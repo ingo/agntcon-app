@@ -6,8 +6,8 @@ actual interface Settings {
     actual fun remove(key: String)
 }
 
-actual class SettingsFactory {
+actual open class SettingsFactory {
     actual open fun create(name: String?): Settings {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        TODO("Not implemented because it should not be used in a backend")
     }
 }
