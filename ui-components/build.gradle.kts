@@ -32,12 +32,6 @@ kotlin {
             api(compose.components.resources)
             api(compose.components.uiToolingPreview)
         }
-
-        // For hot-reload
-        jvmMain.dependencies {
-            implementation(compose.desktop.currentOs)
-            implementation(libs.logback.classic)
-        }
     }
 }
 
@@ -54,9 +48,4 @@ android {
     kotlin {
         jvmToolchain(11)
     }
-}
-
-// Android preview support
-dependencies {
-    debugImplementation(compose.uiTooling)
 }
