@@ -5,6 +5,8 @@ import org.jetbrains.kotlinconf.Conference
 import org.jetbrains.kotlinconf.Session
 import org.jetbrains.kotlinconf.SessionId
 import org.jetbrains.kotlinconf.buildAgenda
+import org.jetbrains.kotlinconf.SessionState
+import kotlin.test.assertNull
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -109,5 +111,36 @@ class MyScheduleTest {
                 ids.take(3).sorted() + ids.drop(3).sorted()
             },
         )
+    }
+
+    @Test
+    fun nowLineIsPlacedByMinutesFromTheStartOfTheTimeline() {
+        val day = day("keynote", "lunch") // timeline 09:00 to 15:00
+
+        assertEquals(0, nowOffsetMinutes(day, LocalDateTime.parse("2026-10-22T09:00")))
+        assertEquals(90, nowOffsetMinutes(day, LocalDateTime.parse("2026-10-22T10:30")))
+        assertEquals(359, nowOffsetMinutes(day, LocalDateTime.parse("2026-10-22T14:59")))
+    }
+
+    @Test
+    fun noNowLineOutsideTheHoursOfTheDay() {
+        val day = day("keynote", "lunch")
+
+        assertNull(nowOffsetMinutes(day, LocalDateTime.parse("2026-10-22T08:59")))
+        assertNull(nowOffsetMinutes(day, LocalDateTime.parse("2026-10-22T15:00")))
+        assertNull(nowOffsetMinutes(day, LocalDateTime.parse("2026-10-21T10:30")))
+        assertNull(nowOffsetMinutes(day, LocalDateTime.parse("2026-10-23T10:30")))
+    }
+
+    @Test
+    fun bookedSessionsKnowIfTheyAreOverLiveOrUpcoming() {
+        val at = LocalDateTime.parse("2026-10-22T10:15")
+        val booked = setOf("keynote", "a", "e").map(::SessionId).toSet()
+        val day = buildMySchedule(Conference(sessions).buildAgenda(booked, emptyList(), at)).single()
+
+        val states = day.booked.associate { it.session.id.id to it.session.state }
+        assertEquals(SessionState.Past, states.getValue("keynote"))
+        assertEquals(SessionState.Live, states.getValue("a"))
+        assertEquals(SessionState.Upcoming, states.getValue("e"))
     }
 }

@@ -289,4 +289,6 @@ Bitte versuchen Sie es erneut.</string>
         <item quantity="one">%1$d Vortrag in der Showcase</item>
         <item quantity="other">%1$d Vorträge in der Showcase</item>
     </plurals>
+    <string name="my_schedule_state_live">Läuft gerade</string>
+    <string name="my_schedule_state_past">Beendet</string>
 </resources>

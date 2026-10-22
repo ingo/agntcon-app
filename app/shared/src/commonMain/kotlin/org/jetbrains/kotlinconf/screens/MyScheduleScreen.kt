@@ -42,6 +42,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.size
+import org.jetbrains.kotlinconf.ui.components.NowLabel
+import org.jetbrains.kotlinconf.generated.resources.my_schedule_state_past
+import org.jetbrains.kotlinconf.generated.resources.my_schedule_state_live
+import org.jetbrains.kotlinconf.SessionState
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.platform.LocalDensity
@@ -104,6 +112,7 @@ fun MyScheduleScreen(
     viewModel: MyScheduleViewModel = metroViewModel(),
 ) {
     val days by viewModel.days.collectAsStateWithLifecycle()
+    val now by viewModel.now.collectAsStateWithLifecycle()
     var selectedDate by rememberSaveable { mutableStateOf<String?>(null) }
     val today = remember { Clock.System.now().toLocalDateTime(EVENT_TIME_ZONE).date }
     val day = days.find { it.date.toString() == selectedDate }
@@ -188,9 +197,11 @@ fun MyScheduleScreen(
             val scrollState = rememberScrollState()
             val density = LocalDensity.current
             LaunchedEffect(day.date) {
-                // Start at the first bookmarked session rather than at the top of the day
-                val first = day.booked.firstOrNull()?.session?.startsAt ?: return@LaunchedEffect
-                val y = with(density) { (MinuteHeight * (first - day.startsAt).inWholeMinutes.toInt()).roundToPx() }
+                // Start at the red line when it is today, else at the first bookmarked session
+                val minutes = nowOffsetMinutes(day, now)
+                    ?: day.booked.firstOrNull()?.session?.startsAt?.let { (it - day.startsAt).inWholeMinutes.toInt() }
+                    ?: return@LaunchedEffect
+                val y = with(density) { (MinuteHeight * minutes).roundToPx() }
                 scrollState.scrollTo((y - with(density) { 24.dp.roundToPx() }).coerceAtLeast(0))
             }
             Column(
@@ -203,7 +214,7 @@ fun MyScheduleScreen(
                 if (day.allDay.isNotEmpty()) {
                     AllDayStrip(day.allDay, onSession)
                 }
-                Timeline(day, onSession, onFree = { freeWindow = it.startsAt to it.endsAt })
+                Timeline(day, now, onSession, onFree = { freeWindow = it.startsAt to it.endsAt })
             }
 
             val window = freeWindow
@@ -252,6 +263,7 @@ private fun AllDayStrip(sessions: List<SessionCardView>, onSession: (SessionId) 
 @Composable
 private fun Timeline(
     day: MyScheduleDay,
+    now: LocalDateTime,
     onSession: (SessionId) -> Unit,
     onFree: (FreeBlock) -> Unit,
 ) {
@@ -306,6 +318,7 @@ private fun Timeline(
             if (height >= MinBlockHeight) {
                 FreeSlot(
                     free = free,
+                    past = free.endsAt <= now,
                     lines = linesIn(height),
                     onClick = { onFree(free) },
                     modifier = Modifier
@@ -329,17 +342,41 @@ private fun Timeline(
                     .height(height),
             )
         }
+
+        // The red line for the current time, on top of everything
+        nowOffsetMinutes(day, now)?.let { minutes ->
+            NowLine(Modifier.offset(y = MinuteHeight * minutes).padding(start = GutterWidth - 6.dp))
+        }
+    }
+}
+
+private val NowLineColor = Color(0xFFE5484D)
+
+/** A red dot at the start of the lane and a line across it, at the current time. */
+@Composable
+private fun NowLine(modifier: Modifier = Modifier) {
+    Box(modifier.fillMaxWidth().height(12.dp).offset(y = (-6).dp), contentAlignment = Alignment.CenterStart) {
+        Box(Modifier.fillMaxWidth().height(2.dp).background(NowLineColor))
+        Box(Modifier.size(10.dp).clip(CircleShape).background(NowLineColor))
     }
 }
 
 @Composable
 private fun BookedSlot(block: BookedBlock, lines: Int, onClick: () -> Unit, modifier: Modifier) {
+    val live = block.session.state == SessionState.Live
+    val past = block.session.state == SessionState.Past
+    val stateText = when {
+        live -> stringResource(Res.string.my_schedule_state_live)
+        past -> stringResource(Res.string.my_schedule_state_past)
+        else -> null
+    }
     // Show only what fits: title, then time and room, then a second title line, then the clash label.
     // Clashes always get the orange border.
     val clash = block.overlapsWith.isNotEmpty()
     val showTime = lines >= 2
     val titleLines = if (lines >= 3) 2 else 1
     val showClashLabel = clash && lines >= titleLines + 2
+    val showNowLabel = live && !clash && lines >= titleLines + 2
     val shape = KotlinConfTheme.shapes.roundedCornerSm
     val colors = KotlinConfTheme.colors
     // A calm tile with a colored stripe; only clashes get an outline
@@ -350,12 +387,28 @@ private fun BookedSlot(block: BookedBlock, lines: Int, onClick: () -> Unit, modi
     }
     Column(
         modifier
+            // Sessions that are over fade back (on an opaque base, so the hour lines don't show
+            // through); the one you are in stands out
+            .background(colors.mainBackground)
+            .alpha(if (past) 0.5f else 1f)
             .padding(horizontal = 2.dp, vertical = 1.dp)
             .clip(shape)
-            .background(colors.mainBackground)
-            .background(if (clash) colors.orangeText.copy(alpha = 0.08f) else colors.tileBackground)
-            .then(if (clash) Modifier.border(1.5.dp, colors.orangeText, shape) else Modifier)
-            .drawBehind { drawRect(accent, size = Size(3.dp.toPx(), size.height)) }
+            .background(
+                when {
+                    clash -> colors.orangeText.copy(alpha = 0.08f)
+                    live -> accent.copy(alpha = 0.16f)
+                    else -> colors.tileBackground
+                }
+            )
+            .then(
+                when {
+                    clash -> Modifier.border(1.5.dp, colors.orangeText, shape)
+                    live -> Modifier.border(1.5.dp, accent, shape)
+                    else -> Modifier
+                }
+            )
+            .drawBehind { drawRect(accent, size = Size((if (live) 6.dp else 3.dp).toPx(), size.height)) }
+            .semantics { if (stateText != null) stateDescription = stateText }
             .clickable(onClick = onClick)
             .padding(start = 10.dp, end = 8.dp, top = BlockVerticalPadding, bottom = BlockVerticalPadding)
     ) {
@@ -368,6 +421,7 @@ private fun BookedSlot(block: BookedBlock, lines: Int, onClick: () -> Unit, modi
                 maxLines = 1,
             )
         }
+        if (showNowLabel) NowLabel()
         if (showClashLabel) {
             Text(
                 stringResource(Res.string.my_schedule_clash),
@@ -380,13 +434,14 @@ private fun BookedSlot(block: BookedBlock, lines: Int, onClick: () -> Unit, modi
 }
 
 @Composable
-private fun FreeSlot(free: FreeBlock, lines: Int, onClick: () -> Unit, modifier: Modifier) {
+private fun FreeSlot(free: FreeBlock, past: Boolean, lines: Int, onClick: () -> Unit, modifier: Modifier) {
     val colors = KotlinConfTheme.colors
     val shape = KotlinConfTheme.shapes.roundedCornerSm
     val canBrowse = free.available.isNotEmpty()
     val browseLabel = pluralStringResource(Res.plurals.my_schedule_free_browse, free.available.size, free.available.size)
     val freeLabel = stringResource(Res.string.my_schedule_free, DateTimeFormatting.timeToTime(free.startsAt, free.endsAt))
     val blockModifier = modifier
+        .alpha(if (past) 0.5f else 1f)
         .padding(2.dp)
         .clip(shape)
         // No box: open time is just the timeline with a way to fill it

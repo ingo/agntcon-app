@@ -289,4 +289,6 @@ Please try again.</string>
         <item quantity="one">%1$d talk in the Showcase</item>
         <item quantity="other">%1$d talks in the Showcase</item>
     </plurals>
+    <string name="my_schedule_state_live">Happening now</string>
+    <string name="my_schedule_state_past">Ended</string>
 </resources>
