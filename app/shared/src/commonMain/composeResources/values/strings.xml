@@ -175,7 +175,6 @@ Please try again.</string>
 
     <string name="partner_detail_title">Partner</string>
     <string name="my_schedule_title">Calendar</string>
-    <string name="my_schedule_summary">Bookmarked: %1$d · Clashes: %2$d</string>
     <string name="my_schedule_all_day">All day</string>
     <string name="my_schedule_clash">Clash</string>
     <string name="my_schedule_free">Free %1$s</string>
@@ -185,8 +184,8 @@ Please try again.</string>
     <string name="my_schedule_bookmark">Bookmark</string>
     <string name="sync_title">Sync with Sessionize</string>
     <string name="sync_info_link">Sync bookmarks with the Sessionize app</string>
-    <string name="sync_my_schedule_link">Sync with the Sessionize web app</string>
-    <string name="sync_my_schedule_linked">Synced with the Sessionize web app</string>
+    <string name="sync_my_schedule_link">Sync with Sessionize</string>
+    <string name="sync_my_schedule_linked">Synced with Sessionize ✓</string>
     <string name="sync_intro">Keep your bookmarks in step with this conference’s Sessionize web app (%1$s), for example a schedule you planned on your laptop.</string>
     <string name="sync_have_code_title">Have a sync code?</string>
     <string name="sync_have_code_steps">In the web app, open the menu, choose Sync favorites, then I don’t have the sync code. Enter the 6-digit code it shows.</string>
@@ -227,4 +226,6 @@ Please try again.</string>
     <string name="now_after">Thanks for coming to %1$s!</string>
     <string name="now_on_now">On now</string>
     <string name="now_starting_next">Starting next · %1$s</string>
+    <string name="my_schedule_bookmarked">%1$d bookmarked</string>
+    <string name="my_schedule_clashes">%1$d clashes</string>
 </resources>
