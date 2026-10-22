@@ -14,10 +14,15 @@ sessionize:
     url: "https://sessionize.com/api/v2/2r0suvtg/view/All"
     imagesUrl: "https://sessionize.com/image/"
     interval: 60
+    # Event-specific handling of the feed; omit for none
+    excludedTags: ["Interview"]
+    multipartWorkshopTag: "Workshop"
+    roomSuffixesToStrip: [" (Lightning talks)"]
 
 conference:
     currentYear: 2026
     supportedYears: [2025, 2026]
+    timeZone: "Europe/Berlin"
     baseUrl: "$CONFERENCE_BASE_URL:http://localhost:8080"
 
 database:

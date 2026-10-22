@@ -38,6 +38,9 @@ kotlin {
             api(libs.kotlinx.serialization.core)
             api(libs.kotlinx.serialization.json)
         }
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
+        }
     }
 
     jvmToolchain(21)

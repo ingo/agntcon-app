@@ -7,7 +7,6 @@ import io.ktor.server.routing.*
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
-import org.jetbrains.kotlinconf.EVENT_TIME_ZONE
 import org.jetbrains.kotlinconf.FeedbackInfo
 import org.jetbrains.kotlinconf.VoteInfo
 import org.jetbrains.kotlinconf.Votes
@@ -61,7 +60,7 @@ fun Route.votingRoutes() {
 
             val nowTime = timeService.now()
 
-            val startVotesAt = session.startsAt.toInstant(EVENT_TIME_ZONE)
+            val startVotesAt = session.startsAt.toInstant(config.timeZone)
             val votingPeriodStarted = nowTime >= startVotesAt.toEpochMilliseconds()
 
             if (!votingPeriodStarted) {
