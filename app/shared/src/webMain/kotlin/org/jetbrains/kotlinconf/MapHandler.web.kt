@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalWasmJsInterop::class)
+
 package org.jetbrains.kotlinconf
 
 import androidx.compose.runtime.Composable
@@ -5,6 +7,7 @@ import androidx.compose.runtime.remember
 import web.window.WindowTarget
 import web.window._blank
 import web.window.window
+import kotlin.js.ExperimentalWasmJsInterop
 import kotlin.js.js
 
 @Composable

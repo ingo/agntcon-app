@@ -3,6 +3,7 @@ package org.jetbrains.kotlinconf.export
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.number
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.kotlinconf.SessionCardView
@@ -91,7 +92,7 @@ private const val ICS_DESCRIPTION_LIMIT = 1000
 private fun Instant.icsUtc(): String {
     val t = toLocalDateTime(TimeZone.UTC)
     fun two(n: Int) = n.toString().padStart(2, '0')
-    return "${t.year.toString().padStart(4, '0')}${two(t.monthNumber)}${two(t.day)}T${two(t.hour)}${two(t.minute)}${two(t.second)}Z"
+    return "${t.year.toString().padStart(4, '0')}${two(t.month.number)}${two(t.day)}T${two(t.hour)}${two(t.minute)}${two(t.second)}Z"
 }
 
 /** Escapes a TEXT value: backslash, semicolon, comma and line breaks. */

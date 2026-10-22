@@ -210,8 +210,10 @@ private fun FilterItemGroup(
     if (items.isEmpty()) return
 
     var showAll by rememberSaveable { mutableStateOf(false) }
-    val collapsed = collapsedCount != null && items.size > collapsedCount && !showAll
-    val shown = if (collapsed) items.filterIndexed { index, item -> index < collapsedCount!! || item.isSelected } else items
+    val limit = collapsedCount
+    val shown = if (limit != null && items.size > limit && !showAll) {
+        items.filterIndexed { index, item -> index < limit || item.isSelected }
+    } else items
 
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),

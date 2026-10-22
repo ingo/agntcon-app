@@ -1,7 +1,10 @@
+@file:OptIn(ExperimentalWasmJsInterop::class)
+
 package org.jetbrains.kotlinconf
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import kotlin.js.ExperimentalWasmJsInterop
 import kotlin.js.js
 
 @Composable
