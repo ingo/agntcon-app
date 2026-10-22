@@ -3,187 +3,137 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Sessionize Conference App: your conference, in your pocket</title>
-  <meta name="description" content="A conference app for any event on Sessionize. A live Now view, a calendar with clash detection, private notes, a list of the people you met, calendar export and company search. Currently set up for AGNTCon + MCPCon North America 2026.">
+  <title>Sessionize Conference App</title>
+  <meta name="description" content="A conference app I built for myself for AGNTCon + MCPCon North America 2026. It works with any event that publishes its schedule on Sessionize. Open source.">
   <meta name="theme-color" content="#1f213a">
   <meta property="og:type" content="website">
   <meta property="og:title" content="Sessionize Conference App">
-  <meta property="og:description" content="Your conference, in your pocket: Now, calendar, notes, people you met, export and search. Works with any event on Sessionize.">
+  <meta property="og:description" content="A conference app I built for myself: schedule, notes, the people I met, calendar export. Works with any event on Sessionize. Open source.">
   <meta property="og:image" content="https://muschenetz.com/sessionize-app/assets/now.png">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231f213a'/%3E%3Ccircle cx='32' cy='32' r='12' fill='none' stroke='%2383ffde' stroke-width='5'/%3E%3Cpath d='M32 24v9l6 4' fill='none' stroke='%23ea6289' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <a class="skip" href="#features">Skip to the features</a>
-
-  <header class="hero">
-    <nav class="nav" aria-label="Main">
-      <span class="brand">Sessionize Conference App</span>
-      <ul>
-        <li><a href="#features">Features</a></li>
-        <li><a href="#screens">Screens</a></li>
-        <li><a href="#privacy">Privacy</a></li>
-        <li><a href="#get">Get the app</a></li>
-      </ul>
-    </nav>
-
-    <div class="hero-inner">
-      <div class="hero-text">
-        <p class="eyebrow">Currently set up for AGNTCon + MCPCon North America 2026</p>
-        <h1>Your conference, in your pocket.</h1>
-        <p class="lead">
-          See what is on <em>now</em>, plan your days on a calendar that spots clashes, keep private notes on
-          sessions and speakers, remember the people you met, and take it all home as a trip report.
-          It reads the public Sessionize schedule, so it works for any event that publishes there.
-        </p>
-        <p class="cta">
-          <a class="button primary" href="#get">Join the TestFlight beta</a>
-          <a class="button" href="https://github.com/ingo/sessionize-app">View the code</a>
-        </p>
-        <ul class="facts" aria-label="At a glance">
-          <li>iPhone beta on TestFlight</li>
-          <li>Open source (Apache 2.0)</li>
-          <li>No account, no server</li>
-        </ul>
-      </div>
-      <figure class="phone hero-phone">
-        <img src="assets/now.png" width="414" height="900" alt="The Now screen: the session happening now with the minutes left, the next session, and free time with a button to browse what starts then.">
-      </figure>
+  <header class="top">
+    <div class="wrap">
+      <h1>Sessionize Conference App</h1>
+      <p class="sub">A conference app for iPhone that I built for myself. Open source.</p>
     </div>
   </header>
 
-  <main>
-    <section class="intro">
-      <h2>Made for the way you use a conference app</h2>
+  <main class="wrap">
+    <section>
       <p>
-        Between sessions you want three answers fast: <strong>where do I need to be</strong>,
-        <strong>what is on while I am free</strong>, and <strong>who was that person I just talked to</strong>.
-        This app is built around those, and everything personal stays on your phone.
+        I wrote this for <a href="https://events.linuxfoundation.org/agntcon-mcpcon-north-america/">AGNTCon + MCPCon
+        North America 2026</a> (October 22–23, San Jose). At a conference I wanted a few things the apps I had
+        used didn't do together: see what is on right now, keep a private note on a talk, remember who I had spoken
+        to and how to reach them, and get my schedule into my calendar.
+      </p>
+      <p>
+        It reads the event's public Sessionize schedule, so it should work for any conference that publishes there.
+        If it is useful to you too, good.
       </p>
     </section>
 
-    <section id="features" class="features" aria-labelledby="features-title">
-      <h2 id="features-title">What it does</h2>
-      <div class="grid">
-        <article class="card">
-          <h3>Now</h3>
-          <p>What you are in and how long is left, what is next and how soon, its room and floor, and the free time before it, with a button to browse what starts then.</p>
-        </article>
-        <article class="card">
-          <h3>A calendar that keeps up</h3>
-          <p>Your bookmarks on a timeline. Overlaps are marked as clashes, free time is split at the conference's own breaks, a red line shows the time, sessions that are over fade back and the one you are in is highlighted.</p>
-        </article>
-        <article class="card">
-          <h3>Search that looks inside</h3>
-          <p>Find sessions by title, speaker, <em>description</em> or <em>company</em>. Filter by topic, level, format or company.</p>
-        </article>
-        <article class="card">
-          <h3>Speakers and companies</h3>
-          <p>Browse speakers with their LinkedIn, blog and company links. A Companies tab lists who is here from where, and a Solutions Showcase filter lets you browse exhibitor talks by company.</p>
-        </article>
-        <article class="card">
-          <h3>Private notes and ratings</h3>
-          <p>Jot a note on any session or speaker. Give a session a thumbs up or down and a one-line takeaway. All of it is stored on your device only.</p>
-        </article>
-        <article class="card">
-          <h3>People I met</h3>
-          <p>Mark a speaker as met, add a note, and find them again later in one list with their LinkedIn link, ready for the follow-up.</p>
-        </article>
-        <article class="card">
-          <h3>Take it with you</h3>
-          <p>Add a session or your whole schedule to your calendar, share it as text, or export a Markdown trip report with your sessions, ratings, notes, slides and the people you met.</p>
-        </article>
-        <article class="card">
-          <h3>Find the room</h3>
-          <p>A venue map with a pin per room. Tap "Find on map" on a session, or the pin on a schedule row, to see where it is.</p>
-        </article>
-        <article class="card">
-          <h3>Stays in step with Sessionize</h3>
-          <p>Link the app to the event's Sessionize web app with a six-digit code and your bookmarks stay the same in both places. Slides and recordings appear on the session page when speakers publish them.</p>
-        </article>
-      </div>
+    <section>
+      <h2>What it does</h2>
+      <ul class="plain">
+        <li><strong>Now:</strong> the session you are in and how long is left, what is next, its room and floor, and your free time before it.</li>
+        <li><strong>Calendar:</strong> your bookmarked sessions on a day timeline. Overlaps are marked as clashes, a red line shows the current time, finished sessions are dimmed and the active one is highlighted. Free time lists what starts then, so you can bookmark it from there.</li>
+        <li><strong>Schedule and search:</strong> the full schedule, filtered by topic, level, format or company. Search matches titles, speakers, descriptions and companies.</li>
+        <li><strong>Speakers and companies:</strong> speaker pages with the links they published (LinkedIn, blog, company site), a Companies tab, and a filter for the Solutions Showcase talks.</li>
+        <li><strong>Notes and ratings:</strong> a note on any session or speaker, and a thumbs up or down with a one-line takeaway for sessions. Stored on the device.</li>
+        <li><strong>People I met:</strong> mark a speaker as met and add a note; they show up in one list with their LinkedIn link.</li>
+        <li><strong>Export:</strong> add a session or your schedule to your calendar (an <code>.ics</code> file), share them as text, or export a Markdown trip report with your sessions, ratings, notes, slide links and the people you met.</li>
+        <li><strong>Map:</strong> a floor plan of the venue with a pin per room, and a "Find on map" button on sessions.</li>
+        <li><strong>Sessionize sync:</strong> optionally link the app to the event's Sessionize web app with its six-digit code, so your bookmarks match in both.</li>
+      </ul>
     </section>
 
-    <section id="screens" class="screens" aria-labelledby="screens-title">
-      <h2 id="screens-title">See it</h2>
+    <section>
+      <h2>Screenshots</h2>
       <div class="shots">
-        <figure class="phone">
-          <img src="assets/calendar.png" width="414" height="900" loading="lazy" alt="The calendar day view with a red line for the current time, the active session outlined, and free-time blocks with browse buttons.">
-          <figcaption>Calendar, with the time and the active session marked</figcaption>
+        <figure>
+          <img src="assets/now.png" width="414" height="900" loading="lazy" alt="The Now screen: the session happening now with the minutes left, the next session, and free time.">
+          <figcaption>Now</figcaption>
         </figure>
-        <figure class="phone">
-          <img src="assets/calendar-dark.png" width="414" height="900" loading="lazy" alt="The same calendar in dark mode.">
-          <figcaption>Dark mode throughout</figcaption>
+        <figure>
+          <img src="assets/calendar.png" width="414" height="900" loading="lazy" alt="The calendar day view with a red line for the current time and the active session outlined.">
+          <figcaption>Calendar</figcaption>
         </figure>
-        <figure class="phone">
+        <figure>
+          <img src="assets/calendar-dark.png" width="414" height="900" loading="lazy" alt="The calendar in dark mode.">
+          <figcaption>Dark mode</figcaption>
+        </figure>
+        <figure>
           <img src="assets/session-rating-notes.png" width="414" height="900" loading="lazy" alt="A session page with a thumbs-up rating, a one-line takeaway and a notes field.">
-          <figcaption>A rating and notes, only on your device</figcaption>
+          <figcaption>Rating and notes</figcaption>
         </figure>
-        <figure class="phone">
-          <img src="assets/companies-showcase.png" width="414" height="900" loading="lazy" alt="The Companies tab filtered to the Solutions Showcase, listing companies with their speakers and talk counts.">
-          <figcaption>Companies and the Solutions Showcase</figcaption>
+        <figure>
+          <img src="assets/companies-showcase.png" width="414" height="900" loading="lazy" alt="The Companies tab filtered to the Solutions Showcase.">
+          <figcaption>Companies</figcaption>
         </figure>
-        <figure class="phone">
+        <figure>
           <img src="assets/search-and-map-pin.png" width="414" height="900" loading="lazy" alt="Search results for the word identity, each with a map pin next to its room.">
-          <figcaption>Search that reads descriptions, with a pin on every mapped room</figcaption>
+          <figcaption>Search</figcaption>
         </figure>
-        <figure class="phone">
+        <figure>
           <img src="assets/share-sheet.png" width="414" height="900" loading="lazy" alt="The iOS share sheet offering the schedule as text.">
-          <figcaption>Share your schedule or a trip report</figcaption>
+          <figcaption>Share</figcaption>
         </figure>
-        <figure class="phone">
+        <figure>
           <img src="assets/map-dark.png" width="414" height="900" loading="lazy" alt="The venue floor map in dark mode.">
-          <figcaption>The venue map</figcaption>
+          <figcaption>Map</figcaption>
         </figure>
       </div>
     </section>
 
-    <section id="privacy" class="privacy" aria-labelledby="privacy-title">
-      <h2 id="privacy-title">Your notes are yours</h2>
+    <section>
+      <h2>Where it stands</h2>
+      <ul class="plain">
+        <li>The iPhone app is in a TestFlight beta. That is the version I have tested.</li>
+        <li>The code is Kotlin Multiplatform, so Android, desktop and web builds exist, but I have not run them for this event. The Android sharing code has not even been compiled.</li>
+        <li>The German translation is mine and nobody has reviewed it.</li>
+        <li>There will be bugs. Accessibility got one pass from me (large text, contrast, tap sizes), not a full VoiceOver test.</li>
+        <li>The venue map is the convention center's published floor plan; only some rooms have pins.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Your data</h2>
       <p>
-        Notes, ratings and the list of people you met are saved on your device, per event, and the app does not
-        send them anywhere. The schedule itself comes from the event's public Sessionize feed. The optional
-        bookmark sync talks to the event's Sessionize web app, and only when you link it.
-      </p>
-      <p>
-        The app is open source, so you can read exactly what it does.
+        Notes, ratings and the list of people you met are saved on your device and the app does not send them
+        anywhere. The schedule comes from the event's public Sessionize feed. The optional bookmark sync talks to
+        the event's Sessionize web app, only after you link it. The source is below if you want to check.
       </p>
     </section>
 
-    <section id="events" class="intro">
-      <h2>For any event on Sessionize</h2>
+    <section id="get">
+      <h2>Trying it</h2>
       <p>
-        A conference needs no server of its own: add a profile with its Sessionize id, time zone and colors, and
-        build. The schedule, speakers, topics and levels come from the feed. The
-        <a href="https://github.com/ingo/sessionize-app#building-for-a-conference">README</a> shows how.
+        To try the beta, ask for a TestFlight invite and I will send one:
+        <a href="https://github.com/ingo/sessionize-app/issues/new?title=TestFlight%20invite&amp;body=Please%20send%20me%20a%20TestFlight%20invite.%20My%20Apple%20ID%20email%3A%20">open an issue</a>
+        (it is public, so you may prefer to message me instead).
       </p>
-    </section>
-
-    <section id="get" class="get" aria-labelledby="get-title">
-      <h2 id="get-title">Get the app</h2>
       <p>
-        The iPhone app is in a TestFlight beta. Ask for an invite and you will get an email from Apple with a link to
-        install it.
+        The code is at <a href="https://github.com/ingo/sessionize-app">github.com/ingo/sessionize-app</a>. The
+        README explains how to build it for another Sessionize event: you add a profile with the event's Sessionize
+        id, time zone and colors. Issues and pull requests are welcome.
       </p>
-      <p class="cta center">
-        <a class="button primary" href="https://github.com/ingo/sessionize-app/issues/new?title=TestFlight%20invite&amp;body=Please%20send%20me%20a%20TestFlight%20invite.%20My%20Apple%20ID%20email%3A%20">Request a TestFlight invite</a>
-        <a class="button" href="https://github.com/ingo/sessionize-app">Source code on GitHub</a>
-      </p>
-      <p class="small">The invite request is a public GitHub issue; you can also message the maintainer directly.</p>
     </section>
   </main>
 
-  <footer class="footer">
+  <footer class="footer wrap">
     <p>
-      This app is a fork of the <a href="https://github.com/JetBrains/kotlinconf-app">KotlinConf app</a> by
-      <a href="https://www.jetbrains.com/">JetBrains</a> and its contributors, who built the architecture, screens and
-      design system it stands on. Thank you. It is published under the
+      This is a fork of the <a href="https://github.com/JetBrains/kotlinconf-app">KotlinConf app</a> by
+      <a href="https://www.jetbrains.com/">JetBrains</a> and its contributors. The architecture, screens and design
+      system are theirs and I am grateful for them. It is published under the
       <a href="https://github.com/ingo/sessionize-app/blob/main/LICENSE">Apache License 2.0</a>.
     </p>
     <p>
       It is not affiliated with or endorsed by JetBrains, KotlinConf, Sessionize or the Linux Foundation. The
-      AGNTCon + MCPCon name belongs to the Linux Foundation and is used only to describe the event the app is currently
-      set up for. KotlinConf and Kodee are trademarks of JetBrains.
+      AGNTCon + MCPCon name belongs to the Linux Foundation and is used only to say which event the app is set up
+      for. KotlinConf and Kodee are trademarks of JetBrains.
     </p>
   </footer>
 </body>
