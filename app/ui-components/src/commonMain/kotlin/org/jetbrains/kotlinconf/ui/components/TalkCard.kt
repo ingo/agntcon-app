@@ -365,27 +365,33 @@ private fun TimeBlock(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.padding(16.dp)
     ) {
-        Text(
-            text = location,
-            style = KotlinConfTheme.typography.text2,
-            color = textColor,
-        )
-        if (onFindOnMap != null) {
-            val description = stringResource(UiRes.string.talk_card_find_on_map, location)
-            Icon(
-                painter = painterResource(UiRes.drawable.location_16),
-                contentDescription = description,
-                tint = KotlinConfTheme.colors.accentText,
-                modifier = Modifier
-                    // The 16dp icon in a 24dp touch target, as tall as the text beside it
-                    .size(24.dp)
-                    .clip(KotlinConfTheme.shapes.roundedCornerMd)
-                    .clickable(role = Role.Button, onClick = onFindOnMap)
-                    .padding(4.dp),
+        // The room takes the space the time and labels leave, and shrinks before they are cut off
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.weight(1f),
+        ) {
+            Text(
+                text = location,
+                style = KotlinConfTheme.typography.text2,
+                color = textColor,
+                modifier = Modifier.weight(1f, fill = false),
             )
+            if (onFindOnMap != null) {
+                val description = stringResource(UiRes.string.talk_card_find_on_map, location)
+                Icon(
+                    painter = painterResource(UiRes.drawable.location_16),
+                    contentDescription = description,
+                    tint = KotlinConfTheme.colors.accentText,
+                    modifier = Modifier
+                        // The 16dp icon in a 24dp touch target, as tall as the text beside it
+                        .size(24.dp)
+                        .clip(KotlinConfTheme.shapes.roundedCornerMd)
+                        .clickable(role = Role.Button, onClick = onFindOnMap)
+                        .padding(4.dp),
+                )
+            }
         }
-
-        Spacer(Modifier.weight(1f))
 
         if (timeNote != null) {
             Text(
