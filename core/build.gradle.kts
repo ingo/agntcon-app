@@ -45,3 +45,10 @@ kotlin {
 
     jvmToolchain(21)
 }
+
+// Real Sessionize feed snapshots for the JVM tests (see testdata/sessionize/README.md)
+tasks.named<Test>("jvmTest") {
+    val testData = rootProject.layout.projectDirectory.dir("testdata/sessionize")
+    inputs.dir(testData)
+    systemProperty("sessionize.testdata", testData.asFile.absolutePath)
+}

@@ -37,7 +37,7 @@ data class BookedBlock(
 data class FreeBlock(
     val startsAt: LocalDateTime,
     val endsAt: LocalDateTime,
-    /** Sessions that fit completely in this gap. */
+    /** Sessions not bookmarked yet that start in this block. */
     val available: List<SessionCardView>,
 )
 
@@ -46,6 +46,12 @@ internal val ALL_DAY_MIN: Duration = 3.hours
 
 /** Shorter gaps between bookmarked sessions are not worth showing. */
 internal val FREE_MIN: Duration = 15.minutes
+
+/**
+ * A time at which at least this many sessions start, or this many end, is one of the conference's
+ * own breaks (the start of a breakout round, the end of lunch). Free time is split at these.
+ */
+internal const val BREAK_MIN_SESSIONS: Int = 3
 
 fun buildMySchedule(agenda: List<Day>): List<MyScheduleDay> = agenda.mapNotNull { day ->
     val sessions = day.timeSlots.flatMap { it.sessions }.distinctBy { it.id }
@@ -130,13 +136,54 @@ private fun freeGaps(
     }
     if (dayEnd - cursor >= FREE_MIN) gaps += cursor to dayEnd
 
-    return gaps.map { (start, end) ->
-        FreeBlock(
-            startsAt = start,
-            endsAt = end,
-            available = timed
-                .filter { !it.isFavorite && it.startsAt >= start && it.endsAt <= end }
-                .sortedWith(compareBy({ it.startsAt }, { it.endsAt })),
-        )
+    val breaks = naturalBreaks(timed)
+    return gaps
+        .flatMap { (start, end) -> splitAtBreaks(start, end, breaks) }
+        .map { (start, end) ->
+            FreeBlock(
+                startsAt = start,
+                endsAt = end,
+                available = timed
+                    .filter { !it.isFavorite && it.startsAt >= start && it.startsAt < end }
+                    .sortedWith(compareBy({ it.startsAt }, { it.endsAt })),
+            )
+        }
+}
+
+/**
+ * The day's slot grid: times when several talks start or end together, such as the start of a
+ * breakout round or the end of lunch. Short items (demos, lightning talks) do not set the grid.
+ */
+internal fun naturalBreaks(timed: List<SessionCardView>): List<LocalDateTime> {
+    val talks = timed.filterNot { it.isLightning }.ifEmpty { timed }
+    val starts = talks.groupingBy { it.startsAt }.eachCount()
+    val ends = talks.groupingBy { it.endsAt }.eachCount()
+    val busy = starts.filterValues { it >= BREAK_MIN_SESSIONS }.keys + ends.filterValues { it >= BREAK_MIN_SESSIONS }.keys
+    // A single-track day has no such pile-ups; there every talk start is a break
+    return busy.ifEmpty { starts.keys }.sorted()
+}
+
+/**
+ * Splits free time at the breaks inside it. A piece shorter than [FREE_MIN] joins the piece after
+ * it (you are free from its start), or the one before it at the end of the free time.
+ */
+internal fun splitAtBreaks(
+    start: LocalDateTime,
+    end: LocalDateTime,
+    breaks: List<LocalDateTime>,
+): List<Pair<LocalDateTime, LocalDateTime>> {
+    val points = listOf(start) + breaks.filter { it > start && it < end } + end
+    val pieces = mutableListOf<Pair<LocalDateTime, LocalDateTime>>()
+    var pieceStart = start
+    for (to in points.drop(1)) {
+        if (to - pieceStart >= FREE_MIN) {
+            pieces += pieceStart to to
+            pieceStart = to
+        }
     }
+    if (pieceStart < end) {
+        val last = pieces.removeLastOrNull()
+        pieces += (last?.first ?: pieceStart) to end
+    }
+    return pieces
 }

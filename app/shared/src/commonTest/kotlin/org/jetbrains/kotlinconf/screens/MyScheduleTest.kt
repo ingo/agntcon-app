@@ -65,16 +65,49 @@ class MyScheduleTest {
     }
 
     @Test
-    fun freeGapsListTheSessionsThatFit() {
+    fun singleTrackFreeTimeSplitsAtEachTalk() {
         val day = day("keynote", "lunch")
 
         val gaps = day.free.map { "${it.startsAt.time}-${it.endsAt.time}" to it.available.map { s -> s.id.id } }
         assertEquals(
             listOf(
-                "09:30-12:00" to listOf("a", "b", "c", "d"),
-                "13:00-15:00" to listOf("e"),
+                "09:30-10:00" to emptyList(),
+                "10:00-10:30" to listOf("a"),
+                "10:30-10:45" to listOf("b"),
+                "10:45-11:30" to listOf("c"),
+                "11:30-12:00" to listOf("d"),
+                "13:00-14:00" to emptyList(),
+                "14:00-15:00" to listOf("e"),
             ),
             gaps,
+        )
+    }
+
+    @Test
+    fun freeTimeFollowsTheConferenceRounds() {
+        // The AGNTCon shape: parallel rounds at 11:10 and 11:45, lunch 12:10-13:25 with short demos inside it
+        val sessions = listOf(
+            session("before", "10:35", "11:00"),
+            session("r1a", "11:10", "11:35"), session("r1b", "11:10", "11:35"), session("r1c", "11:10", "11:35"),
+            session("r2a", "11:45", "12:10"), session("r2b", "11:45", "12:10"), session("r2c", "11:45", "12:10"),
+            session("lunch", "12:10", "13:25"), session("signing", "12:10", "13:25"), session("meetup", "12:10", "13:25"),
+            session("demo1", "12:15", "12:25"), session("demo2", "12:15", "12:25"), session("demo3", "12:15", "12:25"),
+            session("keynote", "13:25", "13:35"),
+            session("after", "14:20", "14:45"), session("after2", "14:20", "14:45"), session("after3", "14:20", "14:45"),
+        )
+        val day = buildMySchedule(
+            Conference(sessions).buildAgenda(setOf(SessionId("before"), SessionId("after")), emptyList(), now)
+        ).single()
+
+        assertEquals(
+            listOf("11:00-11:35", "11:35-12:10", "12:10-13:25", "13:25-14:20"),
+            day.free.filter { it.startsAt.hour in 11..13 }.map { "${it.startsAt.time}-${it.endsAt.time}" },
+        )
+        assertEquals(
+            listOf("lunch", "meetup", "signing", "demo1", "demo2", "demo3"),
+            day.free.single { it.startsAt.hour == 12 }.available.map { it.id.id }.let { ids ->
+                ids.take(3).sorted() + ids.drop(3).sorted()
+            },
         )
     }
 }

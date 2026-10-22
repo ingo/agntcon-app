@@ -99,7 +99,7 @@ data class PartnerDetailScreen(val partnerId: PartnerId) : AppRoute
 
 @Serializable
 @SerialName("MySchedule")
-data object MyScheduleScreen : AppRoute
+data object MyScheduleScreen : AppRoute, TopLevelRoute
 
 @Serializable
 @SerialName("Session")

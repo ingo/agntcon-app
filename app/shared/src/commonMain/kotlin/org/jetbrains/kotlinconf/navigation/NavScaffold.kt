@@ -27,6 +27,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import org.jetbrains.kotlinconf.generated.resources.Res
+import org.jetbrains.kotlinconf.generated.resources.bookmark_28
+import org.jetbrains.kotlinconf.generated.resources.bookmark_28_fill
+import org.jetbrains.kotlinconf.generated.resources.nav_destination_my_schedule
 import org.jetbrains.kotlinconf.generated.resources.award_28
 import org.jetbrains.kotlinconf.generated.resources.award_28_fill
 import org.jetbrains.kotlinconf.generated.resources.clock_28
@@ -61,6 +64,12 @@ private val bottomNavDestinations: List<MainNavDestination<TopLevelRoute>> = lis
         icon = Res.drawable.clock_28,
         iconSelected = Res.drawable.clock_28_fill,
         route = ScheduleScreen,
+    ),
+    MainNavDestination(
+        label = Res.string.nav_destination_my_schedule,
+        icon = Res.drawable.bookmark_28,
+        iconSelected = Res.drawable.bookmark_28_fill,
+        route = MyScheduleScreen,
     ),
     MainNavDestination(
         label = Res.string.nav_destination_speakers,

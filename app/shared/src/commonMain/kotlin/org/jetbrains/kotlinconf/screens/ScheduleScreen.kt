@@ -49,7 +49,6 @@ import org.jetbrains.kotlinconf.SessionId
 import org.jetbrains.kotlinconf.SessionState
 import org.jetbrains.kotlinconf.generated.resources.Res
 import org.jetbrains.kotlinconf.generated.resources.nav_destination_schedule
-import org.jetbrains.kotlinconf.generated.resources.my_schedule_action
 import org.jetbrains.kotlinconf.generated.resources.schedule_action_filter_bookmarked
 import org.jetbrains.kotlinconf.generated.resources.schedule_action_search
 import org.jetbrains.kotlinconf.generated.resources.schedule_error_no_data
@@ -79,7 +78,6 @@ import org.jetbrains.kotlinconf.ui.components.TopMenuButton
 import org.jetbrains.kotlinconf.ui.generated.resources.UiRes
 import org.jetbrains.kotlinconf.ui.generated.resources.bookmark_24
 import org.jetbrains.kotlinconf.ui.generated.resources.search_24
-import org.jetbrains.kotlinconf.ui.generated.resources.view_grid_24
 import org.jetbrains.kotlinconf.ui.theme.KotlinConfTheme
 import org.jetbrains.kotlinconf.utils.DateTimeFormatting
 import org.jetbrains.kotlinconf.utils.ErrorLoadingContent
@@ -91,7 +89,6 @@ import org.jetbrains.kotlinconf.utils.topInsetPadding
 fun ScheduleScreen(
     onSession: (SessionId) -> Unit,
     onPrivacyNoticeNeeded: () -> Unit,
-    onMySchedule: () -> Unit,
     tabReselections: Flow<TopLevelRoute>,
     viewModel: ScheduleViewModel = metroViewModel(),
 ) {
@@ -164,7 +161,6 @@ fun ScheduleScreen(
             onHeaderStateChange = { headerState = it },
             bookmarkFilterEnabled = bookmarkFilterEnabled,
             onBookmarkFilter = { bookmarkFilterEnabled = it },
-            onMySchedule = onMySchedule,
             searchQuery = searchQuery,
             onSearchQueryChange = { searchQuery = it },
             onClearSearch = { viewModel.resetFilters() },
@@ -313,7 +309,6 @@ private fun Header(
     onHeaderStateChange: (MainHeaderContainerState) -> Unit,
     bookmarkFilterEnabled: Boolean,
     onBookmarkFilter: (Boolean) -> Unit,
-    onMySchedule: () -> Unit,
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
     onClearSearch: () -> Unit,
@@ -326,11 +321,6 @@ private fun Header(
                 title = stringResource(Res.string.nav_destination_schedule),
                 startContent = startContent,
                 endContent = {
-                    TopMenuButton(
-                        icon = UiRes.drawable.view_grid_24,
-                        onClick = onMySchedule,
-                        contentDescription = stringResource(Res.string.my_schedule_action),
-                    )
                     TopMenuButton(
                         icon = UiRes.drawable.bookmark_24,
                         selected = bookmarkFilterEnabled,
@@ -422,18 +412,7 @@ private fun ScheduleList(
 
         items(
             scheduleItems,
-            key = {
-                when (it) {
-                    is DaySeparatorItem -> it.id
-                    is DayHeaderItem -> it.value.date.toString()
-                    is ServiceEventGroupItem -> it.value.map { it.id.id }
-                    is ServiceEventItem -> it.value.id.id
-                    is SessionItem -> it.value.id.id
-                    // Slots can share a start time and differ in their end
-                    is TimeSlotTitleItem -> "${it.value.startsAt}-${it.value.endsAt}"
-                    is NoBookmarksItem -> it.id
-                }
-            },
+            key = { it.listKey },
         ) { item ->
             Box(Modifier.animateItem()) {
                 when (item) {

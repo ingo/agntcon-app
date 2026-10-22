@@ -4,6 +4,7 @@
     <string name="navigate_back">Zurück</string>
 
     <string name="nav_destination_info">Info</string>
+    <string name="nav_destination_my_schedule">Mein Programm</string>
     <string name="nav_destination_schedule">Programm</string>
     <string name="nav_destination_speakers">Sprecher</string>
     <string name="nav_destination_map">Karte</string>
@@ -173,12 +174,11 @@ Bitte versuchen Sie es erneut.</string>
 
     <string name="partner_detail_title">Partner</string>
     <string name="my_schedule_title">Mein Programm</string>
-    <string name="my_schedule_action">Mein Programm</string>
     <string name="my_schedule_summary">Gemerkt: %1$d · Überschneidungen: %2$d</string>
     <string name="my_schedule_all_day">Ganztägig</string>
     <string name="my_schedule_clash">Überschneidung</string>
     <string name="my_schedule_free">Frei %1$s</string>
-    <string name="my_schedule_free_fits">Passende Sessions: %1$d</string>
+    <string name="my_schedule_free_fits">Beginnende Sessions: %1$d</string>
     <string name="my_schedule_no_sessions">An diesem Tag gibt es keine Sessions.</string>
     <string name="my_schedule_close">Schließen</string>
     <string name="my_schedule_bookmark">Merken</string>

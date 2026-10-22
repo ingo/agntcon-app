@@ -59,10 +59,8 @@ import org.jetbrains.kotlinconf.ui.components.MainHeaderTitleBar
 import org.jetbrains.kotlinconf.ui.components.Switcher
 import org.jetbrains.kotlinconf.ui.components.Text
 import org.jetbrains.kotlinconf.ui.components.TopMenuButton
-import org.jetbrains.kotlinconf.ui.generated.resources.arrow_left_24
 import org.jetbrains.kotlinconf.ui.generated.resources.bookmark_24
 import org.jetbrains.kotlinconf.ui.generated.resources.close_24
-import org.jetbrains.kotlinconf.ui.generated.resources.main_header_back
 import org.jetbrains.kotlinconf.ui.theme.KotlinConfTheme
 import org.jetbrains.kotlinconf.utils.DateTimeFormatting
 import org.jetbrains.kotlinconf.utils.bottomInsetPadding
@@ -73,8 +71,7 @@ import org.jetbrains.kotlinconf.ui.generated.resources.UiRes
 private val MinuteHeight = 2.dp
 private val GutterWidth = 48.dp
 private val MinBlockHeight = 22.dp
-private val TwoLineBlockHeight = 40.dp
-private val ThreeLineBlockHeight = 64.dp
+private val BlockVerticalPadding = 2.dp
 
 /**
  * The bookmarked sessions of one day on a timeline: overlapping sessions side by side and marked
@@ -82,7 +79,6 @@ private val ThreeLineBlockHeight = 64.dp
  */
 @Composable
 fun MyScheduleScreen(
-    onBack: () -> Unit,
     onSession: (SessionId) -> Unit,
     viewModel: MyScheduleViewModel = metroViewModel(),
 ) {
@@ -100,16 +96,7 @@ fun MyScheduleScreen(
             .background(KotlinConfTheme.colors.mainBackground)
             .padding(topInsetPadding())
     ) {
-        MainHeaderTitleBar(
-            title = stringResource(Res.string.my_schedule_title),
-            startContent = {
-                TopMenuButton(
-                    icon = UiRes.drawable.arrow_left_24,
-                    contentDescription = stringResource(UiRes.string.main_header_back),
-                    onClick = onBack,
-                )
-            }
-        )
+        MainHeaderTitleBar(title = stringResource(Res.string.my_schedule_title))
         HorizontalDivider(thickness = 1.dp, color = KotlinConfTheme.colors.strokePale)
 
         if (day == null) {
@@ -258,6 +245,7 @@ private fun Timeline(
             if (height >= MinBlockHeight) {
                 FreeSlot(
                     free = free,
+                    lines = linesIn(height),
                     onClick = { onFree(free) },
                     modifier = Modifier
                         .offset(x = GutterWidth, y = top)
@@ -272,11 +260,7 @@ private fun Timeline(
             val columnWidth = laneWidth / block.columns
             BookedSlot(
                 block = block,
-                lines = when {
-                    height >= ThreeLineBlockHeight -> 3
-                    height >= TwoLineBlockHeight -> 2
-                    else -> 1
-                },
+                lines = linesIn(height),
                 onClick = { onSession(block.session.id) },
                 modifier = Modifier
                     .offset(x = GutterWidth + columnWidth * block.column, y = top)
@@ -289,9 +273,12 @@ private fun Timeline(
 
 @Composable
 private fun BookedSlot(block: BookedBlock, lines: Int, onClick: () -> Unit, modifier: Modifier) {
-    // Clashes always get the orange border; the label only where it fits
-    val roomy = lines >= 2
+    // Show only what fits: title, then time and room, then a second title line, then the clash label.
+    // Clashes always get the orange border.
     val clash = block.overlapsWith.isNotEmpty()
+    val showTime = lines >= 2
+    val titleLines = if (lines >= 3) 2 else 1
+    val showClashLabel = clash && lines >= titleLines + 2
     val shape = KotlinConfTheme.shapes.roundedCornerSm
     Column(
         modifier
@@ -305,10 +292,10 @@ private fun BookedSlot(block: BookedBlock, lines: Int, onClick: () -> Unit, modi
                 shape = shape,
             )
             .clickable(onClick = onClick)
-            .padding(horizontal = 8.dp, vertical = 2.dp)
+            .padding(horizontal = 8.dp, vertical = BlockVerticalPadding)
     ) {
-        Text(block.session.title, style = KotlinConfTheme.typography.text2, maxLines = if (roomy) 2 else 1)
-        if (roomy) {
+        Text(block.session.title, style = KotlinConfTheme.typography.text2, maxLines = titleLines)
+        if (showTime) {
             Text(
                 "${block.session.shortTimeline} · ${block.session.locationLine}",
                 style = KotlinConfTheme.typography.text2,
@@ -316,7 +303,7 @@ private fun BookedSlot(block: BookedBlock, lines: Int, onClick: () -> Unit, modi
                 maxLines = 1,
             )
         }
-        if (clash && lines >= 3) {
+        if (showClashLabel) {
             Text(
                 stringResource(Res.string.my_schedule_clash),
                 style = KotlinConfTheme.typography.text2,
@@ -328,7 +315,7 @@ private fun BookedSlot(block: BookedBlock, lines: Int, onClick: () -> Unit, modi
 }
 
 @Composable
-private fun FreeSlot(free: FreeBlock, onClick: () -> Unit, modifier: Modifier) {
+private fun FreeSlot(free: FreeBlock, lines: Int, onClick: () -> Unit, modifier: Modifier) {
     val shape = KotlinConfTheme.shapes.roundedCornerSm
     Column(
         modifier
@@ -336,7 +323,7 @@ private fun FreeSlot(free: FreeBlock, onClick: () -> Unit, modifier: Modifier) {
             .clip(shape)
             .border(1.dp, KotlinConfTheme.colors.strokePale, shape)
             .clickable(enabled = free.available.isNotEmpty(), onClick = onClick)
-            .padding(horizontal = 8.dp, vertical = 4.dp)
+            .padding(horizontal = 8.dp, vertical = BlockVerticalPadding)
     ) {
         Text(
             stringResource(Res.string.my_schedule_free, DateTimeFormatting.timeToTime(free.startsAt, free.endsAt)),
@@ -344,7 +331,7 @@ private fun FreeSlot(free: FreeBlock, onClick: () -> Unit, modifier: Modifier) {
             color = KotlinConfTheme.colors.noteText,
             maxLines = 1,
         )
-        if (free.available.isNotEmpty()) {
+        if (free.available.isNotEmpty() && lines >= 2) {
             Text(
                 stringResource(Res.string.my_schedule_free_fits, free.available.size),
                 style = KotlinConfTheme.typography.text2,
@@ -365,7 +352,7 @@ private fun BoxScope.FreeTimePanel(
 ) {
     val (start, end) = window
     // Taken from the live day, so bookmarking here updates the list and the timeline behind it
-    val fits = day.sessions.filter { it.startsAt >= start && it.endsAt <= end }
+    val fits = day.sessions.filter { it.startsAt >= start && it.startsAt < end }
 
     Column(
         Modifier
@@ -419,3 +406,13 @@ private fun BoxScope.FreeTimePanel(
         }
     }
 }
+
+/** Lines of [KotlinConfTheme.typography.text2] that fit in a block of [height], at the user's font size. */
+@Composable
+private fun linesIn(height: Dp): Int {
+    val lineHeight = with(LocalDensity.current) { KotlinConfTheme.typography.text2.lineHeight.toDp() }
+    // Block padding (2.dp) plus the inner vertical padding on both sides
+    val usable = height - 4.dp - BlockVerticalPadding * 2
+    return (usable / lineHeight).toInt().coerceAtLeast(1)
+}
+
