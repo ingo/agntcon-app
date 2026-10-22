@@ -182,4 +182,26 @@ Bitte versuchen Sie es erneut.</string>
     <string name="my_schedule_no_sessions">An diesem Tag gibt es keine Sessions.</string>
     <string name="my_schedule_close">Schließen</string>
     <string name="my_schedule_bookmark">Merken</string>
+    <string name="sync_title">Mit Sessionize synchronisieren</string>
+    <string name="sync_info_link">Merkliste mit der Sessionize-App synchronisieren</string>
+    <string name="sync_my_schedule_link">Mit der Sessionize-Web-App synchronisieren</string>
+    <string name="sync_my_schedule_linked">Mit der Sessionize-Web-App synchronisiert</string>
+    <string name="sync_intro">Halte deine Merkliste mit der Sessionize-Web-App dieser Konferenz (%1$s) abgeglichen, zum Beispiel mit einem Programm, das du am Laptop geplant hast.</string>
+    <string name="sync_have_code_title">Hast du einen Sync-Code?</string>
+    <string name="sync_have_code_steps">Öffne in der Web-App das Menü, wähle Sync favorites und dann I don’t have the sync code. Gib den 6-stelligen Code hier ein.</string>
+    <string name="sync_code_hint">6-stelliger Code</string>
+    <string name="sync_link">Synchronisieren</string>
+    <string name="sync_no_code_title">Oder hier beginnen</string>
+    <string name="sync_no_code_steps">Lass dir hier einen Code anzeigen und gib ihn in der Web-App unter Sync favorites, I want to use sync code ein.</string>
+    <string name="sync_show_code">Sync-Code anzeigen</string>
+    <string name="sync_waiting">Warte auf die Web-App…</string>
+    <string name="sync_linked_title">Mit der Sessionize-Web-App synchronisiert</string>
+    <string name="sync_linked_text">Was du hier oder in der Web-App merkst oder entfernst, erscheint innerhalb von ein, zwei Minuten in beiden.</string>
+    <string name="sync_last_synced">Zuletzt synchronisiert um %1$s</string>
+    <string name="sync_not_synced_yet">Noch nicht synchronisiert</string>
+    <string name="sync_now">Jetzt synchronisieren</string>
+    <string name="sync_stop">Synchronisierung beenden</string>
+    <string name="sync_error_code">Der Code hat nicht funktioniert. Codes laufen nach wenigen Minuten ab; erstelle in der Web-App einen neuen.</string>
+    <string name="sync_error_network">Sessionize ist nicht erreichbar. Prüfe die Verbindung und versuche es erneut.</string>
+    <string name="sync_error_expired">Der Code ist abgelaufen, bevor er benutzt wurde. Lass dir einen neuen anzeigen.</string>
 </resources>

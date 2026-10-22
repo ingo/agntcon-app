@@ -53,6 +53,8 @@ import org.jetbrains.kotlinconf.generated.resources.my_schedule_free_fits
 import org.jetbrains.kotlinconf.generated.resources.my_schedule_no_sessions
 import org.jetbrains.kotlinconf.generated.resources.my_schedule_summary
 import org.jetbrains.kotlinconf.generated.resources.my_schedule_title
+import org.jetbrains.kotlinconf.generated.resources.sync_my_schedule_link
+import org.jetbrains.kotlinconf.generated.resources.sync_my_schedule_linked
 import org.jetbrains.kotlinconf.minus
 import org.jetbrains.kotlinconf.ui.components.HorizontalDivider
 import org.jetbrains.kotlinconf.ui.components.MainHeaderTitleBar
@@ -80,6 +82,7 @@ private val BlockVerticalPadding = 2.dp
 @Composable
 fun MyScheduleScreen(
     onSession: (SessionId) -> Unit,
+    onSync: (() -> Unit)? = null,
     viewModel: MyScheduleViewModel = metroViewModel(),
 ) {
     val days by viewModel.days.collectAsStateWithLifecycle()
@@ -121,6 +124,18 @@ fun MyScheduleScreen(
             color = if (day.clashCount > 0) KotlinConfTheme.colors.orangeText else KotlinConfTheme.colors.noteText,
             modifier = Modifier.padding(horizontal = 12.dp).padding(bottom = 8.dp),
         )
+        if (onSync != null) {
+            val linked = viewModel.syncLinked.collectAsStateWithLifecycle().value
+            Text(
+                stringResource(if (linked) Res.string.sync_my_schedule_linked else Res.string.sync_my_schedule_link),
+                style = KotlinConfTheme.typography.text2,
+                color = KotlinConfTheme.colors.accentText,
+                modifier = Modifier
+                    .padding(horizontal = 12.dp)
+                    .clickable(onClick = onSync)
+                    .padding(bottom = 8.dp),
+            )
+        }
 
         Box(Modifier.weight(1f).fillMaxWidth()) {
             val scrollState = rememberScrollState()

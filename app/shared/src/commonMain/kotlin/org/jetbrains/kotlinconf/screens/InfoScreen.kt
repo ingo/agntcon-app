@@ -40,6 +40,7 @@ import org.jetbrains.kotlinconf.generated.resources.info_link_description_twitte
 import org.jetbrains.kotlinconf.generated.resources.info_link_how_to_find_venue
 import org.jetbrains.kotlinconf.generated.resources.info_link_partners
 import org.jetbrains.kotlinconf.generated.resources.info_link_settings
+import org.jetbrains.kotlinconf.generated.resources.sync_info_link
 import org.jetbrains.kotlinconf.generated.resources.info_title
 import org.jetbrains.kotlinconf.generated.resources.slack
 import org.jetbrains.kotlinconf.generated.resources.twitter
@@ -64,6 +65,7 @@ fun InfoScreen(
     onSlack: (() -> Unit)?,
     onBluesky: (() -> Unit)?,
     onSettings: () -> Unit,
+    onSessionizeSync: (() -> Unit)? = null,
     viewModel: InfoViewModel = metroViewModel(),
 ) {
     val venueAddress = viewModel.venueAddress.collectAsStateWithLifecycle().value
@@ -113,6 +115,9 @@ fun InfoScreen(
             }
             PageMenuItem(stringResource(Res.string.info_link_about_app), onClick = onAboutApp)
             PageMenuItem(stringResource(Res.string.info_link_settings), onClick = onSettings)
+            if (onSessionizeSync != null) {
+                PageMenuItem(stringResource(Res.string.sync_info_link), onClick = onSessionizeSync)
+            }
             if (onOurPartners != null) {
                 PageMenuItem(stringResource(Res.string.info_link_partners), onClick = onOurPartners)
             }

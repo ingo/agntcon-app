@@ -22,6 +22,10 @@ class MyScheduleViewModel(
         .map(::buildMySchedule)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), buildMySchedule(service.agenda.value))
 
+    val syncLinked: StateFlow<Boolean> = service.sessionizeSyncState
+        .map { it?.linked == true }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     fun setBookmark(sessionId: SessionId, bookmarked: Boolean) {
         viewModelScope.launch { service.setFavorite(sessionId, bookmarked) }
     }

@@ -22,6 +22,8 @@ data class EventProfile(
     val stagingApiUrl: String? = null,
     /** The id in `https://sessionize.com/api/v2/{id}/view/All`. Required without [apiUrl]. */
     val sessionizeId: String? = null,
+    /** The event's Sessionize web app (`https://<event>.sessionize.com`), for bookmark sync. */
+    val sessionizeAppUrl: String? = null,
     val sessionizeRules: SessionizeRules = SessionizeRules(),
     val aboutDescription: String = "",
     val websiteUrl: String? = null,

@@ -1,5 +1,6 @@
 package org.jetbrains.kotlinconf.storage
 
+import org.jetbrains.kotlinconf.sync.SessionizeSyncState
 import kotlinx.coroutines.flow.Flow
 import org.jetbrains.kotlinconf.Conference
 import org.jetbrains.kotlinconf.ConferenceInfo
@@ -26,6 +27,9 @@ interface YearlyStorage {
 
     fun getNotificationSettings(): Flow<NotificationSettings?>
     suspend fun setNotificationSettings(value: NotificationSettings)
+
+    fun getSessionizeSync(): Flow<SessionizeSyncState?>
+    suspend fun setSessionizeSync(value: SessionizeSyncState?)
 
     fun getVotes(): Flow<List<VoteInfo>>
     suspend fun setVotes(value: List<VoteInfo>)

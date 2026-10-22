@@ -47,6 +47,7 @@ import org.jetbrains.kotlinconf.screens.AppPrivacyNotice
 import org.jetbrains.kotlinconf.screens.AppPrivacyNoticePrompt
 import org.jetbrains.kotlinconf.screens.AppTermsOfUse
 import org.jetbrains.kotlinconf.screens.MyScheduleScreen
+import org.jetbrains.kotlinconf.screens.SessionizeSyncScreen
 import org.jetbrains.kotlinconf.screens.CodeOfConduct
 import org.jetbrains.kotlinconf.screens.GoldenKodeeFinalistScreen
 import org.jetbrains.kotlinconf.screens.GoldenKodeeScreen
@@ -296,9 +297,14 @@ private fun EntryProviderScope<AppRoute>.screens(
         )
     }
 
+    entry<SessionizeSyncScreen> {
+        SessionizeSyncScreen(onBack = onBack)
+    }
+
     entry<MyScheduleScreen>(metadata = noAnimationMetadata) {
         MyScheduleScreen(
             onSession = { navigator.add(SessionScreen(it)) },
+            onSync = if (ActiveEvent.sessionizeAppUrl != null) { { navigator.add(SessionizeSyncScreen) } } else null,
         )
     }
 
@@ -351,6 +357,7 @@ private fun EntryProviderScope<AppRoute>.screens(
             onSlack = URLs.SLACK?.let { url -> { uriHandler.openUri(url) } },
             onBluesky = URLs.BLUESKY?.let { url -> { uriHandler.openUri(url) } },
             onSettings = { navigator.add(SettingsScreen) },
+            onSessionizeSync = if (ActiveEvent.sessionizeAppUrl != null) { { navigator.add(SessionizeSyncScreen) } } else null,
         )
     }
 

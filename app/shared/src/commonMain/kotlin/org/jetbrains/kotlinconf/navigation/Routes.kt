@@ -102,6 +102,10 @@ data class PartnerDetailScreen(val partnerId: PartnerId) : AppRoute
 data object MyScheduleScreen : AppRoute, TopLevelRoute
 
 @Serializable
+@SerialName("SessionizeSync")
+data object SessionizeSyncScreen : AppRoute
+
+@Serializable
 @SerialName("Session")
 data class SessionScreen(
     val sessionId: SessionId,
