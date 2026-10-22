@@ -29,3 +29,24 @@ To build the project locally:
    * Desktop: `./gradlew :app:desktopApp:hotRun -DmainClass=org.jetbrains.kotlinconf.MainKt`
    * Web: `./gradlew :app:webApp:wasmJsBrowserDevelopmentRun`
    * Backend: `./gradlew :backend:run`
+
+## Building for another Sessionize conference
+
+This fork can be built for any conference that publishes its schedule on [Sessionize](https://sessionize.com).
+Each build is for one conference, described by a profile in
+[`EventProfiles.kt`](app/shared/src/commonMain/kotlin/org/jetbrains/kotlinconf/event/EventProfiles.kt).
+
+1. Find the event's Sessionize API id. Event schedule pages that embed Sessionize contain URLs such as
+   `https://sessionize.com/api/v2/{id}/view/GridSmart`; check that `https://sessionize.com/api/v2/{id}/view/All` returns JSON.
+2. Add an `EventProfile` with that `sessionizeId`, the venue's time zone (e.g. `America/Los_Angeles`), name, about text and links.
+3. Build with `-Pevent=<profile id>`, for example:
+   * Web: `./gradlew -Pevent=agntcon-mcpcon-na-2026 :app:webApp:wasmJsBrowserDevelopmentRun`
+   * Desktop: `./gradlew -Pevent=agntcon-mcpcon-na-2026 :app:desktopApp:run`
+   * iOS (TestFlight): `scripts/ios-testflight.sh agntcon-mcpcon-na-2026 <bundle id> <display name> <team id> --upload`
+
+A profile without an `apiUrl` needs no backend: the app reads the Sessionize feed directly, builds the schedule
+filters from the feed's categories, and hides the features that need the backend (voting, feedback, Golden Kodee,
+venue maps, partners, legal documents, push notifications). The default profile, `kotlinconf`, keeps the original app.
+
+The backend (`:backend`) reads the same feed format; set `conference.timeZone` and the `sessionize.*` rules in
+`application.yaml` for another conference.
