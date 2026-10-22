@@ -36,6 +36,8 @@ object EventProfiles {
         timeZoneId = "America/Los_Angeles",
         sessionizeId = "asqam7rn",
         sessionizeAppUrl = "https://agntcon-mcpcon-na-2026.sessionize.com",
+        // Speakers upload slides (PDF or PowerPoint) or a poster image here
+        sessionizeRules = SessionizeRules(slidesQuestion = "Presentation or Poster"),
         aboutDescription = "October 22–23, 2026\nSan Jose McEnery Convention Center, San Jose, CA\n\n" +
             "The AI agents conference: agentic AI infrastructure, production agent systems, and MCP.",
         websiteUrl = "https://events.linuxfoundation.org/agntcon-mcpcon-north-america/",

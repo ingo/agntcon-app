@@ -34,6 +34,12 @@ data class SessionizeRules(
     val levelGroups: List<String> = emptyList(),
     val formatGroups: List<String> = emptyList(),
     val categoryGroups: List<String> = emptyList(),
+    /**
+     * The session question whose file uploads are the speakers' slides, e.g. "Presentation or Poster".
+     * Any https upload to that question counts. Null picks file uploads that are PDFs on
+     * `sessionize.com/download` from any question. Questions with "logo" in their name never count.
+     */
+    val slidesQuestion: String? = null,
 ) {
     companion object {
         val KOTLINCONF = SessionizeRules(
@@ -72,6 +78,7 @@ fun SessionizeData.toConference(
         .flatMap { it.items }
         .associate { it.id to it.name }
     val roomNames: Map<Int, String> = rooms.associate { it.id to it.name }
+    val slidesQuestionIds: Set<Int> = slidesQuestionIds(rules)
 
     val sessions = sessions.mapNotNull { session ->
         val startsAt = session.startsAt ?: return@mapNotNull null
@@ -90,7 +97,8 @@ fun SessionizeData.toConference(
             startsAt = parseSessionizeTime(startsAt, timeZone),
             endsAt = parseSessionizeTime(endsAt, timeZone),
             tags = tags,
-            videoUrl = session.recordingUrl,
+            videoUrl = session.recordingUrl?.trim()?.takeIf { it.isNotEmpty() },
+            slidesUrl = session.slidesUrl(slidesQuestionIds, rules),
         )
     }.let { list ->
         rules.multipartWorkshopTag?.let { list.mergeWorkshops(it) } ?: list
@@ -108,6 +116,24 @@ fun SessionizeData.toConference(
 
     return Conference(sessions, speakers)
 }
+
+private fun SessionizeData.slidesQuestionIds(rules: SessionizeRules): Set<Int> = questions
+    .filter { it.questionType == FILE_UPLOAD && "logo" !in it.question.lowercase() }
+    .filter { rules.slidesQuestion == null || it.question.trim().equals(rules.slidesQuestion.trim(), ignoreCase = true) }
+    .mapTo(mutableSetOf()) { it.id }
+
+private fun SessionData.slidesUrl(questionIds: Set<Int>, rules: SessionizeRules): String? = questionAnswers
+    .filter { it.questionId in questionIds }
+    .mapNotNull { it.answerValue?.trim() }
+    .firstOrNull { url ->
+        if (rules.slidesQuestion != null) url.startsWith("https://") else url.isSessionizePdf()
+    }
+
+private fun String.isSessionizePdf(): Boolean =
+    startsWith(SESSIONIZE_DOWNLOADS) && endsWith(".pdf", ignoreCase = true)
+
+private const val FILE_UPLOAD = "File_upload"
+private const val SESSIONIZE_DOWNLOADS = "https://sessionize.com/download/"
 
 /**
  * Builds the schedule filter groups from the Sessionize categories, keeping Sessionize's sort order.
@@ -152,6 +178,8 @@ private fun List<Session>.mergeWorkshops(workshopTag: String): List<Session> {
             startsAt = parts.minOf { it.startsAt },
             endsAt = parts.maxOf { it.endsAt },
             tags = first.tags,
+            videoUrl = parts.firstNotNullOfOrNull { it.videoUrl },
+            slidesUrl = parts.firstNotNullOfOrNull { it.slidesUrl },
         )
         listOf(merged)
     }

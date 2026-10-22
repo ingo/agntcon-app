@@ -36,6 +36,29 @@ class RealFeedTest {
     }
 
     @Test
+    fun agntconSlides() {
+        val feed = feed("agntcon-mcpcon-na-2026.json")
+        val named = feed.toConference(TimeZone.of("America/Los_Angeles"), SessionizeRules(slidesQuestion = "Presentation or Poster"))
+        val withSlides = named.sessions.filter { it.slidesUrl != null }
+
+        // Every upload to "Presentation or Poster": PDFs, PowerPoints and a poster image
+        assertEquals(67, withSlides.size)
+        assertTrue(withSlides.all { it.slidesUrl!!.startsWith("https://sessionize.com/download/") })
+        // The two "Prompt à la Carte" sessions only have an Event Logo upload
+        val promptALaCarte = named.sessions.filter { it.title == "Prompt à la Carte" }
+        assertEquals(2, promptALaCarte.size)
+        assertTrue(promptALaCarte.all { it.slidesUrl == null })
+
+        // Without a named question only the PDFs count
+        val pdfs = feed.toConference(TimeZone.of("America/Los_Angeles")).sessions.mapNotNull { it.slidesUrl }
+        assertEquals(63, pdfs.size)
+        assertTrue(pdfs.all { it.endsWith(".pdf") })
+
+        // No recordings yet
+        assertTrue(named.sessions.all { it.videoUrl == null })
+    }
+
+    @Test
     fun kotlinConfUtcFeed() {
         val feed = feed("kotlinconf-2026.json")
         val conference = feed.toConference(TimeZone.of("Europe/Berlin"), SessionizeRules.KOTLINCONF)
@@ -48,5 +71,9 @@ class RealFeedTest {
         assertEquals(111, conference.sessions.size)
         assertTrue(conference.sessions.none { ". Part" in it.title })
         assertTrue(conference.sessions.map { it.id }.let { it.size == it.toSet().size })
+        // Recordings published on YouTube after the event; no slides questions in this feed
+        assertEquals(74, conference.sessions.count { it.videoUrl != null })
+        assertTrue(conference.sessions.mapNotNull { it.videoUrl }.all { it.startsWith("https://www.youtube.com/") })
+        assertTrue(conference.sessions.all { it.slidesUrl == null })
     }
 }

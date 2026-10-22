@@ -22,6 +22,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
@@ -44,8 +45,10 @@ import org.jetbrains.kotlinconf.generated.resources.schedule_in_x_minutes
 import org.jetbrains.kotlinconf.generated.resources.session_room_state_description_collapsed
 import org.jetbrains.kotlinconf.generated.resources.session_room_state_description_expanded
 import org.jetbrains.kotlinconf.generated.resources.session_screen_error
+import org.jetbrains.kotlinconf.generated.resources.session_slides
 import org.jetbrains.kotlinconf.generated.resources.session_title
 import org.jetbrains.kotlinconf.generated.resources.session_watch_video
+import org.jetbrains.kotlinconf.generated.resources.slides
 import org.jetbrains.kotlinconf.ui.AdaptiveDetailLayout
 import org.jetbrains.kotlinconf.ui.components.Action
 import org.jetbrains.kotlinconf.ui.components.ActionSize
@@ -114,6 +117,7 @@ fun SessionScreen(
                 Title(session, viewModel, Modifier.padding(bottom = 24.dp))
             },
             unifiedContent = {
+                SlidesLink(session)
                 VideoLink(session, onWatchVideo)
                 Feedback(session, onPrivacyNoticeNeeded)
                 Speakers(speakers, onSpeaker)
@@ -128,6 +132,7 @@ fun SessionScreen(
                 }
             },
             largeSideContent = {
+                SlidesLink(session)
                 VideoLink(session, onWatchVideo)
                 Feedback(session, onPrivacyNoticeNeeded)
                 if (session.description.isNotBlank()) {
@@ -194,6 +199,19 @@ private fun VideoLink(
             modifier = Modifier.padding(bottom = 12.dp),
         )
     }
+}
+
+@Composable
+private fun SlidesLink(session: SessionCardView) {
+    val slidesUrl = session.slidesUrl ?: return
+    val uriHandler = LocalUriHandler.current
+    PageMenuItem(
+        label = stringResource(Res.string.session_slides),
+        onClick = { uriHandler.openUri(slidesUrl) },
+        drawableStart = Res.drawable.slides,
+        drawableEnd = Res.drawable.arrow_up_right_24,
+        modifier = Modifier.padding(bottom = 12.dp),
+    )
 }
 
 @Composable
