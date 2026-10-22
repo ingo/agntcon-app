@@ -59,6 +59,8 @@ import org.jetbrains.kotlinconf.generated.resources.my_schedule_bookmark
 import org.jetbrains.kotlinconf.generated.resources.my_schedule_clash
 import org.jetbrains.kotlinconf.generated.resources.my_schedule_close
 import org.jetbrains.kotlinconf.generated.resources.my_schedule_free
+import org.jetbrains.kotlinconf.generated.resources.my_schedule_mode_day
+import org.jetbrains.kotlinconf.generated.resources.my_schedule_mode_now
 import org.jetbrains.kotlinconf.generated.resources.my_schedule_no_sessions
 import org.jetbrains.kotlinconf.generated.resources.my_schedule_summary
 import org.jetbrains.kotlinconf.generated.resources.my_schedule_title
@@ -110,6 +112,41 @@ fun MyScheduleScreen(
     ) {
         MainHeaderTitleBar(title = stringResource(Res.string.my_schedule_title))
         HorizontalDivider(thickness = 1.dp, color = KotlinConfTheme.colors.strokePale)
+
+        // Now: what you're in and what's next; Day: the calendar. During the conference, start on Now.
+        val upNext by viewModel.upNext.collectAsStateWithLifecycle()
+        var showNow by rememberSaveable { mutableStateOf<Boolean?>(null) }
+        val nowMode = showNow ?: (upNext?.day?.date == today)
+        Switcher(
+            items = listOf(stringResource(Res.string.my_schedule_mode_now), stringResource(Res.string.my_schedule_mode_day)),
+            shortItems = null,
+            selectedIndex = if (nowMode) 0 else 1,
+            onSelect = { showNow = it == 0 },
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp).padding(top = 8.dp),
+        )
+        if (nowMode) {
+            var nowFreeWindow by remember { mutableStateOf<Pair<LocalDateTime, LocalDateTime>?>(null) }
+            Box(Modifier.weight(1f).fillMaxWidth().padding(top = 8.dp)) {
+                UpNextContent(
+                    upNext = upNext,
+                    today = today,
+                    onSession = onSession,
+                    onFree = { nowFreeWindow = it.startsAt to it.endsAt },
+                )
+                val window = nowFreeWindow
+                val panelDay = upNext?.day
+                if (window != null && panelDay != null) {
+                    FreeTimePanel(
+                        day = panelDay,
+                        window = window,
+                        onClose = { nowFreeWindow = null },
+                        onSession = onSession,
+                        onBookmark = viewModel::setBookmark,
+                    )
+                }
+            }
+            return@Column
+        }
 
         if (day == null) {
             Text(
@@ -373,22 +410,27 @@ private fun FreeSlot(free: FreeBlock, lines: Int, onClick: () -> Unit, modifier:
         }
         return
     }
-    Column(blockModifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(freeLabel, style = KotlinConfTheme.typography.text2, color = colors.noteText, maxLines = 1)
-        when {
-            !canBrowse -> Unit
-            // Room for a button under the time
-            lines >= 3 -> Text(
-                "$browseLabel  →",
-                style = KotlinConfTheme.typography.text2,
-                color = colors.primaryTextWhiteFixed,
-                maxLines = 1,
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .background(colors.primaryBackground)
-                    .padding(horizontal = 12.dp, vertical = 4.dp),
-            )
-            else -> Text("$browseLabel  →", style = KotlinConfTheme.typography.text2, color = colors.accentText, maxLines = 1)
+    Box(blockModifier) {
+        Text(
+            freeLabel,
+            style = KotlinConfTheme.typography.text2,
+            color = colors.noteText,
+            maxLines = 1,
+            modifier = Modifier.align(Alignment.TopStart),
+        )
+        if (canBrowse) {
+            if (lines >= 3) {
+                // Centered in the open space below the time
+                BrowsePill(browseLabel, Modifier.align(Alignment.Center).padding(top = 12.dp))
+            } else {
+                Text(
+                    "$browseLabel  →",
+                    style = KotlinConfTheme.typography.text2,
+                    color = colors.accentText,
+                    maxLines = 1,
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                )
+            }
         }
     }
 }
@@ -481,5 +523,22 @@ private fun HourLine(color: Color, modifier: Modifier = Modifier) {
             pathEffect = PathEffect.dashPathEffect(floatArrayOf(dot, 4.dp.toPx())),
         )
     }
+}
+
+/** A quiet button to find sessions for free time: tinted, not solid, so it invites without shouting. */
+@Composable
+internal fun BrowsePill(label: String, modifier: Modifier = Modifier) {
+    val colors = KotlinConfTheme.colors
+    val accent = if (colors.isDark) colors.accentText else colors.primaryBackground
+    Text(
+        "$label  →",
+        style = KotlinConfTheme.typography.text2,
+        color = accent,
+        maxLines = 1,
+        modifier = modifier
+            .clip(CircleShape)
+            .background(accent.copy(alpha = 0.1f))
+            .padding(horizontal = 14.dp, vertical = 5.dp),
+    )
 }
 

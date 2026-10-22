@@ -187,3 +187,62 @@ internal fun splitAtBreaks(
     }
     return pieces
 }
+
+/** "What's up now": the bookmarked sessions of the current conference day, seen from [UpNext.at]. */
+data class UpNext(
+    val day: MyScheduleDay,
+    val at: LocalDateTime,
+    /** Bookmarked sessions in progress (more than one means a clash to resolve). */
+    val current: List<SessionCardView>,
+    /** The next bookmarked session(s): the earliest start after [at], with any that overlap it. */
+    val next: List<SessionCardView>,
+    /** Free time between now (or the end of the current session) and [next], worth filling. */
+    val freeBeforeNext: FreeBlock?,
+    val later: List<SessionCardView>,
+    val earlier: List<SessionCardView>,
+)
+
+/**
+ * The day to look at: today during the conference, the first day before it, null after it.
+ * Before the conference, the view starts at the beginning of the first day.
+ */
+fun upNext(days: List<MyScheduleDay>, now: LocalDateTime): UpNext? {
+    val day = days.find { it.date == now.date }
+        ?: days.firstOrNull()?.takeIf { now.date < it.date }
+        ?: return null
+    val at = if (day.date == now.date) now else day.startsAt
+    val booked = day.booked.map { it.session }.sortedWith(compareBy({ it.startsAt }, { it.endsAt }))
+
+    val current = booked.filter { it.startsAt <= at && at < it.endsAt }
+    val upcoming = booked.filter { it.startsAt > at }
+    val first = upcoming.firstOrNull()
+    val next = if (first == null) emptyList() else upcoming.filter { it.startsAt < first.endsAt }
+    val later = upcoming - next.toSet()
+
+    // Free time ahead: from the end of what's on now (or now) until the next session
+    val freeFrom = current.maxOfOrNull { it.endsAt } ?: at
+    val freeBeforeNext = day.free.firstOrNull { free ->
+        free.endsAt > freeFrom && (first == null || free.startsAt < first.startsAt) && free.available.any { it.startsAt >= at }
+    }?.let { free -> free.copy(available = free.available.filter { it.startsAt >= at }) }
+
+    return UpNext(
+        day = day,
+        at = at,
+        current = current,
+        next = next,
+        freeBeforeNext = freeBeforeNext,
+        later = later,
+        earlier = booked.filter { it.endsAt <= at },
+    )
+}
+
+/**
+ * The floor or area in a room name, when the event writes it in parentheses,
+ * e.g. "LL20A (Lower Level)" -> "Lower Level".
+ */
+fun roomLevel(location: String): String? =
+    Regex("""\(([^()]+)\)\s*$""").find(location)?.groupValues?.get(1)?.trim()
+
+/** The room name without the level, e.g. "LL20A (Lower Level)" -> "LL20A". */
+fun roomName(location: String): String =
+    location.replace(Regex("""\s*\([^()]+\)\s*$"""), "").ifBlank { location }

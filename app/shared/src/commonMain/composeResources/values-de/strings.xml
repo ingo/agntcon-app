@@ -204,4 +204,20 @@ Bitte versuchen Sie es erneut.</string>
     <string name="sync_error_code">Der Code hat nicht funktioniert. Codes laufen nach wenigen Minuten ab; erstelle in der Web-App einen neuen.</string>
     <string name="sync_error_network">Sessionize ist nicht erreichbar. Prüfe die Verbindung und versuche es erneut.</string>
     <string name="sync_error_expired">Der Code ist abgelaufen, bevor er benutzt wurde. Lass dir einen neuen anzeigen.</string>
+    <string name="my_schedule_mode_now">Jetzt</string>
+    <string name="my_schedule_mode_day">Tag</string>
+    <string name="up_next_now">Jetzt</string>
+    <string name="up_next_next">Als Nächstes</string>
+    <string name="up_next_later">Später heute</string>
+    <string name="up_next_earlier">Früher heute: %1$d</string>
+    <string name="up_next_min_left">noch %1$s</string>
+    <string name="up_next_starts_in">in %1$s</string>
+    <string name="up_next_minutes">%1$d Min.</string>
+    <string name="up_next_hours_minutes">%1$d Std. %2$d Min.</string>
+    <string name="up_next_pick_one">Diese überschneiden sich. Wähle eine.</string>
+    <string name="up_next_change_floor">Etage wechseln: %1$s → %2$s</string>
+    <string name="up_next_nothing_now">Gerade ist nichts gemerkt.</string>
+    <string name="up_next_nothing_next">Heute ist nichts weiter gemerkt.</string>
+    <string name="up_next_before_start">Die Konferenz beginnt am %1$s. Das ist dein erster Tag.</string>
+    <string name="up_next_over">Die Konferenz ist vorbei. Deine Tage findest du unter Tag.</string>
 </resources>

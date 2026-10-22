@@ -204,4 +204,20 @@ Please try again.</string>
     <string name="sync_error_code">That code didn’t work. Codes expire after a few minutes; make a new one in the web app.</string>
     <string name="sync_error_network">Couldn’t reach Sessionize. Check your connection and try again.</string>
     <string name="sync_error_expired">The code expired before it was used. Show a new one.</string>
+    <string name="my_schedule_mode_now">Now</string>
+    <string name="my_schedule_mode_day">Day</string>
+    <string name="up_next_now">Now</string>
+    <string name="up_next_next">Next</string>
+    <string name="up_next_later">Later today</string>
+    <string name="up_next_earlier">Earlier today: %1$d</string>
+    <string name="up_next_min_left">%1$s left</string>
+    <string name="up_next_starts_in">in %1$s</string>
+    <string name="up_next_minutes">%1$d min</string>
+    <string name="up_next_hours_minutes">%1$d h %2$d min</string>
+    <string name="up_next_pick_one">These overlap. Pick one.</string>
+    <string name="up_next_change_floor">Change floors: %1$s → %2$s</string>
+    <string name="up_next_nothing_now">Nothing bookmarked right now.</string>
+    <string name="up_next_nothing_next">No more bookmarked sessions today.</string>
+    <string name="up_next_before_start">The conference starts %1$s. This is your first day.</string>
+    <string name="up_next_over">The conference is over. Your days are still under Day.</string>
 </resources>
