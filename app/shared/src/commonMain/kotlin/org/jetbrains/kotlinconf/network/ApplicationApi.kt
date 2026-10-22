@@ -13,6 +13,7 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.encodedPath
 import kotlinx.coroutines.CancellationException
 import org.jetbrains.kotlinconf.AppConfig
+import org.jetbrains.kotlinconf.event.ActiveEvent
 import org.jetbrains.kotlinconf.utils.Logger
 import org.jetbrains.kotlinconf.utils.tagged
 import kotlin.time.Instant
@@ -32,13 +33,16 @@ class ApplicationApi(
 
     private val taggedLogger = logger.tagged(LOG_TAG)
 
-    suspend fun getServerTime(): Instant? = safeApiCall {
+    /** Null without a backend: the device clock is used as it is. */
+    suspend fun getServerTime(): Instant? = if (!ActiveEvent.hasBackend) null else safeApiCall {
         client.get { apiUrl("time") }.bodyAsText()
             .let { response -> Instant.fromEpochMilliseconds(response.toLong()) }
     }
 
-    suspend fun getConfig(): AppConfig? = safeApiCall {
-        client.get { apiUrl("config") }.body()
+    suspend fun getConfig(): AppConfig? = if (!ActiveEvent.hasBackend) {
+        AppConfig(currentYear = ActiveEvent.year, supportedYears = listOf(ActiveEvent.year))
+    } else {
+        safeApiCall { client.get { apiUrl("config") }.body() }
     }
 
     private suspend fun <T> safeApiCall(

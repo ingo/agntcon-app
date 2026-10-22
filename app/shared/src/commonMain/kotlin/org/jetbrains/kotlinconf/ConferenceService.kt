@@ -25,6 +25,7 @@ import kotlinx.datetime.LocalDateTime
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.kotlinconf.LocalNotificationId.Type
 import org.jetbrains.kotlinconf.di.YearGraph
+import org.jetbrains.kotlinconf.event.ActiveEvent
 import org.jetbrains.kotlinconf.flags.FakeGoldenKodeeData
 import org.jetbrains.kotlinconf.flags.FlagsManager
 import org.jetbrains.kotlinconf.generated.resources.Res
@@ -104,7 +105,7 @@ class ConferenceService(
             timeProvider.run()
         }
 
-        scope.launch {
+        if (ActiveEvent.hasBackend) scope.launch {
             currentYearlyStorage.flatMapLatest { it.getNotificationSettings() }
                 .filterNotNull()
                 .collect { settings ->
@@ -143,10 +144,7 @@ class ConferenceService(
 
     val speakers: StateFlow<List<Speaker>> =
         currentYearlyStorage.flatMapLatest { it.getConferenceCache() }
-            .map {
-                (it?.speakers ?: emptyList())
-                    .filter { speaker -> speaker.photoUrl.isNotBlank() }
-            }
+            .map { it?.speakers ?: emptyList() }
             .stateIn(scope, SharingStarted.Eagerly, emptyList())
 
     private val speakersById: StateFlow<Map<SpeakerId, Speaker>> = speakers
@@ -436,8 +434,8 @@ class ConferenceService(
             )
         }
 
-        // Notifications for session end
-        if (end > now) {
+        // Notifications for session end, asking for feedback
+        if (ActiveEvent.hasBackend && end > now) {
             localNotificationService.post(
                 time = end,
                 localNotificationId = LocalNotificationId(Type.SessionEnd, sessionId.id),
@@ -508,7 +506,7 @@ class ConferenceService(
         val storage = currentYearGraph.storage
         val client = currentYearGraph.api
 
-        val docPaths = listOf(
+        val docPaths = if (!ActiveEvent.hasBackend) emptyList() else listOf(
             "documents/app-privacy-notice.md",
             "documents/app-terms.md",
             "documents/code-of-conduct.md",

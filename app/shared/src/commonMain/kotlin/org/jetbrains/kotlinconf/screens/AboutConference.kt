@@ -1,5 +1,6 @@
 package org.jetbrains.kotlinconf.screens
 
+import org.jetbrains.kotlinconf.URLs
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -33,7 +34,6 @@ import org.jetbrains.kotlinconf.generated.resources.Res
 import org.jetbrains.kotlinconf.generated.resources.about_conference_general_terms_link
 import org.jetbrains.kotlinconf.generated.resources.about_conference_privacy_notice_link
 import org.jetbrains.kotlinconf.generated.resources.about_conference_title
-import org.jetbrains.kotlinconf.generated.resources.about_conference_website_link
 import org.jetbrains.kotlinconf.generated.resources.arrow_up_right_24
 import org.jetbrains.kotlinconf.generated.resources.kotlinconf_by_jetbrains_description
 import org.jetbrains.kotlinconf.ui.components.DayHeader
@@ -45,9 +45,9 @@ import org.jetbrains.kotlinconf.ui.theme.KotlinConfTheme
 
 @Composable
 fun AboutConference(
-    onPrivacyNotice: () -> Unit,
-    onGeneralTerms: () -> Unit,
-    onWebsiteLink: () -> Unit,
+    onPrivacyNotice: (() -> Unit)?,
+    onGeneralTerms: (() -> Unit)?,
+    onWebsiteLink: (() -> Unit)?,
     onBack: () -> Unit,
     onSpeaker: (SpeakerId) -> Unit,
     viewModel: AboutConferenceViewModel = metroViewModel(),
@@ -116,19 +116,26 @@ fun AboutConference(
             modifier = Modifier.padding(bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            PageMenuItem(
-                label = stringResource(Res.string.about_conference_privacy_notice_link),
-                onClick = onPrivacyNotice,
-            )
-            PageMenuItem(
-                label = stringResource(Res.string.about_conference_general_terms_link),
-                onClick = onGeneralTerms,
-            )
-            PageMenuItem(
-                label = stringResource(Res.string.about_conference_website_link),
-                drawableEnd = Res.drawable.arrow_up_right_24,
-                onClick = onWebsiteLink,
-            )
+            if (onPrivacyNotice != null) {
+                PageMenuItem(
+                    label = stringResource(Res.string.about_conference_privacy_notice_link),
+                    onClick = onPrivacyNotice,
+                )
+            }
+            if (onGeneralTerms != null) {
+                PageMenuItem(
+                    label = stringResource(Res.string.about_conference_general_terms_link),
+                    onClick = onGeneralTerms,
+                )
+            }
+            val websiteLabel = URLs.CONFERENCE_HOMEPAGE?.let(::websiteLabel)
+            if (onWebsiteLink != null && websiteLabel != null) {
+                PageMenuItem(
+                    label = websiteLabel,
+                    drawableEnd = Res.drawable.arrow_up_right_24,
+                    onClick = onWebsiteLink,
+                )
+            }
         }
     }
 }
@@ -201,3 +208,8 @@ private fun EventCard(
         }
     }
 }
+
+/** "https://www.kotlinconf.com/" -> "kotlinconf.com" */
+private fun websiteLabel(url: String): String =
+    url.substringAfter("://").substringBefore('/').removePrefix("www.")
+

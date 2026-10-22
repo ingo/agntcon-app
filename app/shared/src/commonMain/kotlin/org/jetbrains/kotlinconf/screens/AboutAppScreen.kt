@@ -1,6 +1,7 @@
 package org.jetbrains.kotlinconf.screens
 
 
+import org.jetbrains.kotlinconf.event.ActiveEvent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -38,6 +39,7 @@ import org.jetbrains.kotlinconf.flags.Flags
 import org.jetbrains.kotlinconf.flags.LocalFlags
 import org.jetbrains.kotlinconf.generated.resources.Res
 import org.jetbrains.kotlinconf.generated.resources.about_app_description
+import org.jetbrains.kotlinconf.generated.resources.about_app_description_sessionize
 import org.jetbrains.kotlinconf.generated.resources.about_app_link_github
 import org.jetbrains.kotlinconf.generated.resources.about_app_link_licenses
 import org.jetbrains.kotlinconf.generated.resources.about_app_link_privacy_notice
@@ -60,8 +62,8 @@ fun AboutAppScreen(
     onBack: () -> Unit,
     onGitHubRepo: () -> Unit,
     onRateApp: () -> Unit,
-    onPrivacyNotice: () -> Unit,
-    onTermsOfUse: () -> Unit,
+    onPrivacyNotice: (() -> Unit)?,
+    onTermsOfUse: (() -> Unit)?,
     onLicenses: () -> Unit,
     onJunie: () -> Unit,
     onDeveloperMenu: (skipWarningDelay: Boolean) -> Unit,
@@ -72,7 +74,11 @@ fun AboutAppScreen(
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
-                stringResource(Res.string.about_app_description),
+                if (ActiveEvent.hasBackend) {
+                    stringResource(Res.string.about_app_description)
+                } else {
+                    stringResource(Res.string.about_app_description_sessionize, ActiveEvent.name)
+                },
                 color = KotlinConfTheme.colors.longText,
                 modifier = Modifier.padding(vertical = 24.dp),
             )
@@ -92,8 +98,12 @@ fun AboutAppScreen(
                 )
             }
 
-            PageMenuItem(stringResource(Res.string.about_app_link_privacy_notice), onClick = onPrivacyNotice)
-            PageMenuItem(stringResource(Res.string.about_app_link_terms_of_use), onClick = onTermsOfUse)
+            if (onPrivacyNotice != null) {
+                PageMenuItem(stringResource(Res.string.about_app_link_privacy_notice), onClick = onPrivacyNotice)
+            }
+            if (onTermsOfUse != null) {
+                PageMenuItem(stringResource(Res.string.about_app_link_terms_of_use), onClick = onTermsOfUse)
+            }
             PageMenuItem(stringResource(Res.string.about_app_link_licenses), onClick = onLicenses)
 
             Spacer(Modifier.height(8.dp))

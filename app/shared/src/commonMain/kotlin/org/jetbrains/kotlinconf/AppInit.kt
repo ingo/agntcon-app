@@ -1,5 +1,6 @@
 package org.jetbrains.kotlinconf
 
+import org.jetbrains.kotlinconf.event.ActiveEvent
 import com.mmk.kmpnotifier.notification.NotifierManager
 import com.mmk.kmpnotifier.notification.NotifierManager.Listener
 import com.mmk.kmpnotifier.notification.PayloadData
@@ -20,16 +21,20 @@ fun initApp(
     appGraph: AppGraph,
     platformLogger: Logger,
 ) {
+    EVENT_TIME_ZONE = ActiveEvent.timeZone
     initFlagsAndLogging(
         appScope = appGraph.scope,
         platformLogger = platformLogger,
         bufferedDelegatingLogger = appGraph.bufferedDelegatingLogger,
         flagsManager = appGraph.flagsManager,
     )
-    initNotifier(
-        configuration = appGraph.notificationConfiguration,
-        logger = appGraph.bufferedDelegatingLogger,
-    )
+    // Push notifications are sent by the conference backend
+    if (ActiveEvent.hasBackend) {
+        initNotifier(
+            configuration = appGraph.notificationConfiguration,
+            logger = appGraph.bufferedDelegatingLogger,
+        )
+    }
 }
 
 private fun initFlagsAndLogging(

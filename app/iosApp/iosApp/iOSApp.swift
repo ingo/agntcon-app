@@ -40,7 +40,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
-        FirebaseApp.configure()
+        if Main_iosKt.usesPushNotifications() {
+            FirebaseApp.configure()
+        }
         Main_iosKt.doInitApp()
         UNUserNotificationCenter.current().delegate = self
         return true
@@ -60,6 +62,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
         _ application: UIApplication,
         didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
     ) {
+        guard FirebaseApp.app() != nil else { return }
         Messaging.messaging().apnsToken = deviceToken
     }
 }

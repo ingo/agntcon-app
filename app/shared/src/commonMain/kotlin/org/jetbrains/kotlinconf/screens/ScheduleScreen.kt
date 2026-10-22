@@ -1,6 +1,7 @@
 package org.jetbrains.kotlinconf.screens
 
 
+import org.jetbrains.kotlinconf.event.ActiveEvent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -548,7 +549,7 @@ private fun SessionCard(
         status = status,
         onClick = { onSession(session.id) },
         modifier = modifier,
-        feedbackContent = if (!isSearch && session.state != SessionState.Upcoming) {
+        feedbackContent = if (ActiveEvent.hasBackend && !isSearch && session.state != SessionState.Upcoming) {
             {
                 FeedbackBlock(
                     sessionId = session.id,

@@ -144,6 +144,26 @@ kotlin {
     jvmToolchain(21)
 }
 
+// The conference this build is for, chosen with -Pevent=<id> (see EventProfiles.kt)
+val generateActiveEvent by tasks.registering {
+    val event = providers.gradleProperty("event").orElse("kotlinconf")
+    val outputDir = layout.buildDirectory.dir("generated/activeEvent/kotlin")
+    inputs.property("event", event)
+    outputs.dir(outputDir)
+    doLast {
+        val file = outputDir.get().file("org/jetbrains/kotlinconf/event/ActiveEventId.kt").asFile
+        file.parentFile.mkdirs()
+        file.writeText(
+            "package org.jetbrains.kotlinconf.event\n\n" +
+                "internal const val ACTIVE_EVENT_ID = \"${event.get()}\"\n"
+        )
+    }
+}
+
+kotlin.sourceSets.commonMain {
+    kotlin.srcDir(generateActiveEvent)
+}
+
 powerAssert {
     functions = listOf(
         "kotlin.test.assertTrue",

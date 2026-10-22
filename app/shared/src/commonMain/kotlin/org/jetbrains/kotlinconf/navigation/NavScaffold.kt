@@ -93,17 +93,16 @@ internal fun NavScaffold(
     navState: NavState,
     navigator: Navigator,
     showGoldenKodee: Boolean,
+    showMap: Boolean,
     content: @Composable (() -> Unit)
 ) {
     val onSelectRoute: (TopLevelRoute) -> Unit = { route ->
         navigator.activate(route)
     }
 
-    val destinations = remember(showGoldenKodee) {
-        if (showGoldenKodee) {
-            bottomNavDestinations
-        } else {
-            bottomNavDestinations.filter { it.route !is GoldenKodeeScreen }
+    val destinations = remember(showGoldenKodee, showMap) {
+        bottomNavDestinations.filter {
+            (showGoldenKodee || it.route !is GoldenKodeeScreen) && (showMap || it.route !is MapScreen)
         }
     }
 

@@ -20,6 +20,7 @@
     <string name="about_app_description">Die KotlinConf-Anwendung wird vom JetBrains-Team mit Kotlin Multiplatform für geteilte Logik und Compose Multiplatform für die Benutzeroberfläche auf Android-, iOS-, Desktop- und Web-Plattformen entwickelt.
 
 Für den Quellcode und weitere technische Details besuchen Sie das GitHub-Repository.</string>
+    <string name="about_app_description_sessionize">Diese App zeigt das Programm von %1$s, direkt aus Sessionize gelesen. Sie basiert auf der Open-Source-App der KotlinConf von JetBrains, entwickelt mit Kotlin Multiplatform für geteilte Logik und Compose Multiplatform für die Benutzeroberfläche.</string>
     <string name="about_app_link_github">GitHub-Repository</string>
     <string name="about_app_link_rate">App bewerten</string>
     <string name="about_app_link_privacy_notice">Datenschutzhinweis der App</string>
@@ -42,7 +43,6 @@ Für den Quellcode und weitere technische Details besuchen Sie das GitHub-Reposi
 
     <string name="about_conference_privacy_notice_link">Datenschutzhinweis für Besucher</string>
     <string name="about_conference_general_terms_link">Allgemeine Geschäftsbedingungen</string>
-    <string name="about_conference_website_link">kotlinconf.com</string>
 
     <string name="about_conference_day1_title_line1">Eröffnungs-</string>
     <string name="about_conference_day1_title_line2">keynote</string>
