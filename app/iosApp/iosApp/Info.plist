@@ -40,8 +40,10 @@
 	</array>
 	<key>UILaunchScreen</key>
 	<dict>
+		<key>UIColorName</key>
+		<string>$(EVENT_LAUNCH_BACKGROUND)</string>
 		<key>UIImageName</key>
-		<string>KotlinConf 2026 icon</string>
+		<string>$(EVENT_LAUNCH_IMAGE)</string>
 		<key>UIImageRespectsSafeAreaInsets</key>
 		<false/>
 	</dict>

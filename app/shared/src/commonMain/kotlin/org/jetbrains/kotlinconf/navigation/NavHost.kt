@@ -163,8 +163,8 @@ internal fun NavHost(
     ) { appliedIsDarkTheme ->
         val colors = when {
             isGoldenKodee -> GoldenKodeeColors
-            appliedIsDarkTheme -> KotlinConfDarkColors
-            else -> KotlinConfLightColors
+            appliedIsDarkTheme -> ActiveEvent.theme?.dark ?: KotlinConfDarkColors
+            else -> ActiveEvent.theme?.light ?: KotlinConfLightColors
         }
 
         if (onThemeChange != null) {

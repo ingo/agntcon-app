@@ -30,6 +30,8 @@ data class EventProfile(
     val social: SocialLinks = SocialLinks(),
     val appStoreUrl: String? = null,
     val playStoreUrl: String? = null,
+    /** Colors and logo; null keeps the KotlinConf look. */
+    val theme: EventTheme? = null,
 ) {
     init {
         require(apiUrl != null || sessionizeId != null) { "Event '$id' needs an apiUrl or a sessionizeId" }

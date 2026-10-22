@@ -21,7 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
-import org.jetbrains.kotlinconf.ui.theme.Brand
 import org.jetbrains.kotlinconf.ui.theme.KotlinConfTheme
 import org.jetbrains.kotlinconf.ui.theme.PreviewHelper
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -57,7 +56,7 @@ private fun LargeSwitcherItem(
                 role = Role.Tab
             )
             .background(
-                Brand.colorGradient,
+                KotlinConfTheme.colors.headerGradient,
                 alpha = gradientAlpha,
             )
             .background(KotlinConfTheme.colors.tileBackground)

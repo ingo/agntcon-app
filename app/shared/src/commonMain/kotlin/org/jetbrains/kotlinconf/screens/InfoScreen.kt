@@ -1,5 +1,8 @@
 package org.jetbrains.kotlinconf.screens
 
+import org.jetbrains.kotlinconf.ui.components.Text
+import org.jetbrains.kotlinconf.event.EventLogo
+import org.jetbrains.kotlinconf.event.ActiveEvent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -83,6 +86,7 @@ fun InfoScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            val eventTheme = ActiveEvent.theme
             if (logoUrl != null) {
                 AsyncImage(
                     model = logoUrl,
@@ -90,6 +94,13 @@ fun InfoScreen(
                     modifier = Modifier
                         .padding(24.dp)
                         .widthIn(max = 360.dp)
+                )
+            } else if (eventTheme != null) {
+                EventLogo(eventTheme, size = 96.dp, modifier = Modifier.padding(top = 24.dp))
+                Text(
+                    ActiveEvent.name,
+                    style = KotlinConfTheme.typography.h3,
+                    modifier = Modifier.padding(bottom = 16.dp),
                 )
             }
             PageMenuItem(stringResource(Res.string.info_link_about_conf), onClick = onAboutConf)

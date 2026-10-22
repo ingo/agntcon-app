@@ -350,6 +350,8 @@
 				);
 				INFOPLIST_FILE = iosApp/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = KotlinConf;
+				EVENT_LAUNCH_BACKGROUND = "";
+				EVENT_LAUNCH_IMAGE = "KotlinConf 2026 icon";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -394,6 +396,8 @@
 				);
 				INFOPLIST_FILE = iosApp/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = KotlinConf;
+				EVENT_LAUNCH_BACKGROUND = "";
+				EVENT_LAUNCH_IMAGE = "KotlinConf 2026 icon";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

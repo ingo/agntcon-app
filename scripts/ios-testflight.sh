@@ -31,6 +31,13 @@ export ORG_GRADLE_PROJECT_event=$EVENT
 
 mkdir -p "$OUT"
 
+# Per-conference icon and launch screen, when the asset catalog has them
+ASSETS="$ROOT/app/iosApp/iosApp/Assets.xcassets"
+EVENT_SETTINGS=()
+[[ -d "$ASSETS/AppIcon-$EVENT.appiconset" ]] && EVENT_SETTINGS+=(ASSETCATALOG_COMPILER_APPICON_NAME="AppIcon-$EVENT")
+[[ -d "$ASSETS/$EVENT launch.imageset" ]] && EVENT_SETTINGS+=(EVENT_LAUNCH_IMAGE="$EVENT launch")
+[[ -d "$ASSETS/$EVENT launch background.colorset" ]] && EVENT_SETTINGS+=(EVENT_LAUNCH_BACKGROUND="$EVENT launch background")
+
 xcodebuild archive \
   -project "$ROOT/app/iosApp/KotlinConf.xcodeproj" \
   -scheme KotlinConfAppScheme \
@@ -43,7 +50,8 @@ xcodebuild archive \
   CODE_SIGN_IDENTITY="Apple Development" \
   PROVISIONING_PROFILE_SPECIFIER= \
   PRODUCT_BUNDLE_IDENTIFIER="$BUNDLE_ID" \
-  INFOPLIST_KEY_CFBundleDisplayName="$DISPLAY_NAME"
+  INFOPLIST_KEY_CFBundleDisplayName="$DISPLAY_NAME" \
+  ${EVENT_SETTINGS[@]+"${EVENT_SETTINGS[@]}"}
 
 echo "Archive: $ARCHIVE"
 

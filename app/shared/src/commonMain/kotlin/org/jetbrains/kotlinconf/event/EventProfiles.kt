@@ -40,6 +40,7 @@ object EventProfiles {
         websiteUrl = "https://events.linuxfoundation.org/agntcon-mcpcon-north-america/",
         codeOfConductUrl = "https://events.linuxfoundation.org/agntcon-mcpcon-north-america/attend/code-of-conduct/",
         venueAddress = "San Jose McEnery Convention Center, 150 W San Carlos St, San Jose, CA 95113",
+        theme = AgntconTheme.theme,
     )
 
     val all: List<EventProfile> = listOf(KotlinConf, AgntconMcpconNa2026)

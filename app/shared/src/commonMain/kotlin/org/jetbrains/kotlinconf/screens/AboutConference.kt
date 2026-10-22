@@ -1,5 +1,7 @@
 package org.jetbrains.kotlinconf.screens
 
+import org.jetbrains.kotlinconf.event.EventLogo
+import org.jetbrains.kotlinconf.event.ActiveEvent
 import org.jetbrains.kotlinconf.URLs
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -102,6 +104,7 @@ fun AboutConference(
 
         Spacer(modifier = Modifier.height(64.dp))
 
+        val eventTheme = ActiveEvent.theme
         if (logoUrl != null) {
             AsyncImage(
                 model = logoUrl,
@@ -109,6 +112,9 @@ fun AboutConference(
                 modifier = Modifier.align(Alignment.CenterHorizontally)
                     .widthIn(max = 360.dp)
             )
+            Spacer(modifier = Modifier.height(64.dp))
+        } else if (eventTheme != null) {
+            EventLogo(eventTheme, size = 120.dp, modifier = Modifier.align(Alignment.CenterHorizontally))
             Spacer(modifier = Modifier.height(64.dp))
         }
 
