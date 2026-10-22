@@ -4,6 +4,8 @@ A conference app for any event that publishes its schedule on [Sessionize](https
 desktop and web from one Kotlin Multiplatform codebase. It is currently set up for
 [AGNTCon + MCPCon North America 2026](https://events.linuxfoundation.org/agntcon-mcpcon-north-america/).
 
+**Project page:** https://muschenetz.com/sessionize-app/ (what the app does, with screenshots, and how to join the TestFlight beta).
+
 ## Credit
 
 This is a fork of the [KotlinConf app](https://github.com/JetBrains/kotlinconf-app) by
