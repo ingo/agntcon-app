@@ -42,7 +42,12 @@ import org.jetbrains.kotlinconf.event.ActiveEvent
 import org.jetbrains.kotlinconf.event.BUNDLED_ASSET_PREFIX
 import org.jetbrains.kotlinconf.event.bundledMapSvg
 import org.jetbrains.kotlinconf.flags.FakeGoldenKodeeData
+import org.jetbrains.kotlinconf.export.ExportSnapshot
 import org.jetbrains.kotlinconf.flags.FlagsManager
+import org.jetbrains.kotlinconf.personal.PersonalNotes
+import org.jetbrains.kotlinconf.personal.SessionRating
+import org.jetbrains.kotlinconf.personal.withMet
+import org.jetbrains.kotlinconf.personal.withRating
 import org.jetbrains.kotlinconf.generated.resources.Res
 import org.jetbrains.kotlinconf.generated.resources.notification_session_already_started
 import org.jetbrains.kotlinconf.generated.resources.notification_session_finished
@@ -183,6 +188,45 @@ class ConferenceService(
             speakers.associateBy { it.id }
         }
         .stateIn(scope, SharingStarted.Eagerly, emptyMap())
+
+    // Private notes, who the attendee met and their ratings: stored on the device only
+
+    val notes: StateFlow<PersonalNotes> =
+        currentYearlyStorage.flatMapLatest { it.getNotes() }
+            .stateIn(scope, SharingStarted.Eagerly, PersonalNotes())
+
+    val metSpeakers: StateFlow<Set<SpeakerId>> =
+        currentYearlyStorage.flatMapLatest { it.getMetSpeakers() }
+            .stateIn(scope, SharingStarted.Eagerly, emptySet())
+
+    val ratings: StateFlow<Map<String, SessionRating>> =
+        currentYearlyStorage.flatMapLatest { it.getRatings() }
+            .stateIn(scope, SharingStarted.Eagerly, emptyMap())
+
+    private val personalMutex = Mutex()
+
+    /** Saves even when the screen that asked has gone, so a note typed just before leaving is not lost. */
+    private suspend fun savePersonal(block: suspend (YearlyStorage) -> Unit) {
+        val storage = currentYearGraph.value?.storage ?: return
+        withContext(Dispatchers.Default + NonCancellable) { personalMutex.withLock { block(storage) } }
+    }
+
+    suspend fun setSessionNote(sessionId: SessionId, text: String) = updateNotes { it.withSessionNote(sessionId, text) }
+
+    suspend fun setSpeakerNote(speakerId: SpeakerId, text: String) = updateNotes { it.withSpeakerNote(speakerId, text) }
+
+    private suspend fun updateNotes(transform: (PersonalNotes) -> PersonalNotes) =
+        savePersonal { it.setNotes(transform(it.getNotes().first())) }
+
+    suspend fun setMet(speakerId: SpeakerId, met: Boolean) =
+        savePersonal { it.setMetSpeakers(it.getMetSpeakers().first().withMet(speakerId, met)) }
+
+    /** Changes a session's private rating; the thumb and the takeaway are set separately. */
+    suspend fun updateRating(sessionId: SessionId, transform: (SessionRating) -> SessionRating) =
+        savePersonal { storage ->
+            val ratings = storage.getRatings().first()
+            storage.setRatings(ratings.withRating(sessionId, transform(ratings[sessionId.id] ?: SessionRating())))
+        }
 
     val conferenceInfo: StateFlow<ConferenceInfo?> =
         currentYearlyStorage.flatMapLatest { it.getConferenceInfoCache() }
@@ -382,6 +426,15 @@ class ConferenceService(
         val client = currentYearGraph.value?.api ?: return false
         return client.sendFeedback(sessionId, feedbackValue)
     }
+
+    /** The schedule, speakers and the attendee's own data as they are now, for exporting. */
+    fun exportSnapshot() = ExportSnapshot(
+        sessions = sessionCards.value,
+        speakers = speakersById.value,
+        notes = notes.value,
+        ratings = ratings.value,
+        met = metSpeakers.value,
+    )
 
     fun speakerById(speakerId: SpeakerId): Speaker? = speakersById.value[speakerId]
 

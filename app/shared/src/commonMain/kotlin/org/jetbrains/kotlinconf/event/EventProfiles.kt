@@ -44,6 +44,7 @@ object EventProfiles {
         codeOfConductUrl = "https://events.linuxfoundation.org/agntcon-mcpcon-north-america/attend/code-of-conduct/",
         venueAddress = "San Jose McEnery Convention Center, 150 W San Carlos St, San Jose, CA 95113",
         venueMap = SanJoseMcEneryConventionCenter,
+        showcaseRoom = "Solutions Showcase",
         theme = AgntconTheme.theme,
     )
 
