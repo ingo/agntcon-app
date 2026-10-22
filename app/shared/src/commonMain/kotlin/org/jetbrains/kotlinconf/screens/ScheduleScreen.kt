@@ -201,7 +201,10 @@ fun ScheduleScreen(
                         items = remember(conferenceDates) {
                             conferenceDates.map { DateTimeFormatting.date(it) }
                         },
-                        shortItems = null,
+                        // Used when the full dates don't fit, e.g. four or more days on a phone
+                        shortItems = remember(conferenceDates) {
+                            conferenceDates.map { DateTimeFormatting.shortDate(it) }
+                        },
                         selectedIndex = selectedDayIndex,
                         onSelect = { index ->
                             scope.launch {

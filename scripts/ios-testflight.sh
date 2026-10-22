@@ -40,8 +40,7 @@ xcodebuild archive \
   CODE_SIGN_IDENTITY="Apple Development" \
   PROVISIONING_PROFILE_SPECIFIER= \
   PRODUCT_BUNDLE_IDENTIFIER="$BUNDLE_ID" \
-  INFOPLIST_KEY_CFBundleDisplayName="$DISPLAY_NAME" \
-  INFOPLIST_KEY_ITSAppUsesNonExemptEncryption=NO
+  INFOPLIST_KEY_CFBundleDisplayName="$DISPLAY_NAME"
 
 echo "Archive: $ARCHIVE"
 
