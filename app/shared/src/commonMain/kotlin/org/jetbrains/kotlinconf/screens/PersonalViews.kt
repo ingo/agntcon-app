@@ -125,7 +125,8 @@ fun AutoSaveField(
             Text(
                 text = hint,
                 style = KotlinConfTheme.typography.text1,
-                color = KotlinConfTheme.colors.placeholderText,
+                // placeholderText is 1.95:1 on this background; secondaryText is about 4.5:1
+                color = KotlinConfTheme.colors.secondaryText,
             )
         }
     }

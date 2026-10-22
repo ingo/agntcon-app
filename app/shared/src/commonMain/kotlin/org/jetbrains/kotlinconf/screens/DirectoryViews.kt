@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -42,7 +43,7 @@ fun CompanyCard(
     Row(
         modifier
             .clip(KotlinConfTheme.shapes.roundedCornerMd)
-            .clickable(onClick = onClick)
+            .clickable(role = Role.Button, onClick = onClick)
             .background(KotlinConfTheme.colors.tileBackground)
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -117,8 +118,8 @@ fun MetPersonCard(
                 color = KotlinConfTheme.colors.accentText,
                 modifier = Modifier
                     .clip(KotlinConfTheme.shapes.roundedCornerMd)
-                    .clickable { onOpenLink(link.url) }
-                    .padding(vertical = 4.dp),
+                    .clickable(role = Role.Button) { onOpenLink(link.url) }
+                    .padding(vertical = 12.dp),
             )
         }
     }

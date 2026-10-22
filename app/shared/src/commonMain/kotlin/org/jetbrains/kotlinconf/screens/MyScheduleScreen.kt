@@ -166,7 +166,7 @@ fun MyScheduleScreen(
 
         Row(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp).padding(bottom = 8.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
         ) {
             val exporter = rememberExporter()
             listOf(
@@ -178,7 +178,8 @@ fun MyScheduleScreen(
                     stringResource(label),
                     style = KotlinConfTheme.typography.text2,
                     color = KotlinConfTheme.colors.accentText,
-                    modifier = Modifier.clickable(role = Role.Button, onClick = action),
+                    // 12dp above and below the text makes each link a 44dp tap target
+                    modifier = Modifier.clickable(role = Role.Button, onClick = action).padding(vertical = 12.dp),
                 )
             }
         }

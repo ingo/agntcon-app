@@ -363,13 +363,22 @@ private fun TimeBlock(
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.padding(16.dp)
+        // With a pin the room row is 44dp tall (a full-size tap target) and the card keeps its height
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = if (onFindOnMap != null) 6.dp else 16.dp)
     ) {
         // The room takes the space the time and labels leave, and shrinks before they are cut off
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .then(
+                    if (onFindOnMap != null) Modifier
+                        .clip(KotlinConfTheme.shapes.roundedCornerMd)
+                        .clickable(role = Role.Button, onClick = onFindOnMap)
+                        .padding(vertical = 10.dp)
+                    else Modifier
+                ),
         ) {
             Text(
                 text = location,
@@ -383,12 +392,7 @@ private fun TimeBlock(
                     painter = painterResource(UiRes.drawable.location_16),
                     contentDescription = description,
                     tint = KotlinConfTheme.colors.accentText,
-                    modifier = Modifier
-                        // The 16dp icon in a 24dp touch target, as tall as the text beside it
-                        .size(24.dp)
-                        .clip(KotlinConfTheme.shapes.roundedCornerMd)
-                        .clickable(role = Role.Button, onClick = onFindOnMap)
-                        .padding(4.dp),
+                    modifier = Modifier.size(24.dp).padding(4.dp),
                 )
             }
         }

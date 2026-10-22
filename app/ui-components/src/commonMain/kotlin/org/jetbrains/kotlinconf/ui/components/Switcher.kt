@@ -3,6 +3,7 @@ package org.jetbrains.kotlinconf.ui.components
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -101,13 +103,20 @@ fun Switcher(
     selectedIndex: Int,
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    /** At large text sizes, let the tabs scroll sideways with their full labels instead of cutting them off. */
+    scrollWhenCramped: Boolean = false,
 ) {
     BoxWithConstraints(modifier = modifier) {
         var useShortItems by remember(items, constraints.maxWidth) { mutableStateOf(false) }
+        // When even the short labels don't fit (large text sizes), each tab takes the width its label needs
+        // and the row scrolls, instead of cutting labels off
+        var scrolls by remember(items, constraints.maxWidth) { mutableStateOf(false) }
         val displayItems = if (useShortItems && shortItems != null) shortItems else items
 
         Row(
-            modifier = Modifier.selectableGroup(),
+            modifier = Modifier
+                .selectableGroup()
+                .then(if (scrolls) Modifier.horizontalScroll(rememberScrollState()) else Modifier),
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             displayItems.forEachIndexed { index, label ->
@@ -116,9 +125,11 @@ fun Switcher(
                     selected = index == selectedIndex,
                     onClick = { onSelect(index) },
                     onLayout = { hasOverflow ->
-                        if (hasOverflow) useShortItems = true
+                        if (hasOverflow) {
+                            if (!useShortItems && shortItems != null) useShortItems = true else if (scrollWhenCramped) scrolls = true
+                        }
                     },
-                    modifier = Modifier.weight(1f),
+                    modifier = if (scrolls) Modifier else Modifier.weight(1f),
                 )
             }
         }

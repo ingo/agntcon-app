@@ -151,6 +151,7 @@ fun SpeakersScreen(
                 shortItems = null,
                 selectedIndex = tabs.indexOf(tab),
                 onSelect = { tabIndex = it },
+                scrollWhenCramped = true,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
             )
         }
@@ -267,7 +268,7 @@ private fun CompaniesList(
             item(key = "no-companies") {
                 Text(
                     stringResource(Res.string.companies_error_no_data),
-                    color = KotlinConfTheme.colors.noteText,
+                    color = KotlinConfTheme.colors.secondaryText,
                     modifier = Modifier.padding(24.dp),
                 )
             }
@@ -297,7 +298,7 @@ private fun MetList(viewModel: SpeakersViewModel, onSpeaker: (SpeakerId) -> Unit
             item(key = "no-met") {
                 Text(
                     stringResource(Res.string.speakers_met_empty),
-                    color = KotlinConfTheme.colors.noteText,
+                    color = KotlinConfTheme.colors.secondaryText,
                     modifier = Modifier.padding(24.dp),
                 )
             }
