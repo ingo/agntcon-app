@@ -1,5 +1,10 @@
 package org.jetbrains.kotlinconf.screens
 
+import org.jetbrains.kotlinconf.generated.resources.my_schedule_free_browse
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.Color
@@ -54,7 +59,6 @@ import org.jetbrains.kotlinconf.generated.resources.my_schedule_bookmark
 import org.jetbrains.kotlinconf.generated.resources.my_schedule_clash
 import org.jetbrains.kotlinconf.generated.resources.my_schedule_close
 import org.jetbrains.kotlinconf.generated.resources.my_schedule_free
-import org.jetbrains.kotlinconf.generated.resources.my_schedule_free_fits
 import org.jetbrains.kotlinconf.generated.resources.my_schedule_no_sessions
 import org.jetbrains.kotlinconf.generated.resources.my_schedule_summary
 import org.jetbrains.kotlinconf.generated.resources.my_schedule_title
@@ -335,30 +339,56 @@ private fun BookedSlot(block: BookedBlock, lines: Int, onClick: () -> Unit, modi
 
 @Composable
 private fun FreeSlot(free: FreeBlock, lines: Int, onClick: () -> Unit, modifier: Modifier) {
+    val colors = KotlinConfTheme.colors
     val shape = KotlinConfTheme.shapes.roundedCornerSm
-    Column(
-        modifier
-            .padding(2.dp)
-            .clip(shape)
-            // Solid, so the dotted hour lines don't run through the text
-            .background(KotlinConfTheme.colors.mainBackground)
-            .border(1.dp, KotlinConfTheme.colors.strokePale, shape)
-            .clickable(enabled = free.available.isNotEmpty(), onClick = onClick)
-            .padding(horizontal = 8.dp, vertical = BlockVerticalPadding)
-    ) {
-        Text(
-            stringResource(Res.string.my_schedule_free, DateTimeFormatting.timeToTime(free.startsAt, free.endsAt)),
-            style = KotlinConfTheme.typography.text2,
-            color = KotlinConfTheme.colors.noteText,
-            maxLines = 1,
-        )
-        if (free.available.isNotEmpty() && lines >= 2) {
-            Text(
-                stringResource(Res.string.my_schedule_free_fits, free.available.size),
-                style = KotlinConfTheme.typography.text2,
-                color = KotlinConfTheme.colors.accentText,
-                maxLines = 1,
+    val canBrowse = free.available.isNotEmpty()
+    val browseLabel = stringResource(Res.string.my_schedule_free_browse, free.available.size)
+    val freeLabel = stringResource(Res.string.my_schedule_free, DateTimeFormatting.timeToTime(free.startsAt, free.endsAt))
+    val blockModifier = modifier
+        .padding(2.dp)
+        .clip(shape)
+        // Solid, so the dotted hour lines don't run through it
+        .background(colors.mainBackground)
+        // Dashed: an open slot, not a session
+        .drawBehind {
+            drawRoundRect(
+                color = colors.strokeHalf,
+                cornerRadius = CornerRadius(8.dp.toPx()),
+                style = Stroke(
+                    width = 1.dp.toPx(),
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(4.dp.toPx(), 3.dp.toPx())),
+                ),
             )
+        }
+        .clickable(enabled = canBrowse, onClick = onClick)
+        .padding(horizontal = 8.dp, vertical = BlockVerticalPadding)
+
+    if (lines < 2) {
+        // One line: time and link side by side
+        Row(blockModifier, horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(freeLabel, style = KotlinConfTheme.typography.text2, color = colors.noteText, maxLines = 1)
+            if (canBrowse) {
+                Text("$browseLabel  →", style = KotlinConfTheme.typography.text2, color = colors.accentText, maxLines = 1)
+            }
+        }
+        return
+    }
+    Column(blockModifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(freeLabel, style = KotlinConfTheme.typography.text2, color = colors.noteText, maxLines = 1)
+        when {
+            !canBrowse -> Unit
+            // Room for a button under the time
+            lines >= 3 -> Text(
+                "$browseLabel  →",
+                style = KotlinConfTheme.typography.text2,
+                color = colors.primaryTextWhiteFixed,
+                maxLines = 1,
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .background(colors.primaryBackground)
+                    .padding(horizontal = 12.dp, vertical = 4.dp),
+            )
+            else -> Text("$browseLabel  →", style = KotlinConfTheme.typography.text2, color = colors.accentText, maxLines = 1)
         }
     }
 }
