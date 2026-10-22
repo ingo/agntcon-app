@@ -3,6 +3,7 @@ package org.jetbrains.kotlinconf.sessionize
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
+import org.jetbrains.kotlinconf.contactLink
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -56,6 +57,38 @@ class RealFeedTest {
 
         // No recordings yet
         assertTrue(named.sessions.all { it.videoUrl == null })
+    }
+
+    @Test
+    fun agntconSpeakerLinksAndCompanies() {
+        val conference = feed("agntcon-mcpcon-na-2026.json").toConference(TimeZone.of("America/Los_Angeles"))
+        val speakers = conference.speakers
+
+        // 241 speakers; the live feed had 179 LinkedIn links when the snapshot was taken
+        val linkedIn = speakers.count { s -> s.links.any { it.isLinkedIn } }
+        assertTrue(linkedIn in 170..200, "LinkedIn links: $linkedIn")
+        assertTrue(speakers.all { s -> s.links.all { it.url.startsWith("https://") || it.url.startsWith("http://") } })
+        assertTrue(speakers.flatMap { it.links }.map { it.type }.toSet().containsAll(setOf("LinkedIn", "Company_Website", "Twitter", "Blog")))
+
+        val aaron = speakers.single { it.name == "Aaron Parecki" }
+        assertEquals("Okta", aaron.company)
+        assertEquals("Director of Identity Standards, Okta", aaron.position)
+        assertEquals("https://www.linkedin.com/in/aaronparecki", aaron.contactLink?.url)
+
+        // Almost every speaker answered "Company"; a company a tag line leaves out is still in the shown line
+        assertTrue(speakers.count { it.company.isNotEmpty() } >= 230)
+        assertTrue(speakers.filter { it.company.isNotEmpty() }.all { it.position.contains(it.company, ignoreCase = true) })
+        // A logo in "Company URL" is not taken as a website
+        assertTrue(speakers.mapNotNull { it.companyUrl }.none { it.endsWith(".svg") || it.endsWith(".png") })
+    }
+
+    @Test
+    fun kotlinConfSpeakersHaveNoCompanyQuestionsAndKeepTheirTagLines() {
+        val feed = feed("kotlinconf-2026.json")
+        val conference = feed.toConference(TimeZone.of("Europe/Berlin"), SessionizeRules.KOTLINCONF)
+
+        assertTrue(conference.speakers.all { it.company.isEmpty() })
+        assertEquals(feed.speakers.map { it.tagLine ?: "" }, conference.speakers.map { it.position })
     }
 
     @Test

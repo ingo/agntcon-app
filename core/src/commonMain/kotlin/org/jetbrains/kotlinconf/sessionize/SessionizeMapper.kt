@@ -8,6 +8,7 @@ import kotlinx.serialization.json.Json
 import org.jetbrains.kotlinconf.Conference
 import org.jetbrains.kotlinconf.Session
 import org.jetbrains.kotlinconf.Speaker
+import org.jetbrains.kotlinconf.SpeakerLink
 import org.jetbrains.kotlinconf.TagInfo
 import kotlin.time.Instant
 
@@ -40,6 +41,10 @@ data class SessionizeRules(
      * `sessionize.com/download` from any question. Questions with "logo" in their name never count.
      */
     val slidesQuestion: String? = null,
+    /** Speaker questions that hold the company, the job title and the company's website. */
+    val companyQuestion: String = "Company",
+    val titleQuestion: String = "Speaker Title",
+    val companyUrlQuestion: String = "Company URL",
 ) {
     companion object {
         val KOTLINCONF = SessionizeRules(
@@ -104,18 +109,59 @@ fun SessionizeData.toConference(
         rules.multipartWorkshopTag?.let { list.mergeWorkshops(it) } ?: list
     }
 
-    val speakers = speakers.map {
-        Speaker(
-            id = it.id,
-            name = it.fullName,
-            position = it.tagLine ?: "",
-            description = it.bio ?: "",
-            photoUrl = it.profilePicture ?: "",
-        )
-    }
+    val speakers = speakers.map { it.toSpeaker(this, rules) }
 
     return Conference(sessions, speakers)
 }
+
+private fun SpeakerData.toSpeaker(feed: SessionizeData, rules: SessionizeRules): Speaker {
+    fun answer(question: String): String? = feed.questions
+        .filter { it.question.trim().equals(question.trim(), ignoreCase = true) }
+        .firstNotNullOfOrNull { q -> questionAnswers.firstOrNull { it.questionId == q.id }?.answerValue }
+        ?.trim()?.takeIf { it.isNotEmpty() }
+
+    val company = answer(rules.companyQuestion) ?: ""
+    val jobTitle = answer(rules.titleQuestion)
+    val links = links.mapNotNull { link ->
+        val url = link.url.trim()
+        if (!url.startsWith("http://") && !url.startsWith("https://")) null
+        else SpeakerLink(type = link.linkType, title = link.title.trim().ifEmpty { link.linkType.replace('_', ' ') }, url = url)
+    }
+    val companyUrl = answer(rules.companyUrlQuestion)?.takeIf { it.isWebsite() }
+        ?: links.firstOrNull { it.type == SpeakerLink.COMPANY_WEBSITE }?.url
+
+    return Speaker(
+        id = id,
+        name = fullName,
+        position = displayPosition(tagLine, jobTitle, company),
+        description = bio ?: "",
+        photoUrl = profilePicture ?: "",
+        company = company,
+        companyUrl = companyUrl,
+        links = links,
+    )
+}
+
+/**
+ * The line shown under a speaker's name: their tag line, or job title and company when there is none.
+ * A company the tag line leaves out is added, so what is shown is also what a search finds.
+ */
+internal fun displayPosition(tagLine: String?, jobTitle: String?, company: String): String {
+    // Events that collect no company or job title show the tag line exactly as Sessionize has it
+    if (company.isEmpty() && jobTitle == null) return tagLine ?: ""
+    val line = tagLine?.trim().orEmpty().ifEmpty { jobTitle.orEmpty() }
+    return when {
+        company.isEmpty() -> line
+        line.isEmpty() -> company
+        line.contains(company, ignoreCase = true) -> line
+        else -> "$line, $company"
+    }
+}
+
+/** A web page, not a logo or other image (some speakers put their logo in the website question). */
+private fun String.isWebsite(): Boolean =
+    (startsWith("https://") || startsWith("http://")) &&
+        listOf(".svg", ".png", ".jpg", ".jpeg", ".gif", ".webp").none { substringBefore('?').endsWith(it, ignoreCase = true) }
 
 private fun SessionizeData.slidesQuestionIds(rules: SessionizeRules): Set<Int> = questions
     .filter { it.questionType == FILE_UPLOAD && "logo" !in it.question.lowercase() }

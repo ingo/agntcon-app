@@ -3,6 +3,7 @@ package org.jetbrains.kotlinconf.sessionize
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import org.jetbrains.kotlinconf.SessionId
+import org.jetbrains.kotlinconf.contactLink
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -123,7 +124,102 @@ class SessionizeMapperTest {
         assertEquals("https://www.youtube.com/watch?v=part2", workshop.videoUrl)
     }
 
+    @Test
+    fun speakerLinksKeepTypeTitleAndWebUrlsOnly() {
+        val speaker = parseSessionizeData(SPEAKERS_FEED).toConference(pacific).speakers.single { it.id.id == "s1" }
+
+        assertEquals(
+            listOf("LinkedIn", "Blog", "Company_Website", "Sessionize"),
+            speaker.links.map { it.type },
+        )
+        // A link with no title is labelled with its type; a mailto: link is dropped
+        assertEquals(listOf("LinkedIn", "Blog", "Company Website", "Sessionize"), speaker.links.map { it.title })
+        assertEquals("https://www.linkedin.com/in/a-b", speaker.contactLink?.url)
+        assertTrue(speaker.links.single { it.type == "LinkedIn" }.isLinkedIn)
+    }
+
+    @Test
+    fun contactLinkFallsBackToAnyPersonalLinkButNotSessionize() {
+        val speakers = parseSessionizeData(SPEAKERS_FEED).toConference(pacific).speakers.associateBy { it.id.id }
+
+        assertEquals("https://example.com/blog", speakers.getValue("s2").contactLink?.url)
+        // Only a Sessionize profile: nothing to contact them by
+        assertNull(speakers.getValue("s3").contactLink)
+        assertEquals(listOf("Sessionize"), speakers.getValue("s3").links.map { it.type })
+        assertNull(speakers.getValue("s4").contactLink)
+    }
+
+    @Test
+    fun companyAndTitleComeFromTheSpeakerQuestions() {
+        val speakers = parseSessionizeData(SPEAKERS_FEED).toConference(pacific).speakers.associateBy { it.id.id }
+
+        assertEquals("Okta", speakers.getValue("s1").company)
+        // The tag line already names the company
+        assertEquals("Director of Identity, Okta", speakers.getValue("s1").position)
+        assertEquals("https://okta.com", speakers.getValue("s1").companyUrl)
+        // No tag line: job title and company from the questions; a logo in the website question is not a website
+        assertEquals("CTO, TrueFoundry", speakers.getValue("s2").position)
+        assertEquals("TrueFoundry", speakers.getValue("s2").company)
+        assertNull(speakers.getValue("s2").companyUrl)
+        // A company the tag line leaves out is appended; no answers keeps the tag line as it was
+        assertEquals("Java dev, ExoQuery", speakers.getValue("s4").position)
+        assertEquals("Just a tag line", speakers.getValue("s3").position)
+        assertEquals("", speakers.getValue("s3").company)
+    }
+
+    @Test
+    fun companyQuestionsCanBeRenamedPerEvent() {
+        val rules = SessionizeRules(companyQuestion = "Employer")
+        val speakers = parseSessionizeData(SPEAKERS_FEED).toConference(pacific, rules).speakers.associateBy { it.id.id }
+
+        assertEquals("", speakers.getValue("s1").company)
+        assertEquals("Acme", speakers.getValue("s5").company)
+    }
+
     private companion object {
+        val SPEAKERS_FEED = """
+            {
+              "sessions": [],
+              "speakers": [
+                {"id": "s1", "fullName": "A B", "tagLine": "Director of Identity, Okta",
+                 "links": [
+                   {"title": "LinkedIn", "url": "https://www.linkedin.com/in/a-b", "linkType": "LinkedIn"},
+                   {"title": "Blog", "url": "https://example.com/blog", "linkType": "Blog"},
+                   {"title": "", "url": "https://okta.com", "linkType": "Company_Website"},
+                   {"title": "Sessionize", "url": "https://sessionize.com/a-b", "linkType": "Sessionize"},
+                   {"title": "Email", "url": "mailto:a@b.com", "linkType": "Other"}
+                 ],
+                 "questionAnswers": [
+                   {"questionId": 1, "answerValue": "Okta"},
+                   {"questionId": 2, "answerValue": "Director of Identity Standards"}
+                 ]},
+                {"id": "s2", "fullName": "C D", "tagLine": null,
+                 "links": [
+                   {"title": "Sessionize", "url": "https://sessionize.com/c-d", "linkType": "Sessionize"},
+                   {"title": "Blog", "url": "https://example.com/blog", "linkType": "Blog"}
+                 ],
+                 "questionAnswers": [
+                   {"questionId": 1, "answerValue": " TrueFoundry "},
+                   {"questionId": 2, "answerValue": "CTO"},
+                   {"questionId": 3, "answerValue": "https://cdn.example.com/logo.svg"}
+                 ]},
+                {"id": "s3", "fullName": "E F", "tagLine": "Just a tag line", "links": [
+                   {"title": "Sessionize", "url": "https://sessionize.com/e-f", "linkType": "Sessionize"}
+                 ]},
+                {"id": "s4", "fullName": "G H", "tagLine": "Java dev",
+                 "questionAnswers": [{"questionId": 1, "answerValue": "ExoQuery"}]},
+                {"id": "s5", "fullName": "I J", "tagLine": null,
+                 "questionAnswers": [{"questionId": 4, "answerValue": "Acme"}]}
+              ],
+              "questions": [
+                {"id": 1, "question": "Company", "questionType": "Short_Text"},
+                {"id": 2, "question": "Speaker Title", "questionType": "Short_Text"},
+                {"id": 3, "question": "Company URL", "questionType": "Web_address"},
+                {"id": 4, "question": "Employer", "questionType": "Short_Text"}
+              ]
+            }
+        """.trimIndent()
+
         val SLIDES_FEED = """
             {
               "sessions": [
