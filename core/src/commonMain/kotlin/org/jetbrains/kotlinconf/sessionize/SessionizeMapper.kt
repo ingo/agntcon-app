@@ -109,7 +109,7 @@ fun SessionizeData.toConference(
         rules.multipartWorkshopTag?.let { list.mergeWorkshops(it) } ?: list
     }
 
-    val speakers = speakers.map { it.toSpeaker(this, rules) }
+    val speakers = speakers.map { it.toSpeaker(this, rules) }.withConsistentCompanies()
 
     return Conference(sessions, speakers)
 }
@@ -140,6 +140,29 @@ private fun SpeakerData.toSpeaker(feed: SessionizeData, rules: SessionizeRules):
         companyUrl = companyUrl,
         links = links,
     )
+}
+
+/** "Vstorm" and "VStorm" are one company: every spelling becomes the most common one (the first on a tie). */
+internal fun List<Speaker>.withConsistentCompanies(): List<Speaker> {
+    val spelling: Map<String, String> = filter { it.company.isNotEmpty() }
+        .groupBy { it.company.lowercase() }
+        .mapValues { (_, speakers) ->
+            speakers.groupingBy { it.company }.eachCount().entries.maxByOrNull { it.value }!!.key
+        }
+    if (spelling.isEmpty()) return this
+    return map { speaker ->
+        val company = spelling[speaker.company.lowercase()] ?: return@map speaker
+        if (company == speaker.company) speaker else Speaker(
+            id = speaker.id,
+            name = speaker.name,
+            position = speaker.position,
+            description = speaker.description,
+            photoUrl = speaker.photoUrl,
+            company = company,
+            companyUrl = speaker.companyUrl,
+            links = speaker.links,
+        )
+    }
 }
 
 /**

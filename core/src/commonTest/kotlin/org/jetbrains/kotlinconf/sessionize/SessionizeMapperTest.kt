@@ -176,6 +176,23 @@ class SessionizeMapperTest {
         assertEquals("Acme", speakers.getValue("s5").company)
     }
 
+    @Test
+    fun companiesDifferingOnlyInCaseBecomeTheMostCommonSpelling() {
+        val feed = """
+            {"speakers": [
+              {"id": "a", "fullName": "A", "questionAnswers": [{"questionId": 1, "answerValue": "VStorm"}]},
+              {"id": "b", "fullName": "B", "questionAnswers": [{"questionId": 1, "answerValue": "Vstorm"}]},
+              {"id": "c", "fullName": "C", "questionAnswers": [{"questionId": 1, "answerValue": "Vstorm"}]},
+              {"id": "d", "fullName": "D", "questionAnswers": [{"questionId": 1, "answerValue": "Solo.io"}]},
+              {"id": "e", "fullName": "E", "questionAnswers": [{"questionId": 1, "answerValue": "solo.io"}]}
+            ], "questions": [{"id": 1, "question": "Company", "questionType": "Short_Text"}]}
+        """.trimIndent()
+        val companies = parseSessionizeData(feed).toConference(pacific).speakers.map { it.company }
+
+        // Most common wins; a tie keeps the first
+        assertEquals(listOf("Vstorm", "Vstorm", "Vstorm", "Solo.io", "Solo.io"), companies)
+    }
+
     private companion object {
         val SPEAKERS_FEED = """
             {
