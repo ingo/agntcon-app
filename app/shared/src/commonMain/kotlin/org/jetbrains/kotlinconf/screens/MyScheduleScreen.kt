@@ -371,9 +371,7 @@ private fun FreeSlot(free: FreeBlock, lines: Int, onClick: () -> Unit, modifier:
         // One line: time and link side by side
         Row(blockModifier, horizontalArrangement = Arrangement.SpaceBetween) {
             Text(freeLabel, style = KotlinConfTheme.typography.text2, color = colors.noteText, maxLines = 1, modifier = Modifier.background(colors.mainBackground))
-            if (canBrowse) {
-                Text("$browseLabel  →", style = KotlinConfTheme.typography.text2, color = colors.accentText, maxLines = 1, modifier = Modifier.background(colors.mainBackground))
-            }
+            if (canBrowse) BrowsePill(browseLabel, compact = true)
         }
         return
     }
@@ -390,13 +388,7 @@ private fun FreeSlot(free: FreeBlock, lines: Int, onClick: () -> Unit, modifier:
                 // Centered in the open space below the time
                 BrowsePill(browseLabel, Modifier.align(Alignment.Center).padding(top = 12.dp))
             } else {
-                Text(
-                    "$browseLabel  →",
-                    style = KotlinConfTheme.typography.text2,
-                    color = colors.accentText,
-                    maxLines = 1,
-                    modifier = Modifier.align(Alignment.BottomCenter).background(colors.mainBackground),
-                )
+                BrowsePill(browseLabel, Modifier.align(Alignment.BottomCenter), compact = true)
             }
         }
     }
@@ -494,7 +486,7 @@ private fun HourLine(color: Color, modifier: Modifier = Modifier) {
 
 /** A quiet button to find sessions for free time: tinted, not solid, so it invites without shouting. */
 @Composable
-internal fun BrowsePill(label: String, modifier: Modifier = Modifier) {
+internal fun BrowsePill(label: String, modifier: Modifier = Modifier, compact: Boolean = false) {
     val colors = KotlinConfTheme.colors
     val accent = if (colors.isDark) colors.accentText else colors.primaryBackground
     Text(
@@ -506,7 +498,8 @@ internal fun BrowsePill(label: String, modifier: Modifier = Modifier) {
             .clip(CircleShape)
             .background(colors.mainBackground)
             .background(accent.copy(alpha = 0.1f))
-            .padding(horizontal = 14.dp, vertical = 5.dp),
+            // Slimmer where the free time is short, so it still fits
+            .padding(horizontal = if (compact) 10.dp else 14.dp, vertical = if (compact) 1.dp else 5.dp),
     )
 }
 
