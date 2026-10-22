@@ -27,8 +27,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import org.jetbrains.kotlinconf.generated.resources.Res
-import org.jetbrains.kotlinconf.generated.resources.bookmark_28
-import org.jetbrains.kotlinconf.generated.resources.bookmark_28_fill
+import org.jetbrains.kotlinconf.generated.resources.calendar_28
+import org.jetbrains.kotlinconf.generated.resources.calendar_28_fill
 import org.jetbrains.kotlinconf.generated.resources.nav_destination_my_schedule
 import org.jetbrains.kotlinconf.generated.resources.award_28
 import org.jetbrains.kotlinconf.generated.resources.award_28_fill
@@ -67,8 +67,8 @@ private val bottomNavDestinations: List<MainNavDestination<TopLevelRoute>> = lis
     ),
     MainNavDestination(
         label = Res.string.nav_destination_my_schedule,
-        icon = Res.drawable.bookmark_28,
-        iconSelected = Res.drawable.bookmark_28_fill,
+        icon = Res.drawable.calendar_28,
+        iconSelected = Res.drawable.calendar_28_fill,
         route = MyScheduleScreen,
     ),
     MainNavDestination(

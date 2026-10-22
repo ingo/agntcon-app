@@ -1,5 +1,10 @@
 package org.jetbrains.kotlinconf.screens
 
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -243,9 +248,8 @@ private fun Timeline(
                 color = KotlinConfTheme.colors.noteText,
                 modifier = Modifier.offset(y = y - 8.dp),
             )
-            HorizontalDivider(
-                thickness = 1.dp,
-                color = KotlinConfTheme.colors.strokePale,
+            HourLine(
+                color = KotlinConfTheme.colors.strokeHalf,
                 modifier = Modifier.padding(start = GutterWidth).offset(y = y),
             )
         }
@@ -336,6 +340,8 @@ private fun FreeSlot(free: FreeBlock, lines: Int, onClick: () -> Unit, modifier:
         modifier
             .padding(2.dp)
             .clip(shape)
+            // Solid, so the dotted hour lines don't run through the text
+            .background(KotlinConfTheme.colors.mainBackground)
             .border(1.dp, KotlinConfTheme.colors.strokePale, shape)
             .clickable(enabled = free.available.isNotEmpty(), onClick = onClick)
             .padding(horizontal = 8.dp, vertical = BlockVerticalPadding)
@@ -429,5 +435,21 @@ private fun linesIn(height: Dp): Int {
     // Block padding (2.dp) plus the inner vertical padding on both sides
     val usable = height - 4.dp - BlockVerticalPadding * 2
     return (usable / lineHeight).toInt().coerceAtLeast(1)
+}
+
+/** A dotted hour mark, so it doesn't read as a divider between sections. */
+@Composable
+private fun HourLine(color: Color, modifier: Modifier = Modifier) {
+    Canvas(modifier.fillMaxWidth().height(1.dp)) {
+        val dot = 1.dp.toPx()
+        drawLine(
+            color = color,
+            start = Offset(0f, size.height / 2),
+            end = Offset(size.width, size.height / 2),
+            strokeWidth = dot,
+            cap = StrokeCap.Round,
+            pathEffect = PathEffect.dashPathEffect(floatArrayOf(dot, 4.dp.toPx())),
+        )
+    }
 }
 
