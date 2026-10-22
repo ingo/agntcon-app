@@ -120,6 +120,10 @@ data class SessionScreen(
 data class SpeakerDetailScreen(val speakerId: SpeakerId) : AppRoute
 
 @Serializable
+@SerialName("Company")
+data class CompanyScreen(val name: String) : AppRoute
+
+@Serializable
 @SerialName("MapDetail")
 data class NestedMapScreen(val roomName: String) : AppRoute
 

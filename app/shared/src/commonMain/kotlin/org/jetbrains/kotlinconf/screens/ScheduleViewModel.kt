@@ -27,12 +27,11 @@ import org.jetbrains.kotlinconf.SessionId
 import org.jetbrains.kotlinconf.SessionState
 import org.jetbrains.kotlinconf.TimeProvider
 import org.jetbrains.kotlinconf.TimeSlot
+import org.jetbrains.kotlinconf.directory.companiesBySessionCount
 import org.jetbrains.kotlinconf.isServiceEvent
 import org.jetbrains.kotlinconf.ui.components.FilterItem
 import org.jetbrains.kotlinconf.ui.components.FilterItemType
 import org.jetbrains.kotlinconf.utils.ErrorLoadingState
-import org.jetbrains.kotlinconf.utils.containsDiacritics
-import org.jetbrains.kotlinconf.utils.removeDiacritics
 
 sealed interface ScheduleListItem
 
@@ -84,8 +83,25 @@ class ScheduleViewModel(
         return map { FilterItem(type = type, value = it, isSelected = false) }
     }
 
-    val filterItems: StateFlow<List<FilterItem>>
-        field = MutableStateFlow<List<FilterItem>>(emptyList())
+    /** The tag filters (category, level, format) with their selection. */
+    private val tagItems = MutableStateFlow<List<FilterItem>>(emptyList())
+
+    private val selectedCompany = MutableStateFlow<String?>(null)
+
+    /** The companies that speak, the ones with most sessions first; empty when the event has none. */
+    private val companies: StateFlow<List<String>> = service.agenda
+        .map { days -> companiesBySessionCount(days.flatMap { it.timeSlots }.flatMap { it.sessions }) }
+        .distinctUntilChanged()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    val filterItems: StateFlow<List<FilterItem>> = combine(tagItems, companies, selectedCompany) { tags, companies, selected ->
+        tags + companies.map { FilterItem(FilterItemType.Company, it, isSelected = it == selected) }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    /** The rooms that have a pin on the venue map, by the name the schedule shows. */
+    val pinnedRooms: StateFlow<Set<String>> = service.mapData
+        .map { it?.rooms?.keys ?: emptySet() }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptySet())
 
     init {
         viewModelScope.launch {
@@ -93,7 +109,7 @@ class ScheduleViewModel(
                 .mapNotNull { it?.tags }
                 .distinctUntilChanged()
                 .collect { tags ->
-                    filterItems.value =
+                    tagItems.value =
                         tags.categories.toFilterItems(FilterItemType.Category) +
                                 tags.levels.toFilterItems(FilterItemType.Level) +
                                 tags.formats.toFilterItems(FilterItemType.Format)
@@ -109,7 +125,11 @@ class ScheduleViewModel(
     private var loading = MutableStateFlow(false)
 
     fun toggleFilter(item: FilterItem, selected: Boolean) {
-        filterItems.update { oldItems ->
+        if (item.type == FilterItemType.Company) {
+            selectedCompany.value = if (selected) item.value else null
+            return
+        }
+        tagItems.update { oldItems ->
             val list = oldItems.toMutableList()
 
             if (item.type == FilterItemType.Level || item.type == FilterItemType.Format) {
@@ -130,7 +150,8 @@ class ScheduleViewModel(
     }
 
     fun resetFilters() {
-        filterItems.update {
+        selectedCompany.value = null
+        tagItems.update {
             it.map { filter -> filter.copy(isSelected = false) }
         }
     }
@@ -151,8 +172,11 @@ class ScheduleViewModel(
             searchParams.isSearch -> {
                 val searchItems = buildSearchItems(
                     days = agenda,
-                    searchQuery = searchParams.searchQuery,
-                    selectedTags = tags.filter { it.isSelected }.map { it.value },
+                    search = SessionSearch(
+                        query = searchParams.searchQuery,
+                        tags = tags.filter { it.isSelected && it.type != FilterItemType.Company }.map { it.value },
+                        company = tags.firstOrNull { it.isSelected && it.type == FilterItemType.Company }?.value,
+                    ),
                 )
                 ErrorLoadingState.Content(ScheduleContent(agenda, searchItems))
             }
@@ -187,18 +211,12 @@ class ScheduleViewModel(
 
     private fun buildSearchItems(
         days: List<Day>,
-        searchQuery: String,
-        selectedTags: List<String>,
+        search: SessionSearch,
     ): List<SessionItem> = buildList {
         for (day in days) {
             for (timeSlot in day.timeSlots) {
                 for (session in timeSlot.sessions) {
-                    val result = match(
-                        session = session,
-                        searchRegex = Regex.escape(searchQuery).toRegex(RegexOption.IGNORE_CASE),
-                        diacriticsSearch = searchQuery.containsDiacritics(),
-                        tags = selectedTags,
-                    )
+                    val result = search.match(session)
                     if (result.matched) {
                         add(
                             SessionItem(
@@ -213,45 +231,6 @@ class ScheduleViewModel(
             }
         }
     }.sortedBy { it.value.state == SessionState.Past }
-
-    private class MatchResult(
-        val matched: Boolean,
-        val tagMatches: List<String> = emptyList(),
-        val titleHighlights: List<IntRange> = emptyList(),
-        val speakerHighlights: List<IntRange> = emptyList(),
-    )
-
-    private fun match(
-        session: SessionCardView,
-        searchRegex: Regex,
-        diacriticsSearch: Boolean,
-        tags: List<String>,
-    ): MatchResult {
-        if (session.isServiceEvent) {
-            return MatchResult(matched = false)
-        }
-
-        if (!session.tags.containsAll(tags)) {
-            return MatchResult(matched = false)
-        }
-
-        // Look for exact matches if diacritics are present, ignore all diacritics otherwise
-        val title = session.title
-        val targetTitle = if (diacriticsSearch) title else title.removeDiacritics()
-
-        val speakerLine = session.speakerLine
-        val targetSpeakers = if (diacriticsSearch) speakerLine else speakerLine.removeDiacritics()
-
-        val titleHighlights = searchRegex.findAll(targetTitle).map { it.range }.toList()
-        val speakerHighlights = searchRegex.findAll(targetSpeakers).map { it.range }.toList()
-
-        return MatchResult(
-            matched = titleHighlights.isNotEmpty() || speakerHighlights.isNotEmpty(),
-            tagMatches = tags,
-            titleHighlights = titleHighlights,
-            speakerHighlights = speakerHighlights,
-        )
-    }
 
     fun onBookmark(sessionId: SessionId, bookmarked: Boolean) {
         viewModelScope.launch {

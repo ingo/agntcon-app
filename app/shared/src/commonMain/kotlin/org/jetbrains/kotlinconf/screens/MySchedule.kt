@@ -53,6 +53,13 @@ internal val FREE_MIN: Duration = 15.minutes
  */
 internal const val BREAK_MIN_SESSIONS: Int = 3
 
+/**
+ * Minutes from the start of the day's timeline to [now], for the red "now" line; null when [now] is
+ * not within the hours the timeline shows (another day, before the first or after the last session).
+ */
+fun nowOffsetMinutes(day: MyScheduleDay, now: LocalDateTime): Int? =
+    if (now.date == day.date && now >= day.startsAt && now < day.endsAt) (now - day.startsAt).inWholeMinutes.toInt() else null
+
 fun buildMySchedule(agenda: List<Day>): List<MyScheduleDay> = agenda.mapNotNull { day ->
     val sessions = day.timeSlots.flatMap { it.sessions }.distinctBy { it.id }
     val (allDaySessions, timed) = sessions.partition { it.endsAt - it.startsAt >= ALL_DAY_MIN }

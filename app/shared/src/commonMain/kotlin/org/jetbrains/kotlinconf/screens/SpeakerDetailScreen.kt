@@ -1,6 +1,7 @@
 package org.jetbrains.kotlinconf.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -11,6 +12,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -24,12 +27,20 @@ import org.jetbrains.kotlinconf.SessionId
 import org.jetbrains.kotlinconf.Speaker
 import org.jetbrains.kotlinconf.SpeakerId
 import org.jetbrains.kotlinconf.generated.resources.Res
+import org.jetbrains.kotlinconf.generated.resources.arrow_up_right_24
 import org.jetbrains.kotlinconf.generated.resources.schedule_in_x_minutes
+import org.jetbrains.kotlinconf.generated.resources.speaker_company_link
+import org.jetbrains.kotlinconf.generated.resources.speaker_links
+import org.jetbrains.kotlinconf.generated.resources.speaker_met
+import org.jetbrains.kotlinconf.generated.resources.speaker_met_done
+import org.jetbrains.kotlinconf.generated.resources.speaker_notes_hint
 import org.jetbrains.kotlinconf.generated.resources.speaker_detail_error_not_found
 import org.jetbrains.kotlinconf.generated.resources.speaker_detail_title
 import org.jetbrains.kotlinconf.ui.AdaptiveDetailLayout
+import org.jetbrains.kotlinconf.ui.components.Button
 import org.jetbrains.kotlinconf.ui.components.HorizontalDivider
 import org.jetbrains.kotlinconf.ui.components.MainHeaderTitleBar
+import org.jetbrains.kotlinconf.ui.components.PageMenuItem
 import org.jetbrains.kotlinconf.ui.components.SpeakerAvatar
 import org.jetbrains.kotlinconf.ui.components.TalkCard
 import org.jetbrains.kotlinconf.ui.components.TalkStatus
@@ -47,6 +58,7 @@ fun SpeakerDetailScreen(
     speakerId: SpeakerId,
     onBack: () -> Unit,
     onSession: (SessionId) -> Unit,
+    onCompany: (String) -> Unit,
     viewModel: SpeakerDetailViewModel =
         assistedMetroViewModel<SpeakerDetailViewModel, SpeakerDetailViewModel.Factory> {
             create(speakerId)
@@ -54,6 +66,7 @@ fun SpeakerDetailScreen(
 ) {
     val speakerState = viewModel.speaker.collectAsStateWithLifecycle().value
     val sessions = viewModel.sessions.collectAsStateWithLifecycle().value
+    val uriHandler = LocalUriHandler.current
 
     Column(
         Modifier
@@ -90,7 +103,11 @@ fun SpeakerDetailScreen(
                     Name(currentSpeaker, Modifier.padding(bottom = 24.dp, top = 6.dp))
                 },
                 unifiedContent = {
-                    Description(currentSpeaker)
+                    // Links and "met" before the bio: at a conference they are what is wanted first
+                    Photo(currentSpeaker)
+                    Spacer(Modifier.height(16.dp))
+                    Contact(currentSpeaker, viewModel, onCompany, uriHandler::openUri)
+                    Bio(currentSpeaker)
                     Spacer(Modifier.height(16.dp))
                     Talks(sessions, viewModel, onSession)
                 },
@@ -98,6 +115,7 @@ fun SpeakerDetailScreen(
                     Description(currentSpeaker)
                 },
                 largeSideContent = {
+                    Contact(currentSpeaker, viewModel, onCompany, uriHandler::openUri)
                     Talks(sessions, viewModel, onSession)
                 },
                 onBack = onBack,
@@ -137,17 +155,73 @@ private fun Description(
     modifier: Modifier = Modifier,
 ) {
     Column(modifier) {
-        SpeakerAvatar(
-            photoUrl = currentSpeaker.photoUrl,
-            modifier = Modifier.widthIn(max = 300.dp)
-                .aspectRatio(1f)
-        )
+        Photo(currentSpeaker)
         Spacer(Modifier.height(24.dp))
-        Text(
-            text = currentSpeaker.description,
-            style = KotlinConfTheme.typography.text2,
-            color = KotlinConfTheme.colors.longText,
-            selectable = true,
+        Bio(currentSpeaker)
+    }
+}
+
+@Composable
+private fun Photo(speaker: Speaker) {
+    SpeakerAvatar(
+        photoUrl = speaker.photoUrl,
+        modifier = Modifier.widthIn(max = 300.dp)
+            .aspectRatio(1f)
+    )
+}
+
+@Composable
+private fun Bio(speaker: Speaker) {
+    Text(
+        text = speaker.description,
+        style = KotlinConfTheme.typography.text2,
+        color = KotlinConfTheme.colors.longText,
+        selectable = true,
+    )
+}
+
+/** Links to the speaker, a company page, and the attendee's own "met" mark and note. */
+@Composable
+private fun Contact(
+    speaker: Speaker,
+    viewModel: SpeakerDetailViewModel,
+    onCompany: (String) -> Unit,
+    onOpenLink: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val met by viewModel.met.collectAsStateWithLifecycle()
+    val note by viewModel.note.collectAsStateWithLifecycle()
+    // LinkedIn first, then the rest in the order Sessionize lists them
+    val links = speaker.links.sortedBy { if (it.isLinkedIn) 0 else 1 }
+
+    Column(modifier.padding(bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        if (links.isNotEmpty()) {
+            Text(stringResource(Res.string.speaker_links), style = KotlinConfTheme.typography.h3)
+            links.forEach { link ->
+                PageMenuItem(
+                    label = link.title,
+                    onClick = { onOpenLink(link.url) },
+                    drawableEnd = Res.drawable.arrow_up_right_24,
+                )
+            }
+        }
+        if (speaker.company.isNotBlank()) {
+            PageMenuItem(
+                label = stringResource(Res.string.speaker_company_link, speaker.company),
+                onClick = { onCompany(speaker.company) },
+            )
+        }
+        Button(
+            label = stringResource(if (met) Res.string.speaker_met_done else Res.string.speaker_met),
+            onClick = { viewModel.setMet(!met) },
+            primary = met,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        AutoSaveField(
+            stored = note,
+            onSave = viewModel::setNote,
+            hint = stringResource(Res.string.speaker_notes_hint),
+            minHeight = 96.dp,
         )
     }
 }

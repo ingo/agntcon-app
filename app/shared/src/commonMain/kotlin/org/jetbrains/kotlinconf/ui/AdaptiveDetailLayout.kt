@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
@@ -41,7 +42,9 @@ fun AdaptiveDetailLayout(
     ScrollToTopHandler(scrollState)
     HideKeyboardOnDragHandler(scrollState)
 
+    // imePadding: the page shrinks above the keyboard, so a text field stays in view while typing
     val contentModifier = Modifier
+        .imePadding()
         .verticalScroll(scrollState)
         .padding(bottom = 24.dp)
         .padding(bottomInsetPadding())

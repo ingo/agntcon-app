@@ -17,6 +17,9 @@ import org.jetbrains.kotlinconf.ConferenceInfo
 import org.jetbrains.kotlinconf.GoldenKodeeData
 import org.jetbrains.kotlinconf.NotificationSettings
 import org.jetbrains.kotlinconf.SessionId
+import org.jetbrains.kotlinconf.SpeakerId
+import org.jetbrains.kotlinconf.personal.PersonalNotes
+import org.jetbrains.kotlinconf.personal.SessionRating
 import org.jetbrains.kotlinconf.VoteInfo
 import org.jetbrains.kotlinconf.di.Year
 import org.jetbrains.kotlinconf.di.YearScope
@@ -53,6 +56,9 @@ class YearlyStorageImpl(
     val NOTIFICATION_SETTINGS = key("notificationSettings")
     val VOTES = key("votes")
     val SESSIONIZE_SYNC = key("sessionizeSync")
+    val NOTES = key("notes")
+    val MET_SPEAKERS = key("metSpeakers")
+    val RATINGS = key("ratings")
 
     override fun isPolicySigned(): Flow<Boolean> = settings.getBooleanFlow(POLICY_SIGNED, false)
     override suspend fun setPolicySigned(value: Boolean) = settings.set(POLICY_SIGNED, value)
@@ -68,6 +74,15 @@ class YearlyStorageImpl(
 
     override fun getFavorites(): Flow<Set<SessionId>> = settings.getStringOrNullFlow(FAVORITES).map { it.decodeOrNull<Set<SessionId>>() ?: emptySet() }
     override suspend fun setFavorites(value: Set<SessionId>) = settings.set(FAVORITES, json.encodeToString(value))
+
+    override fun getNotes(): Flow<PersonalNotes> = settings.getStringOrNullFlow(NOTES).map { it.decodeOrNull<PersonalNotes>() ?: PersonalNotes() }
+    override suspend fun setNotes(value: PersonalNotes) = settings.set(NOTES, json.encodeToString(value))
+
+    override fun getMetSpeakers(): Flow<Set<SpeakerId>> = settings.getStringOrNullFlow(MET_SPEAKERS).map { it.decodeOrNull<Set<SpeakerId>>() ?: emptySet() }
+    override suspend fun setMetSpeakers(value: Set<SpeakerId>) = settings.set(MET_SPEAKERS, json.encodeToString(value))
+
+    override fun getRatings(): Flow<Map<String, SessionRating>> = settings.getStringOrNullFlow(RATINGS).map { it.decodeOrNull<Map<String, SessionRating>>() ?: emptyMap() }
+    override suspend fun setRatings(value: Map<String, SessionRating>) = settings.set(RATINGS, json.encodeToString(value))
 
     override fun getNotificationSettings(): Flow<NotificationSettings?> = settings.getStringOrNullFlow(NOTIFICATION_SETTINGS).map { it.decodeOrNull<NotificationSettings>() }
     override suspend fun setNotificationSettings(value: NotificationSettings) = settings.set(NOTIFICATION_SETTINGS, json.encodeToString(value))

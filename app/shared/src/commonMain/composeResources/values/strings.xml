@@ -236,4 +236,59 @@ Please try again.</string>
     <string name="session_starts_on">Starts %1$s at %2$s</string>
     <string name="session_live">Happening now · %1$s left</string>
     <string name="session_ended">This session has ended</string>
+
+    <!-- Notes, ratings, people, companies and export -->
+    <string name="session_add_to_calendar">Add to calendar</string>
+    <string name="session_share">Share session</string>
+    <string name="session_find_on_map">Find on map</string>
+    <string name="session_my_notes">My notes</string>
+    <string name="session_my_notes_hint">Only on this device</string>
+    <string name="session_my_rating">My rating</string>
+    <string name="session_rating_thumb_up">Liked it</string>
+    <string name="session_rating_thumb_down">Not for me</string>
+    <string name="session_takeaway_hint">One-line takeaway</string>
+    <string name="speaker_links">Links</string>
+    <string name="speaker_met">Mark as met</string>
+    <string name="speaker_met_done">Met</string>
+    <string name="speaker_notes_hint">A note about this person. Only on this device</string>
+    <string name="speaker_company_link">More from %1$s</string>
+    <string name="speakers_tab_speakers">Speakers</string>
+    <string name="speakers_tab_companies">Companies</string>
+    <string name="speakers_tab_met">Met</string>
+    <string name="speakers_met_empty">No one yet. Open a speaker and tap “Mark as met” to keep a note and their link here.</string>
+    <string name="companies_showcase_filter">Solutions Showcase</string>
+    <string name="companies_error_no_data">No companies yet.</string>
+    <string name="company_title">Company</string>
+    <string name="company_website">Company website</string>
+    <string name="company_speakers">Speakers</string>
+    <string name="company_sessions">Sessions</string>
+    <string name="company_showcase">In the Solutions Showcase</string>
+    <string name="company_error_not_found">We could not find this company.</string>
+    <string name="my_schedule_add_to_calendar">Add to calendar</string>
+    <string name="my_schedule_share">Share</string>
+    <string name="my_schedule_trip_report">Trip report</string>
+    <string name="export_speakers">Speakers</string>
+    <string name="export_room">Room</string>
+    <string name="export_my_notes">My notes</string>
+    <string name="export_rating">Rating</string>
+    <string name="export_slides">Slides</string>
+    <string name="export_recording">Recording</string>
+    <string name="export_schedule_heading">My schedule</string>
+    <string name="export_trip_report_heading">Trip report</string>
+    <string name="export_people_met">People I met</string>
+    <string name="export_no_sessions">No sessions bookmarked yet</string>
+    <plurals name="companies_number_of_results">
+        <item quantity="one">%1$d company found</item>
+        <item quantity="other">%1$d companies found</item>
+    </plurals>
+    <plurals name="company_session_count">
+        <item quantity="one">%1$d session</item>
+        <item quantity="other">%1$d sessions</item>
+    </plurals>
+    <plurals name="company_showcase_count">
+        <item quantity="one">%1$d talk in the Showcase</item>
+        <item quantity="other">%1$d talks in the Showcase</item>
+    </plurals>
+    <string name="my_schedule_state_live">Happening now</string>
+    <string name="my_schedule_state_past">Ended</string>
 </resources>

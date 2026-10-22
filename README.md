@@ -4,6 +4,8 @@ A conference app for any event that publishes its schedule on [Sessionize](https
 desktop and web from one Kotlin Multiplatform codebase. It is currently set up for
 [AGNTCon + MCPCon North America 2026](https://events.linuxfoundation.org/agntcon-mcpcon-north-america/).
 
+**Project page:** https://muschenetz.com/sessionize-app/ (what the app does, with screenshots, and how to join the TestFlight beta).
+
 ## Credit
 
 This is a fork of the [KotlinConf app](https://github.com/JetBrains/kotlinconf-app) by
@@ -40,6 +42,32 @@ the changes made in this fork are listed below and in the git history.
 - **Sync with the Sessionize web app**: link with the 6-digit code from the event's web app ("Sync favorites") and
   bookmarks stay in step both ways. This uses the same calls as Sessionize's own web app; they are not a documented
   API and may change, in which case the app keeps working from its own bookmarks.
+
+**At the conference: notes, people and sharing** (all of it stays on your device; nothing needs a server)
+
+<p>
+  <img src="docs/screenshots/session-top.png" width="190" alt="Session page with add to calendar, share and find on map">
+  <img src="docs/screenshots/session-rating-notes.png" width="190" alt="A thumbs-up rating, a one-line takeaway and notes on a session">
+  <img src="docs/screenshots/speaker-links.png" width="190" alt="A speaker page with LinkedIn and other links">
+  <img src="docs/screenshots/people-i-met.png" width="190" alt="The people I met, with notes and LinkedIn">
+</p>
+<p>
+  <img src="docs/screenshots/companies-showcase.png" width="190" alt="Companies with a talk in the Solutions Showcase">
+  <img src="docs/screenshots/search-and-map-pin.png" width="190" alt="Search results with a map pin on each room">
+  <img src="docs/screenshots/calendar-export.png" width="190" alt="Calendar tab with add to calendar, share and trip report">
+  <img src="docs/screenshots/share-sheet.png" width="190" alt="The iOS share sheet with the schedule as text">
+</p>
+
+- **Notes** on any session or speaker, **People I met** (mark a speaker as met; the Met tab lists them with your note and
+  their LinkedIn link) and **private ratings** (thumbs up or down and a one-line takeaway; shown for events without
+  their own voting).
+- **Add to calendar** for one session or all your bookmarks (an `.ics` file), **share** a session or your schedule as
+  text, and a **trip report** in Markdown: your sessions in time order with speakers, rating, takeaway, notes, slides and
+  recordings, plus the people you met. It goes through the platform's share sheet.
+- **Companies**: speakers' companies from the feed, searchable, with a **Solutions Showcase** filter to browse exhibitor
+  talks by company; a company filter in the schedule's search; speaker links (LinkedIn, blog, company site).
+- **Better search**: the schedule search also matches session descriptions and speakers' companies, and **Find on map**
+  on a session's room (and a pin on schedule rows) opens the venue map on that room.
 
 **Fixes to the original**
 - Sessions are grouped into their own time slots; a long session (such as all-day registration) no longer swallows the

@@ -20,7 +20,6 @@ object JvmBindings {
     fun provideSettings(): ObservableSettings = createSettings()
 
     @Provides
-    @SingleIn(AppScope::class)
     @FileStorageDir
     fun provideFileStorageDir(): String = "files"
 

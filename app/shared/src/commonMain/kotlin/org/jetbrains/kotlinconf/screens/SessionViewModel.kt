@@ -20,6 +20,8 @@ import org.jetbrains.kotlinconf.ConferenceService
 import org.jetbrains.kotlinconf.SessionCardView
 import org.jetbrains.kotlinconf.SessionId
 import org.jetbrains.kotlinconf.Speaker
+import org.jetbrains.kotlinconf.personal.SessionRating
+import org.jetbrains.kotlinconf.personal.Thumb
 import org.jetbrains.kotlinconf.utils.ErrorLoadingState
 
 @AssistedInject
@@ -40,6 +42,31 @@ class SessionViewModel(
 
     val speakers: StateFlow<List<Speaker>> = service.speakersBySessionId(sessionId)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val note: StateFlow<String> = service.notes
+        .map { it.sessionNote(sessionId) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), service.notes.value.sessionNote(sessionId))
+
+    val rating: StateFlow<SessionRating> = service.ratings
+        .map { it[sessionId.id] ?: SessionRating() }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), service.ratings.value[sessionId.id] ?: SessionRating())
+
+    /** The rooms with a pin on the venue map, to offer "Find on map". */
+    val pinnedRooms: StateFlow<Set<String>> = service.mapData
+        .map { it?.rooms?.keys ?: emptySet() }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), service.mapData.value?.rooms?.keys ?: emptySet())
+
+    fun setNote(text: String) {
+        viewModelScope.launch { service.setSessionNote(sessionId, text) }
+    }
+
+    fun setThumb(thumb: Thumb?) {
+        viewModelScope.launch { service.updateRating(sessionId) { it.copy(thumb = thumb) } }
+    }
+
+    fun setTakeaway(text: String) {
+        viewModelScope.launch { service.updateRating(sessionId) { it.copy(takeaway = text) } }
+    }
 
     fun toggleFavorite(isBookmarked: Boolean) {
         viewModelScope.launch {

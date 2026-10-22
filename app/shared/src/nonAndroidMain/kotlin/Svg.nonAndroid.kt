@@ -2,7 +2,7 @@ package org.jetbrains.kotlinconf.screens
 
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.skiaCanvas
 import io.ktor.utils.io.core.toByteArray
 import org.jetbrains.kotlinconf.event.pngSize
 import org.jetbrains.kotlinconf.event.rasterMapPng
@@ -21,7 +21,7 @@ actual class Svg actual constructor(svgString: String) {
 
     actual fun renderTo(scope: DrawScope) {
         scope.drawIntoCanvas { canvas ->
-            if (raster != null) canvas.nativeCanvas.drawImage(raster, 0f, 0f) else svg?.render(canvas.nativeCanvas)
+            if (raster != null) canvas.skiaCanvas.drawImage(raster, 0f, 0f) else svg?.render(canvas.skiaCanvas)
         }
     }
 }

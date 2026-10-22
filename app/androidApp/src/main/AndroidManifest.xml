@@ -28,6 +28,17 @@
             </intent-filter>
         </activity>
 
+        <!-- Lets the share sheet read the calendar file the app exports (see ShareHandler.android.kt) -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.shareprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/share_file_paths"/>
+        </provider>
+
         <!-- Used by Firebase when it displays push notifications automatically -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"

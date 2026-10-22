@@ -31,6 +31,8 @@ data class EventProfile(
     val venueAddress: String? = null,
     /** A floor plan shipped with the app, for events without a backend; the backend serves its own. */
     val venueMap: VenueMap? = null,
+    /** Sessions in a room whose name contains this are exhibitor talks; the directory lists them by company. */
+    val showcaseRoom: String? = null,
     val social: SocialLinks = SocialLinks(),
     val appStoreUrl: String? = null,
     val playStoreUrl: String? = null,

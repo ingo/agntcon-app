@@ -123,5 +123,6 @@ fun Session.asSessionCard(
         },
         videoUrl = videoUrl,
         slidesUrl = slidesUrl,
+        companies = speakerIds.mapNotNull { speakersById[it]?.company?.takeIf { company -> company.isNotBlank() } }.distinct(),
     )
 }

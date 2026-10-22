@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalWasmJsInterop::class)
+
 package org.jetbrains.kotlinconf
 
 import dev.zacsweers.metro.AppScope
@@ -8,6 +10,7 @@ import web.notifications.Notification
 import web.notifications.NotificationPermission
 import web.notifications.granted
 import web.notifications.requestPermission
+import kotlin.js.ExperimentalWasmJsInterop
 import kotlin.js.js
 
 @SingleIn(AppScope::class)

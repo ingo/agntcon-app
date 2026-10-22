@@ -56,9 +56,11 @@ import org.jetbrains.kotlinconf.ui.generated.resources.action_state_description_
 import org.jetbrains.kotlinconf.ui.generated.resources.bookmark_24
 import org.jetbrains.kotlinconf.ui.generated.resources.bookmark_24_fill
 import org.jetbrains.kotlinconf.ui.generated.resources.lightning_16_fill
+import org.jetbrains.kotlinconf.ui.generated.resources.location_16
 import org.jetbrains.kotlinconf.ui.generated.resources.lightning_talk
 import org.jetbrains.kotlinconf.ui.generated.resources.session_codelab
 import org.jetbrains.kotlinconf.ui.generated.resources.session_education
+import org.jetbrains.kotlinconf.ui.generated.resources.talk_card_find_on_map
 import org.jetbrains.kotlinconf.ui.generated.resources.talk_card_icon_desc_codelab
 import org.jetbrains.kotlinconf.ui.generated.resources.talk_card_icon_desc_education
 import org.jetbrains.kotlinconf.ui.theme.KotlinConfTheme
@@ -112,6 +114,8 @@ fun TalkCard(
     onClick: () -> Unit,
     feedbackContent: (@Composable () -> Unit)?,
     modifier: Modifier = Modifier,
+    /** Shows a pin next to the room that opens it on the venue map; null when the room has no pin. */
+    onFindOnMap: (() -> Unit)? = null,
 ) {
     val backgroundColor by animateColorAsState(
         if (status == TalkStatus.Past) KotlinConfTheme.colors.cardBackgroundPast
@@ -164,6 +168,7 @@ fun TalkCard(
             status = status,
             lightning = lightning,
             time = time,
+            onFindOnMap = onFindOnMap,
         )
         AnimatedVisibility(
             visible = feedbackContent != null,
@@ -353,19 +358,44 @@ private fun TimeBlock(
     status: TalkStatus,
     lightning: Boolean,
     time: String,
+    onFindOnMap: (() -> Unit)?,
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.padding(16.dp)
+        // With a pin the room row is 44dp tall (a full-size tap target) and the card keeps its height
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = if (onFindOnMap != null) 6.dp else 16.dp)
     ) {
-        Text(
-            text = location,
-            style = KotlinConfTheme.typography.text2,
-            color = textColor,
-        )
-
-        Spacer(Modifier.weight(1f))
+        // The room takes the space the time and labels leave, and shrinks before they are cut off
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier
+                .weight(1f)
+                .then(
+                    if (onFindOnMap != null) Modifier
+                        .clip(KotlinConfTheme.shapes.roundedCornerMd)
+                        .clickable(role = Role.Button, onClick = onFindOnMap)
+                        .padding(vertical = 10.dp)
+                    else Modifier
+                ),
+        ) {
+            Text(
+                text = location,
+                style = KotlinConfTheme.typography.text2,
+                color = textColor,
+                modifier = Modifier.weight(1f, fill = false),
+            )
+            if (onFindOnMap != null) {
+                val description = stringResource(UiRes.string.talk_card_find_on_map, location)
+                Icon(
+                    painter = painterResource(UiRes.drawable.location_16),
+                    contentDescription = description,
+                    tint = KotlinConfTheme.colors.accentText,
+                    modifier = Modifier.size(24.dp).padding(4.dp),
+                )
+            }
+        }
 
         if (timeNote != null) {
             Text(

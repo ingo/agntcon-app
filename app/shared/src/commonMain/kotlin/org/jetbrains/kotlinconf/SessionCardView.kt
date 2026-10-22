@@ -22,6 +22,8 @@ data class SessionCardView(
     val startsInMinutes: Int?,
     val videoUrl: String?,
     val slidesUrl: String? = null,
+    /** The speakers' companies, when the event collects them. */
+    val companies: List<String> = emptyList(),
 ) {
     val fullTimeline: String = DateTimeFormatting.dateAndTime(startsAt, endsAt)
     val shortTimeline: String = DateTimeFormatting.timeToTime(startsAt, endsAt)
