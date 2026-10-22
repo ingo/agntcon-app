@@ -53,6 +53,9 @@ xcodebuild archive \
   INFOPLIST_KEY_CFBundleDisplayName="$DISPLAY_NAME" \
   ${EVENT_SETTINGS[@]+"${EVENT_SETTINGS[@]}"}
 
+# Organizer lists archives by this name; it would otherwise show the scheme name
+/usr/libexec/PlistBuddy -c "Set :Name $DISPLAY_NAME" "$ARCHIVE/Info.plist"
+
 echo "Archive: $ARCHIVE"
 
 [[ "$UPLOAD" == "--upload" ]] || exit 0
