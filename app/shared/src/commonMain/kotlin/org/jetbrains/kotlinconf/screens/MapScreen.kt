@@ -32,10 +32,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -172,6 +174,7 @@ private fun MapScreenImpl(
                 val venueAddress = mapData.venueAddress
                 MapWithControls(
                     svg = svg,
+                    marker = room?.takeIf { it.floorIndex == floorIndex }?.let { Offset(it.offsetX, it.offsetY) },
                     initialZoom = mapData.initialZoom * scaleAdjustment,
                     initialOffset = initialOffset.asSvgOffset(svg),
                     zoomRange = (mapData.minZoom * scaleAdjustment)..(mapData.maxZoom * scaleAdjustment),
@@ -207,11 +210,21 @@ fun StaticMap(
         val scaleAdjustment = containerSize.maxWidth / svg.width
         val initialZoom = scaleAdjustment * mapData.initialZoom * 1.5f
 
+        // Keep the room in view without scrolling past the plan's edges, which would show empty space
+        val viewHeight = with(LocalDensity.current) { 400.dp.toPx() }
+        val halfWidth = containerSize.maxWidth / initialZoom / 2 / svg.width
+        val halfHeight = viewHeight / initialZoom / 2 / svg.height
+        val center = Offset(
+            if (halfWidth >= 0.5f) 0.5f else offset.x.coerceIn(halfWidth, 1 - halfWidth),
+            if (halfHeight >= 0.5f) 0.5f else offset.y.coerceIn(halfHeight, 1 - halfHeight),
+        )
+
         Map(
             svg = svg,
-            state = rememberMapState(initialZoom, offset.asSvgOffset(svg)),
+            state = rememberMapState(initialZoom, center.asSvgOffset(svg)),
             modifier = modifier,
             interactive = false,
+            marker = offset,
         )
     }
 }
@@ -243,6 +256,7 @@ private fun rememberMapState(initialZoom: Float, initialOffset: Offset): MapStat
 @Composable
 private fun MapWithControls(
     svg: Svg,
+    marker: Offset?,
     initialZoom: Float,
     initialOffset: Offset,
     zoomRange: ClosedFloatingPointRange<Float>,
@@ -258,6 +272,7 @@ private fun MapWithControls(
             state = state,
             zoomRange = zoomRange,
             interactive = true,
+            marker = marker,
         )
 
         val buttonEdgePadding = 12.dp
@@ -318,7 +333,10 @@ private fun Map(
     modifier: Modifier = Modifier,
     zoomRange: ClosedFloatingPointRange<Float> = 0.5f..5f,
     interactive: Boolean = true,
+    /** A room to mark, as fractions of the floor's width and height. */
+    marker: Offset? = null,
 ) {
+    val markerColor = KotlinConfTheme.colors.accentText
     val scope = rememberCoroutineScope()
     val spec = remember { tween<Float>(500, easing = EaseOutCubic) }
 
@@ -388,6 +406,14 @@ private fun Map(
                 ),
             ) {
                 svg.renderTo(this)
+                if (marker != null) {
+                    // The same size on screen at any zoom
+                    val radius = 7.dp.toPx() / state.scale.value
+                    val center = Offset(svg.width * marker.x, svg.height * marker.y)
+                    drawCircle(markerColor.copy(alpha = 0.25f), radius * 2.4f, center)
+                    drawCircle(Color.White, radius * 1.35f, center)
+                    drawCircle(markerColor, radius, center)
+                }
             }
         }
     }

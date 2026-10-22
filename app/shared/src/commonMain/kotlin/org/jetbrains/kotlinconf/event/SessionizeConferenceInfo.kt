@@ -7,8 +7,8 @@ import org.jetbrains.kotlinconf.sessionize.toTagInfo
 
 /**
  * Conference info for an event without a backend: the about text and venue come from the
- * profile, the schedule filters from the feed's categories. There are no partners, maps or
- * day descriptions; the schedule takes its days from the sessions.
+ * profile, the schedule filters from the feed's categories, the map from the profile's venue map
+ * if it has one. There are no partners or day descriptions; the schedule takes its days from the sessions.
  */
 fun EventProfile.toConferenceInfo(feed: SessionizeData): ConferenceInfo = ConferenceInfo(
     aboutHeader = name,
@@ -18,7 +18,7 @@ fun EventProfile.toConferenceInfo(feed: SessionizeData): ConferenceInfo = Confer
     days = emptyList(),
     aboutBlocks = emptyList(),
     tags = feed.toTagInfo(sessionizeRules),
-    mapData = MapData(
+    mapData = venueMap?.toMapData(feed, venueAddress) ?: MapData(
         venueAddress = venueAddress,
         floors = emptyList(),
         rooms = emptyMap(),
