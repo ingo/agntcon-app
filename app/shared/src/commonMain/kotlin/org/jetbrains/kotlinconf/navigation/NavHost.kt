@@ -47,6 +47,7 @@ import org.jetbrains.kotlinconf.screens.AppPrivacyNotice
 import org.jetbrains.kotlinconf.screens.AppPrivacyNoticePrompt
 import org.jetbrains.kotlinconf.screens.AppTermsOfUse
 import org.jetbrains.kotlinconf.screens.MyScheduleScreen
+import org.jetbrains.kotlinconf.screens.NowScreen
 import org.jetbrains.kotlinconf.screens.SessionizeSyncScreen
 import org.jetbrains.kotlinconf.screens.CodeOfConduct
 import org.jetbrains.kotlinconf.screens.GoldenKodeeFinalistScreen
@@ -113,10 +114,10 @@ internal fun NavHost(
     val skipNotificationsOnboarding = LocalFlags.current.supportsNotifications.not()
     val startRoute = remember {
         when {
-            isOnboardingComplete -> ScheduleScreen
+            isOnboardingComplete -> NowScreen
             // The app privacy notice covers the backend; without one there is nothing to accept
             ActiveEvent.hasBackend -> StartPrivacyNoticeScreen
-            skipNotificationsOnboarding -> ScheduleScreen
+            skipNotificationsOnboarding -> NowScreen
             else -> StartNotificationsScreen
         }
     }
@@ -124,14 +125,15 @@ internal fun NavHost(
     val navState = rememberNavState(
         startRoute = startRoute,
         topLevelRoutes = setOf(
-            ScheduleScreen,
+            NowScreen,
             MyScheduleScreen,
+            ScheduleScreen,
             SpeakersScreen,
             GoldenKodeeScreen,
             MapScreen,
             InfoScreen,
         ),
-        primaryTopLevelRoute = ScheduleScreen,
+        primaryTopLevelRoute = NowScreen,
     )
 
     val topLevelBackEnabled = LocalFlags.current.enableBackOnTopLevelScreens
@@ -261,14 +263,14 @@ private fun EntryProviderScope<AppRoute>.screens(
         AppPrivacyNoticePrompt(
             onRejectNotice = {
                 if (skipNotifications) {
-                    navigator.set(ScheduleScreen)
+                    navigator.set(NowScreen)
                 } else {
                     navigator.set(StartNotificationsScreen)
                 }
             },
             onAcceptNotice = {
                 if (skipNotifications) {
-                    navigator.set(ScheduleScreen)
+                    navigator.set(NowScreen)
                 } else {
                     navigator.set(StartNotificationsScreen)
                 }
@@ -280,7 +282,7 @@ private fun EntryProviderScope<AppRoute>.screens(
     entry<StartNotificationsScreen> {
         StartNotificationsScreen(
             onDone = {
-                navigator.set(ScheduleScreen)
+                navigator.set(NowScreen)
             }
         )
     }
@@ -295,6 +297,14 @@ private fun EntryProviderScope<AppRoute>.screens(
             onPrivacyNoticeNeeded = { navigator.add(AppPrivacyNoticePrompt) },
             tabReselections = navigator.tabReselections(forRoute = ScheduleScreen),
         )
+    }
+
+    entry<NowScreen>(metadata = noAnimationMetadata) {
+        val service: ConferenceService = LocalAppGraph.current.conferenceService
+        LaunchedEffect(Unit) {
+            service.completeOnboarding()
+        }
+        NowScreen(onSession = { navigator.add(SessionScreen(it)) })
     }
 
     entry<SessionizeSyncScreen> {

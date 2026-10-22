@@ -4,7 +4,8 @@
     <string name="navigate_back">Back</string>
 
     <string name="nav_destination_info">Info</string>
-    <string name="nav_destination_my_schedule">My schedule</string>
+    <string name="nav_destination_my_schedule">Calendar</string>
+    <string name="nav_destination_now">Now</string>
     <string name="nav_destination_schedule">Schedule</string>
     <string name="nav_destination_speakers">Speakers</string>
     <string name="nav_destination_map">Map</string>
@@ -173,7 +174,7 @@ Please try again.</string>
     <string name="partners_error">Partner information is not available.</string>
 
     <string name="partner_detail_title">Partner</string>
-    <string name="my_schedule_title">My schedule</string>
+    <string name="my_schedule_title">Calendar</string>
     <string name="my_schedule_summary">Bookmarked: %1$d · Clashes: %2$d</string>
     <string name="my_schedule_all_day">All day</string>
     <string name="my_schedule_clash">Clash</string>
@@ -204,9 +205,7 @@ Please try again.</string>
     <string name="sync_error_code">That code didn’t work. Codes expire after a few minutes; make a new one in the web app.</string>
     <string name="sync_error_network">Couldn’t reach Sessionize. Check your connection and try again.</string>
     <string name="sync_error_expired">The code expired before it was used. Show a new one.</string>
-    <string name="my_schedule_mode_now">Now</string>
-    <string name="my_schedule_mode_day">Day</string>
-    <string name="up_next_now">Now</string>
+    <string name="up_next_now">Happening now</string>
     <string name="up_next_next">Next</string>
     <string name="up_next_later">Later today</string>
     <string name="up_next_earlier">Earlier today: %1$d</string>
@@ -220,4 +219,5 @@ Please try again.</string>
     <string name="up_next_nothing_next">No more bookmarked sessions today.</string>
     <string name="up_next_before_start">The conference starts %1$s. This is your first day.</string>
     <string name="up_next_over">The conference is over. Your days are still under Day.</string>
+    <string name="up_next_clash">Clashes with another bookmarked session</string>
 </resources>

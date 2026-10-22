@@ -19,7 +19,7 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.kotlinconf.ui.generated.resources.UiRes
-import org.jetbrains.kotlinconf.ui.generated.resources.kodee_emotion_neutral
+import org.jetbrains.kotlinconf.ui.generated.resources.person_silhouette
 import org.jetbrains.kotlinconf.ui.theme.KotlinConfTheme
 import org.jetbrains.kotlinconf.ui.theme.PreviewHelper
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -33,6 +33,8 @@ fun SpeakerCard(
     modifier: Modifier = Modifier,
     nameHighlights: List<IntRange> = emptyList(),
     titleHighlights: List<IntRange> = emptyList(),
+    /** Smaller photo and text, for long lists. */
+    compact: Boolean = false,
 ) {
     Row(
         modifier = modifier
@@ -43,19 +45,20 @@ fun SpeakerCard(
     ) {
         SpeakerAvatar(
             photoUrl = photoUrl,
-            modifier = Modifier.size(96.dp),
+            modifier = Modifier.size(if (compact) 56.dp else 96.dp),
         )
         Column {
             Text(
                 text = buildHighlightedString(name, nameHighlights),
-                style = KotlinConfTheme.typography.h3,
+                style = if (compact) KotlinConfTheme.typography.h4 else KotlinConfTheme.typography.h3,
                 color = KotlinConfTheme.colors.primaryText,
             )
-            Spacer(modifier = Modifier.size(6.dp))
+            Spacer(modifier = Modifier.size(if (compact) 2.dp else 6.dp))
             Text(
                 text = buildHighlightedString(title, titleHighlights),
                 style = KotlinConfTheme.typography.text2,
                 color = KotlinConfTheme.colors.secondaryText,
+                maxLines = if (compact) 2 else Int.MAX_VALUE,
             )
         }
     }
@@ -76,7 +79,9 @@ fun SpeakerAvatar(
             .clip(KotlinConfTheme.shapes.roundedCornerMd)
             .background(KotlinConfTheme.colors.tileBackground),
         contentScale = ContentScale.Crop,
-        error = painterResource(UiRes.drawable.kodee_emotion_neutral),
+        // Speakers without a photo, or one that fails to load
+        error = painterResource(UiRes.drawable.person_silhouette),
+        fallback = painterResource(UiRes.drawable.person_silhouette),
     )
 }
 

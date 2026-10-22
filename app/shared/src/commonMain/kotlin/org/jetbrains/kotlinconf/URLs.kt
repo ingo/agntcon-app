@@ -19,7 +19,7 @@ object URLs {
     val BLUESKY: String? get() = ActiveEvent.social.bluesky
 
     // Repository URL
-    const val GITHUB_REPO = "https://github.com/JetBrains/kotlinconf-app"
+    const val GITHUB_REPO = "https://github.com/ingo/sessionize-app"
 
     // App stores
     val PLAY_STORE: String? get() = ActiveEvent.playStoreUrl

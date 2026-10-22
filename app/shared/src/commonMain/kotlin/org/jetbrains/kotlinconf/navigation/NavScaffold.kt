@@ -28,6 +28,9 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import org.jetbrains.kotlinconf.generated.resources.Res
 import org.jetbrains.kotlinconf.generated.resources.calendar_28
+import org.jetbrains.kotlinconf.generated.resources.nav_destination_now
+import org.jetbrains.kotlinconf.generated.resources.schedule_28
+import org.jetbrains.kotlinconf.generated.resources.schedule_28_fill
 import org.jetbrains.kotlinconf.generated.resources.calendar_28_fill
 import org.jetbrains.kotlinconf.generated.resources.nav_destination_my_schedule
 import org.jetbrains.kotlinconf.generated.resources.award_28
@@ -60,16 +63,22 @@ import org.jetbrains.kotlinconf.utils.topInsetPadding
 
 private val bottomNavDestinations: List<MainNavDestination<TopLevelRoute>> = listOf(
     MainNavDestination(
-        label = Res.string.nav_destination_schedule,
+        label = Res.string.nav_destination_now,
         icon = Res.drawable.clock_28,
         iconSelected = Res.drawable.clock_28_fill,
-        route = ScheduleScreen,
+        route = NowScreen,
     ),
     MainNavDestination(
         label = Res.string.nav_destination_my_schedule,
         icon = Res.drawable.calendar_28,
         iconSelected = Res.drawable.calendar_28_fill,
         route = MyScheduleScreen,
+    ),
+    MainNavDestination(
+        label = Res.string.nav_destination_schedule,
+        icon = Res.drawable.schedule_28,
+        iconSelected = Res.drawable.schedule_28_fill,
+        route = ScheduleScreen,
     ),
     MainNavDestination(
         label = Res.string.nav_destination_speakers,

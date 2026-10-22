@@ -158,10 +158,11 @@ fun SpeakersScreen(
                         title = speaker.position,
                         titleHighlights = speakerWithHighlights.titleHighlights,
                         photoUrl = speaker.photoUrl,
+                        compact = true,
                         modifier = Modifier
                             .animateItem()
                             .fillMaxWidth()
-                            .padding(12.dp),
+                            .padding(horizontal = 12.dp, vertical = 6.dp),
                         onClick = { onSpeaker(speaker.id) },
                     )
                 }

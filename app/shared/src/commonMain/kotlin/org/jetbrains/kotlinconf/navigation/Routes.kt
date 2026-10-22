@@ -15,6 +15,10 @@ sealed interface AppRoute
 sealed interface TopLevelRoute : AppRoute
 
 @Serializable
+@SerialName("Now")
+data object NowScreen : AppRoute, TopLevelRoute
+
+@Serializable
 @SerialName("Schedule")
 data object ScheduleScreen : AppRoute, TopLevelRoute
 

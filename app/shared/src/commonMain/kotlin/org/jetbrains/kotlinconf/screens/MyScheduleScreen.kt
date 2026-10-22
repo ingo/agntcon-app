@@ -59,8 +59,6 @@ import org.jetbrains.kotlinconf.generated.resources.my_schedule_bookmark
 import org.jetbrains.kotlinconf.generated.resources.my_schedule_clash
 import org.jetbrains.kotlinconf.generated.resources.my_schedule_close
 import org.jetbrains.kotlinconf.generated.resources.my_schedule_free
-import org.jetbrains.kotlinconf.generated.resources.my_schedule_mode_day
-import org.jetbrains.kotlinconf.generated.resources.my_schedule_mode_now
 import org.jetbrains.kotlinconf.generated.resources.my_schedule_no_sessions
 import org.jetbrains.kotlinconf.generated.resources.my_schedule_summary
 import org.jetbrains.kotlinconf.generated.resources.my_schedule_title
@@ -112,41 +110,6 @@ fun MyScheduleScreen(
     ) {
         MainHeaderTitleBar(title = stringResource(Res.string.my_schedule_title))
         HorizontalDivider(thickness = 1.dp, color = KotlinConfTheme.colors.strokePale)
-
-        // Now: what you're in and what's next; Day: the calendar. During the conference, start on Now.
-        val upNext by viewModel.upNext.collectAsStateWithLifecycle()
-        var showNow by rememberSaveable { mutableStateOf<Boolean?>(null) }
-        val nowMode = showNow ?: (upNext?.day?.date == today)
-        Switcher(
-            items = listOf(stringResource(Res.string.my_schedule_mode_now), stringResource(Res.string.my_schedule_mode_day)),
-            shortItems = null,
-            selectedIndex = if (nowMode) 0 else 1,
-            onSelect = { showNow = it == 0 },
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp).padding(top = 8.dp),
-        )
-        if (nowMode) {
-            var nowFreeWindow by remember { mutableStateOf<Pair<LocalDateTime, LocalDateTime>?>(null) }
-            Box(Modifier.weight(1f).fillMaxWidth().padding(top = 8.dp)) {
-                UpNextContent(
-                    upNext = upNext,
-                    today = today,
-                    onSession = onSession,
-                    onFree = { nowFreeWindow = it.startsAt to it.endsAt },
-                )
-                val window = nowFreeWindow
-                val panelDay = upNext?.day
-                if (window != null && panelDay != null) {
-                    FreeTimePanel(
-                        day = panelDay,
-                        window = window,
-                        onClose = { nowFreeWindow = null },
-                        onSession = onSession,
-                        onBookmark = viewModel::setBookmark,
-                    )
-                }
-            }
-            return@Column
-        }
 
         if (day == null) {
             Text(
@@ -436,7 +399,7 @@ private fun FreeSlot(free: FreeBlock, lines: Int, onClick: () -> Unit, modifier:
 }
 
 @Composable
-private fun BoxScope.FreeTimePanel(
+internal fun BoxScope.FreeTimePanel(
     day: MyScheduleDay,
     window: Pair<LocalDateTime, LocalDateTime>,
     onClose: () -> Unit,

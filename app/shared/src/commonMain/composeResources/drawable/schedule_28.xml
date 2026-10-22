@@ -1,0 +1,13 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="28dp"
+    android:height="28dp"
+    android:viewportWidth="28"
+    android:viewportHeight="28">
+  <!-- Full schedule: a list of sessions -->
+  <path
+      android:pathData="M5.5,6A1.5,1.5 0,1 1,5.5 9A1.5,1.5 0,1 1,5.5 6ZM5.5,12.5A1.5,1.5 0,1 1,5.5 15.5A1.5,1.5 0,1 1,5.5 12.5ZM5.5,19A1.5,1.5 0,1 1,5.5 22A1.5,1.5 0,1 1,5.5 19Z"
+      android:fillColor="#19191C"/>
+  <path
+      android:pathData="M10,6.5H24Q25,6.5 25,7.5Q25,8.5 24,8.5H10Q9,8.5 9,7.5Q9,6.5 10,6.5ZM10,13H24Q25,13 25,14Q25,15 24,15H10Q9,15 9,14Q9,13 10,13ZM10,19.5H24Q25,19.5 25,20.5Q25,21.5 24,21.5H10Q9,21.5 9,20.5Q9,19.5 10,19.5Z"
+      android:fillColor="#19191C"/>
+</vector>

@@ -1,5 +1,12 @@
 package org.jetbrains.kotlinconf.screens
 
+import org.jetbrains.kotlinconf.generated.resources.up_next_clash
+import org.jetbrains.kotlinconf.generated.resources.clash_16
+import org.jetbrains.compose.resources.painterResource
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -74,6 +81,9 @@ internal fun UpNextContent(
             Note(stringResource(Res.string.up_next_over))
             return@Column
         }
+        // Bookmarked sessions that overlap another one get a marker
+        val clashing = upNext.day.booked.filter { it.overlapsWith.isNotEmpty() }.map { it.session.id }.toSet()
+
         if (upNext.day.date != today) {
             Note(stringResource(Res.string.up_next_before_start, DateTimeFormatting.date(upNext.day.date)))
         }
@@ -88,6 +98,7 @@ internal fun UpNextContent(
                 SessionCard(
                     session = session,
                     timeNote = stringResource(Res.string.up_next_min_left, durationText(session.endsAt - upNext.at)),
+                    clash = session.id in clashing,
                     previousLocation = null,
                     onClick = { onSession(session.id) },
                 )
@@ -107,6 +118,7 @@ internal fun UpNextContent(
                 SessionCard(
                     session = session,
                     timeNote = null,
+                    clash = session.id in clashing,
                     previousLocation = comingFrom,
                     onClick = { onSession(session.id) },
                 )
@@ -117,7 +129,7 @@ internal fun UpNextContent(
 
         if (upNext.later.isNotEmpty()) {
             SectionTitle(stringResource(Res.string.up_next_later))
-            upNext.later.forEach { CompactRow(it, onClick = { onSession(it.id) }) }
+            upNext.later.forEach { CompactRow(it, clash = it.id in clashing, onClick = { onSession(it.id) }) }
         }
 
         if (upNext.earlier.isNotEmpty()) {
@@ -128,7 +140,7 @@ internal fun UpNextContent(
                 color = KotlinConfTheme.colors.noteText,
                 modifier = Modifier.clickable { showEarlier = !showEarlier }.padding(vertical = 8.dp),
             )
-            if (showEarlier) upNext.earlier.forEach { CompactRow(it, onClick = { onSession(it.id) }) }
+            if (showEarlier) upNext.earlier.forEach { CompactRow(it, clash = it.id in clashing, onClick = { onSession(it.id) }) }
         }
     }
 }
@@ -155,6 +167,7 @@ private fun Note(text: String, warning: Boolean = false) {
 private fun SessionCard(
     session: SessionCardView,
     timeNote: String?,
+    clash: Boolean,
     previousLocation: String?,
     onClick: () -> Unit,
 ) {
@@ -169,11 +182,14 @@ private fun SessionCard(
             .padding(16.dp),
     ) {
         Text(session.title, style = KotlinConfTheme.typography.h3, maxLines = 3)
-        Text(
-            session.shortTimeline + (timeNote?.let { " · $it" } ?: ""),
-            style = KotlinConfTheme.typography.text2,
-            color = colors.secondaryText,
-        )
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (clash) ClashIcon()
+            Text(
+                session.shortTimeline + (timeNote?.let { " · $it" } ?: ""),
+                style = KotlinConfTheme.typography.text2,
+                color = colors.secondaryText,
+            )
+        }
         // Where to go: the room, and the floor when the event names it
         val level = roomLevel(session.locationLine)
         Text(
@@ -216,17 +232,23 @@ private fun FreeCard(free: FreeBlock, onClick: () -> Unit) {
 }
 
 @Composable
-private fun CompactRow(session: SessionCardView, onClick: () -> Unit) {
+private fun CompactRow(session: SessionCardView, clash: Boolean, onClick: () -> Unit) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 6.dp),
     ) {
-        Text(
-            DateTimeFormatting.time(session.startsAt),
-            style = KotlinConfTheme.typography.text2,
-            color = KotlinConfTheme.colors.noteText,
-            modifier = Modifier.width(48.dp),
-        )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.width(64.dp),
+        ) {
+            Text(
+                DateTimeFormatting.time(session.startsAt),
+                style = KotlinConfTheme.typography.text2,
+                color = KotlinConfTheme.colors.noteText,
+            )
+            if (clash) ClashIcon()
+        }
         Column(Modifier.weight(1f)) {
             Text(session.title, style = KotlinConfTheme.typography.text1, maxLines = 2)
             val level = roomLevel(session.locationLine)
@@ -249,3 +271,15 @@ private fun durationText(duration: Duration): String {
         stringResource(Res.string.up_next_hours_minutes, minutes / 60, minutes % 60)
     }
 }
+
+/** Marks a session that overlaps another bookmarked session. */
+@Composable
+private fun ClashIcon() {
+    Image(
+        painter = painterResource(Res.drawable.clash_16),
+        contentDescription = stringResource(Res.string.up_next_clash),
+        colorFilter = ColorFilter.tint(KotlinConfTheme.colors.orangeText),
+        modifier = Modifier.size(14.dp),
+    )
+}
+
