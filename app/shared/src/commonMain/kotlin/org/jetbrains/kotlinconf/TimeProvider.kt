@@ -50,7 +50,10 @@ class ServerBasedTimeProvider(private val client: ApplicationApi) : TimeProvider
         time.value = now()
 
         while (true) {
-            delay(60_000.milliseconds)
+            // Tick just after each whole minute, so "starts in 1 min" turns into "happening now" at 11:45:00,
+            // not up to a minute later depending on when the app was opened
+            val intoMinute = (Clock.System.now() + offset).toEpochMilliseconds().mod(60_000L)
+            delay((60_000L - intoMinute + 50).milliseconds)
             time.value = now()
         }
     }

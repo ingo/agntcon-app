@@ -78,6 +78,7 @@ fun SessionScreen(
     val sessionState = viewModel.session.collectAsStateWithLifecycle().value
     val speakers = viewModel.speakers.collectAsStateWithLifecycle().value
 
+    val now by viewModel.now.collectAsStateWithLifecycle()
     ErrorLoadingContent(
         state = sessionState,
         errorMessage = stringResource(Res.string.session_screen_error),
@@ -104,9 +105,12 @@ fun SessionScreen(
                 )
             },
             compactContentHeader = {
+                // When it starts, so you can tell at a glance you're at the right session
+                SessionTimingBanner(session, now, Modifier.padding(top = 16.dp))
                 Title(session, viewModel, Modifier.padding(vertical = 24.dp))
             },
             largeContentHeader = {
+                SessionTimingBanner(session, now, Modifier.padding(bottom = 16.dp))
                 Title(session, viewModel, Modifier.padding(bottom = 24.dp))
             },
             unifiedContent = {

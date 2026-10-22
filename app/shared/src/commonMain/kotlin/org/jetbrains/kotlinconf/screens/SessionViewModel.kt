@@ -1,5 +1,7 @@
 package org.jetbrains.kotlinconf.screens
 
+import kotlinx.datetime.LocalDateTime
+import org.jetbrains.kotlinconf.TimeProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.zacsweers.metro.AppScope
@@ -23,8 +25,11 @@ import org.jetbrains.kotlinconf.utils.ErrorLoadingState
 @AssistedInject
 class SessionViewModel(
     private val service: ConferenceService,
+    timeProvider: TimeProvider,
     @Assisted private val sessionId: SessionId,
 ) : ViewModel() {
+    /** The current time in the event's time zone, updated every minute. */
+    val now: StateFlow<LocalDateTime> = timeProvider.time
 
     val session: StateFlow<ErrorLoadingState<SessionCardView>> = service.sessionByIdFlow(sessionId)
         .map { session ->

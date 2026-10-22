@@ -35,6 +35,8 @@ the changes made in this fork are listed below and in the git history.
     (breakout rounds, lunch) with a button to browse the sessions starting then and bookmark them in place.
   - **Now**: during the conference, what you are in and how long is left, what's next and how soon, its room and floor
     (with a hint when you need to change floors), free time before it, and the rest of the day.
+- **Session pages** open with how long until the session starts (or how long is left), its room and floor, highlighted
+  in the last 15 minutes, so you can tell at a glance whether you are in the right room for the right session.
 - **Sync with the Sessionize web app**: link with the 6-digit code from the event's web app ("Sync favorites") and
   bookmarks stay in step both ways. This uses the same calls as Sessionize's own web app; they are not a documented
   API and may change, in which case the app keeps working from its own bookmarks.

@@ -51,6 +51,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.toLocalDateTime
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.kotlinconf.EVENT_TIME_ZONE
 import org.jetbrains.kotlinconf.SessionCardView
@@ -358,7 +359,7 @@ private fun FreeSlot(free: FreeBlock, lines: Int, onClick: () -> Unit, modifier:
     val colors = KotlinConfTheme.colors
     val shape = KotlinConfTheme.shapes.roundedCornerSm
     val canBrowse = free.available.isNotEmpty()
-    val browseLabel = stringResource(Res.string.my_schedule_free_browse, free.available.size)
+    val browseLabel = pluralStringResource(Res.plurals.my_schedule_free_browse, free.available.size, free.available.size)
     val freeLabel = stringResource(Res.string.my_schedule_free, DateTimeFormatting.timeToTime(free.startsAt, free.endsAt))
     val blockModifier = modifier
         .padding(2.dp)
