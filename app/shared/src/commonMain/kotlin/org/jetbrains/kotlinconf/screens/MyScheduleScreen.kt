@@ -329,6 +329,12 @@ private fun Timeline(
             }
         }
 
+        // The red line for the current time. It runs under the session tiles, so it never crosses their
+        // text; the session you are in is outlined instead.
+        nowOffsetMinutes(day, now)?.let { minutes ->
+            NowLine(Modifier.offset(y = MinuteHeight * minutes))
+        }
+
         day.booked.forEach { block ->
             val (top, height) = bookedPlacement.getValue(block)
             val columnWidth = laneWidth / block.columns
@@ -343,22 +349,22 @@ private fun Timeline(
             )
         }
 
-        // The red line for the current time, on top of everything
-        nowOffsetMinutes(day, now)?.let { minutes ->
-            NowLine(Modifier.offset(y = MinuteHeight * minutes).padding(start = GutterWidth - 6.dp))
-        }
+        nowOffsetMinutes(day, now)?.let { minutes -> NowDot(Modifier.offset(y = MinuteHeight * minutes)) }
     }
 }
 
 private val NowLineColor = Color(0xFFE5484D)
 
-/** A red dot at the start of the lane and a line across it, at the current time. */
+/** The line across the lane at the current time; it runs under the session tiles. */
 @Composable
 private fun NowLine(modifier: Modifier = Modifier) {
-    Box(modifier.fillMaxWidth().height(12.dp).offset(y = (-6).dp), contentAlignment = Alignment.CenterStart) {
-        Box(Modifier.fillMaxWidth().height(2.dp).background(NowLineColor))
-        Box(Modifier.size(10.dp).clip(CircleShape).background(NowLineColor))
-    }
+    Box(modifier.padding(start = GutterWidth).fillMaxWidth().height(2.dp).offset(y = (-1).dp).background(NowLineColor))
+}
+
+/** The red dot at the start of the line, on top of the tiles so it stays visible next to the session you are in. */
+@Composable
+private fun NowDot(modifier: Modifier = Modifier) {
+    Box(modifier.padding(start = GutterWidth - 6.dp).size(10.dp).offset(y = (-5).dp).clip(CircleShape).background(NowLineColor))
 }
 
 @Composable
