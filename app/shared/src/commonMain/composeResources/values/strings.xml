@@ -217,7 +217,14 @@ Please try again.</string>
     <string name="up_next_change_floor">Change floors: %1$s → %2$s</string>
     <string name="up_next_nothing_now">Nothing bookmarked right now.</string>
     <string name="up_next_nothing_next">No more bookmarked sessions today.</string>
-    <string name="up_next_before_start">The conference starts %1$s. This is your first day.</string>
-    <string name="up_next_over">The conference is over. Your days are still under Day.</string>
     <string name="up_next_clash">Clashes with another bookmarked session</string>
+    <string name="now_good_morning">Good morning</string>
+    <string name="now_good_afternoon">Good afternoon</string>
+    <string name="now_good_evening">Good evening</string>
+    <string name="now_welcome_hint">Bookmark the sessions you want to see. They’ll show up here, with where to go next.</string>
+    <string name="now_before">%1$s starts %2$s. Here’s how your first day looks.</string>
+    <string name="now_between">Nothing on today. Next up: %1$s.</string>
+    <string name="now_after">Thanks for coming to %1$s!</string>
+    <string name="now_on_now">On now</string>
+    <string name="now_starting_next">Starting next · %1$s</string>
 </resources>

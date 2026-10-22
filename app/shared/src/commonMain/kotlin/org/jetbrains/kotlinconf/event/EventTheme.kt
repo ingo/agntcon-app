@@ -30,12 +30,12 @@ class EventTheme(
 
 /** The conference's logo mark, in the accent color on light backgrounds and white on dark ones. */
 @Composable
-fun EventLogo(theme: EventTheme, size: Dp, modifier: Modifier = Modifier) {
+fun EventLogo(theme: EventTheme, size: Dp, modifier: Modifier = Modifier, tint: Color? = null) {
     val colors = KotlinConfTheme.colors
     Image(
         painter = painterResource(theme.mark),
         contentDescription = null,
-        colorFilter = ColorFilter.tint(if (colors.isDark) colors.primaryText else colors.primaryBackground),
+        colorFilter = ColorFilter.tint(tint ?: if (colors.isDark) colors.primaryText else colors.primaryBackground),
         modifier = modifier.size(size),
     )
 }

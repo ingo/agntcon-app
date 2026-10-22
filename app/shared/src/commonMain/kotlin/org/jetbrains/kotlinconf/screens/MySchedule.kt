@@ -188,10 +188,14 @@ internal fun splitAtBreaks(
     return pieces
 }
 
+/** Where the current moment sits relative to the conference. */
+enum class ConferenceMoment { Today, BeforeConference, BetweenDays }
+
 /** "What's up now": the bookmarked sessions of the current conference day, seen from [UpNext.at]. */
 data class UpNext(
     val day: MyScheduleDay,
     val at: LocalDateTime,
+    val moment: ConferenceMoment,
     /** Bookmarked sessions in progress (more than one means a clash to resolve). */
     val current: List<SessionCardView>,
     /** The next bookmarked session(s): the earliest start after [at], with any that overlap it. */
@@ -200,17 +204,29 @@ data class UpNext(
     val freeBeforeNext: FreeBlock?,
     val later: List<SessionCardView>,
     val earlier: List<SessionCardView>,
-)
+    /** All sessions in progress at [at], bookmarked or not. */
+    val happening: List<SessionCardView>,
+    /** All sessions of the next start time after [at]: the next round. */
+    val startingNext: List<SessionCardView>,
+) {
+    /** Nothing bookmarked on this day at all. */
+    val nothingBookmarked: Boolean get() = current.isEmpty() && next.isEmpty() && later.isEmpty() && earlier.isEmpty()
+}
 
 /**
- * The day to look at: today during the conference, the first day before it, null after it.
- * Before the conference, the view starts at the beginning of the first day.
+ * The day to look at: today during the conference, otherwise the next conference day (before the
+ * conference or between its days), viewed from that day's start. Null after the conference.
  */
 fun upNext(days: List<MyScheduleDay>, now: LocalDateTime): UpNext? {
     val day = days.find { it.date == now.date }
-        ?: days.firstOrNull()?.takeIf { now.date < it.date }
+        ?: days.firstOrNull { it.date > now.date }
         ?: return null
-    val at = if (day.date == now.date) now else day.startsAt
+    val moment = when {
+        day.date == now.date -> ConferenceMoment.Today
+        days.first().date > now.date -> ConferenceMoment.BeforeConference
+        else -> ConferenceMoment.BetweenDays
+    }
+    val at = if (moment == ConferenceMoment.Today) now else day.startsAt
     val booked = day.booked.map { it.session }.sortedWith(compareBy({ it.startsAt }, { it.endsAt }))
 
     val current = booked.filter { it.startsAt <= at && at < it.endsAt }
@@ -225,14 +241,19 @@ fun upNext(days: List<MyScheduleDay>, now: LocalDateTime): UpNext? {
         free.endsAt > freeFrom && (first == null || free.startsAt < first.startsAt) && free.available.any { it.startsAt >= at }
     }?.let { free -> free.copy(available = free.available.filter { it.startsAt >= at }) }
 
+    val nextRound = day.sessions.filter { it.startsAt > at }.minOfOrNull { it.startsAt }
+
     return UpNext(
         day = day,
         at = at,
+        moment = moment,
         current = current,
         next = next,
         freeBeforeNext = freeBeforeNext,
         later = later,
         earlier = booked.filter { it.endsAt <= at },
+        happening = day.sessions.filter { it.startsAt <= at && at < it.endsAt },
+        startingNext = day.sessions.filter { it.startsAt == nextRound },
     )
 }
 

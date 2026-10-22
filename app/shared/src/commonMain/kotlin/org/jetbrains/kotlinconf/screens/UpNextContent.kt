@@ -1,5 +1,20 @@
 package org.jetbrains.kotlinconf.screens
 
+import org.jetbrains.kotlinconf.generated.resources.now_starting_next
+import org.jetbrains.kotlinconf.generated.resources.now_on_now
+import org.jetbrains.kotlinconf.generated.resources.now_after
+import org.jetbrains.kotlinconf.generated.resources.now_between
+import org.jetbrains.kotlinconf.generated.resources.now_before
+import org.jetbrains.kotlinconf.generated.resources.now_welcome_hint
+import org.jetbrains.kotlinconf.generated.resources.now_good_evening
+import org.jetbrains.kotlinconf.generated.resources.now_good_afternoon
+import org.jetbrains.kotlinconf.generated.resources.now_good_morning
+import org.jetbrains.kotlinconf.generated.resources.my_schedule_bookmark
+import org.jetbrains.kotlinconf.ui.generated.resources.bookmark_24
+import org.jetbrains.kotlinconf.ui.generated.resources.UiRes
+import org.jetbrains.kotlinconf.ui.components.TopMenuButton
+import org.jetbrains.kotlinconf.event.EventLogo
+import org.jetbrains.kotlinconf.event.ActiveEvent
 import org.jetbrains.kotlinconf.generated.resources.up_next_clash
 import org.jetbrains.kotlinconf.generated.resources.clash_16
 import org.jetbrains.compose.resources.painterResource
@@ -28,14 +43,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.kotlinconf.SessionCardView
 import org.jetbrains.kotlinconf.SessionId
 import org.jetbrains.kotlinconf.generated.resources.Res
 import org.jetbrains.kotlinconf.generated.resources.my_schedule_free
 import org.jetbrains.kotlinconf.generated.resources.my_schedule_free_browse
-import org.jetbrains.kotlinconf.generated.resources.up_next_before_start
 import org.jetbrains.kotlinconf.generated.resources.up_next_change_floor
 import org.jetbrains.kotlinconf.generated.resources.up_next_earlier
 import org.jetbrains.kotlinconf.generated.resources.up_next_hours_minutes
@@ -46,7 +60,6 @@ import org.jetbrains.kotlinconf.generated.resources.up_next_next
 import org.jetbrains.kotlinconf.generated.resources.up_next_nothing_next
 import org.jetbrains.kotlinconf.generated.resources.up_next_nothing_now
 import org.jetbrains.kotlinconf.generated.resources.up_next_now
-import org.jetbrains.kotlinconf.generated.resources.up_next_over
 import org.jetbrains.kotlinconf.generated.resources.up_next_pick_one
 import org.jetbrains.kotlinconf.generated.resources.up_next_starts_in
 import org.jetbrains.kotlinconf.minus
@@ -63,9 +76,10 @@ import kotlin.time.Duration
 @Composable
 internal fun UpNextContent(
     upNext: UpNext?,
-    today: LocalDate,
+    now: LocalDateTime,
     onSession: (SessionId) -> Unit,
     onFree: (FreeBlock) -> Unit,
+    onBookmark: (SessionId, Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -77,16 +91,25 @@ internal fun UpNextContent(
             .padding(bottomInsetPadding())
             .padding(bottom = 24.dp),
     ) {
-        if (upNext == null) {
-            Note(stringResource(Res.string.up_next_over))
+        GreetingCard(upNext, now)
+        if (upNext == null) return@Column
+
+        if (upNext.nothingBookmarked) {
+            // Nothing planned yet: what's going on across the conference, to pick from
+            if (upNext.happening.isNotEmpty()) {
+                SectionTitle(stringResource(Res.string.now_on_now))
+                upNext.happening.forEach { BrowseRow(it, onSession, onBookmark) }
+            }
+            val nextRound = upNext.startingNext.firstOrNull()
+            if (nextRound != null) {
+                SectionTitle(stringResource(Res.string.now_starting_next, DateTimeFormatting.time(nextRound.startsAt)))
+                upNext.startingNext.forEach { BrowseRow(it, onSession, onBookmark) }
+            }
             return@Column
         }
+
         // Bookmarked sessions that overlap another one get a marker
         val clashing = upNext.day.booked.filter { it.overlapsWith.isNotEmpty() }.map { it.session.id }.toSet()
-
-        if (upNext.day.date != today) {
-            Note(stringResource(Res.string.up_next_before_start, DateTimeFormatting.date(upNext.day.date)))
-        }
 
         // What's on now; a gap shows as free time instead
         SectionTitle(stringResource(Res.string.up_next_now) + " · " + DateTimeFormatting.time(upNext.at))
@@ -281,5 +304,85 @@ private fun ClashIcon() {
         colorFilter = ColorFilter.tint(KotlinConfTheme.colors.orangeText),
         modifier = Modifier.size(14.dp),
     )
+}
+
+/** A friendly welcome: greeting, the event, and where the day stands. */
+@Composable
+private fun GreetingCard(upNext: UpNext?, now: LocalDateTime) {
+    val white = KotlinConfTheme.colors.primaryTextWhiteFixed
+    val event = ActiveEvent
+    val greeting = when (now.hour) {
+        in 0..11 -> Res.string.now_good_morning
+        in 12..16 -> Res.string.now_good_afternoon
+        else -> Res.string.now_good_evening
+    }
+    val status: String? = when {
+        upNext == null -> stringResource(Res.string.now_after, event.name)
+        upNext.moment == ConferenceMoment.BeforeConference ->
+            stringResource(Res.string.now_before, event.name, DateTimeFormatting.weekdayDate(upNext.day.date))
+        upNext.moment == ConferenceMoment.BetweenDays ->
+            stringResource(Res.string.now_between, DateTimeFormatting.weekdayDate(upNext.day.date))
+        else -> null
+    }
+
+    Column(
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 4.dp)
+            .clip(KotlinConfTheme.shapes.roundedCornerMd)
+            .background(KotlinConfTheme.colors.headerGradient)
+            .padding(20.dp),
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
+            event.theme?.let { EventLogo(it, size = 44.dp, tint = white) }
+            Column {
+                Text(stringResource(greeting), style = KotlinConfTheme.typography.h2, color = white)
+                Text(
+                    DateTimeFormatting.weekdayDate(now.date) + " · " + DateTimeFormatting.time(now),
+                    style = KotlinConfTheme.typography.text2,
+                    color = white.copy(alpha = 0.8f),
+                )
+            }
+        }
+        Text(event.name, style = KotlinConfTheme.typography.text1, color = white, modifier = Modifier.padding(top = 6.dp))
+        if (status != null) {
+            Text(status, style = KotlinConfTheme.typography.text2, color = white.copy(alpha = 0.9f))
+        }
+        if (upNext != null && upNext.nothingBookmarked) {
+            Text(stringResource(Res.string.now_welcome_hint), style = KotlinConfTheme.typography.text2, color = white.copy(alpha = 0.9f))
+        }
+    }
+}
+
+/** A session to pick, with a bookmark button. */
+@Composable
+private fun BrowseRow(session: SessionCardView, onSession: (SessionId) -> Unit, onBookmark: (SessionId, Boolean) -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(KotlinConfTheme.shapes.roundedCornerMd)
+            .background(KotlinConfTheme.colors.tileBackground)
+            .clickable { onSession(session.id) }
+            .padding(start = 16.dp, end = 4.dp, top = 10.dp, bottom = 10.dp),
+    ) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(session.title, style = KotlinConfTheme.typography.text1, maxLines = 2)
+            val level = roomLevel(session.locationLine)
+            Text(
+                session.shortTimeline + " · " + roomName(session.locationLine) + (level?.let { " · $it" } ?: ""),
+                style = KotlinConfTheme.typography.text2,
+                color = KotlinConfTheme.colors.noteText,
+                maxLines = 1,
+            )
+        }
+        TopMenuButton(
+            icon = UiRes.drawable.bookmark_24,
+            contentDescription = stringResource(Res.string.my_schedule_bookmark),
+            selected = session.isFavorite,
+            onToggle = { onBookmark(session.id, it) },
+        )
+    }
 }
 

@@ -62,8 +62,36 @@ class UpNextTest {
     fun beforeTheConferenceShowsTheFirstDayFromItsStart() {
         val now = LocalDateTime.parse("2026-10-01T09:00")
         val upNext = upNext(buildMySchedule(conference.buildAgenda(favorites, emptyList(), now)), now)!!
+        assertEquals(ConferenceMoment.BeforeConference, upNext.moment)
         assertEquals(LocalDateTime.parse("2026-10-22T10:00"), upNext.at)
         assertEquals(listOf("a"), upNext.current.ids())
+    }
+
+    @Test
+    fun withNothingBookmarkedShowsWhatIsOnAndTheNextRound() {
+        val now = LocalDateTime.parse("2026-10-22T10:20")
+        val upNext = upNext(buildMySchedule(conference.buildAgenda(emptySet(), emptyList(), now)), now)!!
+        assertEquals(true, upNext.nothingBookmarked)
+        assertEquals(listOf("a"), upNext.happening.ids())
+        // b and c both start at 11:00
+        assertEquals(setOf("b", "c"), upNext.startingNext.ids().toSet())
+    }
+
+    @Test
+    fun betweenConferenceDaysShowsTheNextDay() {
+        val twoDays = Conference(
+            listOf(
+                session("a", "10:00", "10:45"),
+                Session(
+                    id = SessionId("z"), title = "z", description = "", speakerIds = emptyList(), location = "Room",
+                    startsAt = LocalDateTime.parse("2026-10-24T09:00"), endsAt = LocalDateTime.parse("2026-10-24T09:30"),
+                ),
+            )
+        )
+        val now = LocalDateTime.parse("2026-10-23T12:00")
+        val upNext = upNext(buildMySchedule(twoDays.buildAgenda(emptySet(), emptyList(), now)), now)!!
+        assertEquals(ConferenceMoment.BetweenDays, upNext.moment)
+        assertEquals("2026-10-24", upNext.day.date.toString())
     }
 
     @Test

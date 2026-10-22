@@ -13,6 +13,7 @@ import kotlinx.coroutines.launch
 import org.jetbrains.kotlinconf.ConferenceService
 import org.jetbrains.kotlinconf.TimeProvider
 import kotlinx.coroutines.flow.combine
+import kotlinx.datetime.LocalDateTime
 import org.jetbrains.kotlinconf.SessionId
 
 @ContributesIntoMap(AppScope::class)
@@ -24,6 +25,9 @@ class MyScheduleViewModel(
     val days: StateFlow<List<MyScheduleDay>> = service.agenda
         .map(::buildMySchedule)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), buildMySchedule(service.agenda.value))
+
+    /** The current time in the event's time zone, updated every minute. */
+    val now: StateFlow<LocalDateTime> = timeProvider.time
 
     /** "What's up now", following the clock (null after the conference). */
     val upNext: StateFlow<UpNext?> = combine(days, timeProvider.time) { days, now -> upNext(days, now) }

@@ -217,7 +217,14 @@ Bitte versuchen Sie es erneut.</string>
     <string name="up_next_change_floor">Etage wechseln: %1$s → %2$s</string>
     <string name="up_next_nothing_now">Gerade ist nichts gemerkt.</string>
     <string name="up_next_nothing_next">Heute ist nichts weiter gemerkt.</string>
-    <string name="up_next_before_start">Die Konferenz beginnt am %1$s. Das ist dein erster Tag.</string>
-    <string name="up_next_over">Die Konferenz ist vorbei. Deine Tage findest du unter Tag.</string>
     <string name="up_next_clash">Überschneidet sich mit einer anderen gemerkten Session</string>
+    <string name="now_good_morning">Guten Morgen</string>
+    <string name="now_good_afternoon">Guten Tag</string>
+    <string name="now_good_evening">Guten Abend</string>
+    <string name="now_welcome_hint">Merke dir die Sessions, die du sehen willst. Sie erscheinen hier, mit dem Weg zur nächsten.</string>
+    <string name="now_before">%1$s beginnt am %2$s. So sieht dein erster Tag aus.</string>
+    <string name="now_between">Heute ist nichts geplant. Weiter geht es am %1$s.</string>
+    <string name="now_after">Danke, dass du bei %1$s warst!</string>
+    <string name="now_on_now">Läuft gerade</string>
+    <string name="now_starting_next">Beginnt als Nächstes · %1$s</string>
 </resources>
