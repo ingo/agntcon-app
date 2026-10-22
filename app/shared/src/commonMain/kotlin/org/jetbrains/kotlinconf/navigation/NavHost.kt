@@ -41,6 +41,7 @@ import org.jetbrains.kotlinconf.SessionId
 import org.jetbrains.kotlinconf.ThemeChangeAnimation
 import org.jetbrains.kotlinconf.URLs
 import org.jetbrains.kotlinconf.flags.LocalFlags
+import org.jetbrains.kotlinconf.screens.MyScheduleScreen
 import org.jetbrains.kotlinconf.screens.AboutAppScreen
 import org.jetbrains.kotlinconf.screens.AboutConference
 import org.jetbrains.kotlinconf.screens.AppPrivacyNotice
@@ -290,7 +291,15 @@ private fun EntryProviderScope<AppRoute>.screens(
         ScheduleScreen(
             onSession = { navigator.add(SessionScreen(it)) },
             onPrivacyNoticeNeeded = { navigator.add(AppPrivacyNoticePrompt) },
+            onMySchedule = { navigator.add(MyScheduleScreen) },
             tabReselections = navigator.tabReselections(forRoute = ScheduleScreen),
+        )
+    }
+
+    entry<MyScheduleScreen> {
+        MyScheduleScreen(
+            onBack = onBack,
+            onSession = { navigator.add(SessionScreen(it)) },
         )
     }
 

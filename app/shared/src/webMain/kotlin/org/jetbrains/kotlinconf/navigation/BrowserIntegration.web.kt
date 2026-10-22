@@ -44,6 +44,7 @@ private fun AppRoute.toBrowserHistoryFragment() = when (val key = this) {
     TermsOfUseScreen -> buildBrowserHistoryFragment("terms_of_use")
     VisitorPrivacyNoticeScreen -> buildBrowserHistoryFragment("visitor_privacy_notice")
     ScheduleScreen -> buildBrowserHistoryFragment("schedule")
+    MyScheduleScreen -> buildBrowserHistoryFragment("my_schedule")
     SpeakersScreen -> buildBrowserHistoryFragment("speakers")
     MapScreen -> buildBrowserHistoryFragment("map")
     InfoScreen -> buildBrowserHistoryFragment("info")
@@ -111,6 +112,7 @@ actual fun BrowserIntegration(navState: NavState) {
                     "terms_of_use" -> TermsOfUseScreen
                     "visitor_privacy_notice" -> VisitorPrivacyNoticeScreen
                     "schedule" -> ScheduleScreen
+                    "my_schedule" -> MyScheduleScreen
                     "speakers" -> SpeakersScreen
                     "map" -> MapScreen
                     "info" -> InfoScreen

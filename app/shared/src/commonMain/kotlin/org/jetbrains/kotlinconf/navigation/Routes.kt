@@ -98,6 +98,10 @@ data object PartnersScreen : AppRoute
 data class PartnerDetailScreen(val partnerId: PartnerId) : AppRoute
 
 @Serializable
+@SerialName("MySchedule")
+data object MyScheduleScreen : AppRoute
+
+@Serializable
 @SerialName("Session")
 data class SessionScreen(
     val sessionId: SessionId,

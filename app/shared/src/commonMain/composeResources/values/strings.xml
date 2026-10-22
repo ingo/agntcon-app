@@ -172,4 +172,14 @@ Please try again.</string>
     <string name="partners_error">Partner information is not available.</string>
 
     <string name="partner_detail_title">Partner</string>
+    <string name="my_schedule_title">My schedule</string>
+    <string name="my_schedule_action">My schedule</string>
+    <string name="my_schedule_summary">Bookmarked: %1$d · Clashes: %2$d</string>
+    <string name="my_schedule_all_day">All day</string>
+    <string name="my_schedule_clash">Clash</string>
+    <string name="my_schedule_free">Free %1$s</string>
+    <string name="my_schedule_free_fits">Sessions that fit: %1$d</string>
+    <string name="my_schedule_no_sessions">No sessions on this day.</string>
+    <string name="my_schedule_close">Close</string>
+    <string name="my_schedule_bookmark">Bookmark</string>
 </resources>
