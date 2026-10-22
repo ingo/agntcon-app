@@ -2,6 +2,7 @@ package org.jetbrains.kotlinconf
 
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
+import org.jetbrains.kotlinconf.screens.minutesUntil
 import org.jetbrains.kotlinconf.utils.DateTimeFormatting
 
 data class Day(
@@ -117,7 +118,7 @@ fun Session.asSessionCard(
         vote = vote?.score,
         description = description,
         tags = tags?.toSet() ?: emptySet(),
-        startsInMinutes = (startsAt - now).inWholeMinutes.toInt().let { diff ->
+        startsInMinutes = minutesUntil(startsAt, now).let { diff ->
             if (diff in 1..30) diff else null
         },
         videoUrl = videoUrl,

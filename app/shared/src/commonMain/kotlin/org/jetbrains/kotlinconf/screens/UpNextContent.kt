@@ -44,6 +44,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import kotlinx.datetime.LocalDateTime
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.kotlinconf.SessionCardView
 import org.jetbrains.kotlinconf.SessionId
@@ -249,7 +250,7 @@ private fun FreeCard(free: FreeBlock, onClick: () -> Unit) {
             color = colors.noteText,
         )
         if (free.available.isNotEmpty()) {
-            BrowsePill(stringResource(Res.string.my_schedule_free_browse, free.available.size))
+            BrowsePill(pluralStringResource(Res.plurals.my_schedule_free_browse, free.available.size, free.available.size))
         }
     }
 }
@@ -286,7 +287,7 @@ private fun CompactRow(session: SessionCardView, clash: Boolean, onClick: () -> 
 }
 
 @Composable
-private fun durationText(duration: Duration): String {
+internal fun durationText(duration: Duration): String {
     val minutes = duration.inWholeMinutes.coerceAtLeast(0).toInt()
     return if (minutes < 60) {
         stringResource(Res.string.up_next_minutes, minutes)

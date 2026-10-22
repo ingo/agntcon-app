@@ -1,5 +1,7 @@
 package org.jetbrains.kotlinconf.screens
 
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.ui.geometry.Size
 import org.jetbrains.kotlinconf.generated.resources.my_schedule_free_browse
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.geometry.CornerRadius
@@ -49,6 +51,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.toLocalDateTime
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.kotlinconf.EVENT_TIME_ZONE
 import org.jetbrains.kotlinconf.SessionCardView
@@ -60,7 +63,8 @@ import org.jetbrains.kotlinconf.generated.resources.my_schedule_clash
 import org.jetbrains.kotlinconf.generated.resources.my_schedule_close
 import org.jetbrains.kotlinconf.generated.resources.my_schedule_free
 import org.jetbrains.kotlinconf.generated.resources.my_schedule_no_sessions
-import org.jetbrains.kotlinconf.generated.resources.my_schedule_summary
+import org.jetbrains.kotlinconf.generated.resources.my_schedule_bookmarked
+import org.jetbrains.kotlinconf.generated.resources.my_schedule_clashes
 import org.jetbrains.kotlinconf.generated.resources.my_schedule_title
 import org.jetbrains.kotlinconf.generated.resources.sync_my_schedule_link
 import org.jetbrains.kotlinconf.generated.resources.sync_my_schedule_linked
@@ -127,23 +131,32 @@ fun MyScheduleScreen(
             onSelect = { index -> selectedDate = days[index].date.toString() },
             modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
         )
-        Text(
-            stringResource(Res.string.my_schedule_summary, day.booked.size + day.allDay.size, day.clashCount),
-            style = KotlinConfTheme.typography.text2,
-            color = if (day.clashCount > 0) KotlinConfTheme.colors.orangeText else KotlinConfTheme.colors.noteText,
-            modifier = Modifier.padding(horizontal = 12.dp).padding(bottom = 8.dp),
-        )
-        if (onSync != null) {
-            val linked = viewModel.syncLinked.collectAsStateWithLifecycle().value
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp).padding(bottom = 8.dp),
+        ) {
             Text(
-                stringResource(if (linked) Res.string.sync_my_schedule_linked else Res.string.sync_my_schedule_link),
+                stringResource(Res.string.my_schedule_bookmarked, day.booked.size + day.allDay.size),
                 style = KotlinConfTheme.typography.text2,
-                color = KotlinConfTheme.colors.accentText,
-                modifier = Modifier
-                    .padding(horizontal = 12.dp)
-                    .clickable(onClick = onSync)
-                    .padding(bottom = 8.dp),
+                color = KotlinConfTheme.colors.noteText,
             )
+            if (day.clashCount > 0) {
+                Text(
+                    " · " + stringResource(Res.string.my_schedule_clashes, day.clashCount),
+                    style = KotlinConfTheme.typography.text2,
+                    color = KotlinConfTheme.colors.orangeText,
+                )
+            }
+            Spacer(Modifier.weight(1f))
+            if (onSync != null) {
+                val linked = viewModel.syncLinked.collectAsStateWithLifecycle().value
+                Text(
+                    stringResource(if (linked) Res.string.sync_my_schedule_linked else Res.string.sync_my_schedule_link),
+                    style = KotlinConfTheme.typography.text2,
+                    color = KotlinConfTheme.colors.accentText,
+                    modifier = Modifier.clickable(onClick = onSync),
+                )
+            }
         }
 
         Box(Modifier.weight(1f).fillMaxWidth()) {
@@ -253,7 +266,7 @@ private fun Timeline(
                 modifier = Modifier.offset(y = y - 8.dp),
             )
             HourLine(
-                color = KotlinConfTheme.colors.strokeHalf,
+                color = KotlinConfTheme.colors.strokePale,
                 modifier = Modifier.padding(start = GutterWidth).offset(y = y),
             )
         }
@@ -303,19 +316,23 @@ private fun BookedSlot(block: BookedBlock, lines: Int, onClick: () -> Unit, modi
     val titleLines = if (lines >= 3) 2 else 1
     val showClashLabel = clash && lines >= titleLines + 2
     val shape = KotlinConfTheme.shapes.roundedCornerSm
+    val colors = KotlinConfTheme.colors
+    // A calm tile with a colored stripe; only clashes get an outline
+    val accent = when {
+        clash -> colors.orangeText
+        colors.isDark -> colors.accentText
+        else -> colors.primaryBackground
+    }
     Column(
         modifier
-            .padding(2.dp)
+            .padding(horizontal = 2.dp, vertical = 1.dp)
             .clip(shape)
-            .background(KotlinConfTheme.colors.mainBackground)
-            .background(KotlinConfTheme.colors.tileBackground)
-            .border(
-                width = if (clash) 2.dp else 1.dp,
-                color = if (clash) KotlinConfTheme.colors.orangeText else KotlinConfTheme.colors.strokeHalf,
-                shape = shape,
-            )
+            .background(colors.mainBackground)
+            .background(if (clash) colors.orangeText.copy(alpha = 0.08f) else colors.tileBackground)
+            .then(if (clash) Modifier.border(1.5.dp, colors.orangeText, shape) else Modifier)
+            .drawBehind { drawRect(accent, size = Size(3.dp.toPx(), size.height)) }
             .clickable(onClick = onClick)
-            .padding(horizontal = 8.dp, vertical = BlockVerticalPadding)
+            .padding(start = 10.dp, end = 8.dp, top = BlockVerticalPadding, bottom = BlockVerticalPadding)
     ) {
         Text(block.session.title, style = KotlinConfTheme.typography.text2, maxLines = titleLines)
         if (showTime) {
@@ -342,34 +359,20 @@ private fun FreeSlot(free: FreeBlock, lines: Int, onClick: () -> Unit, modifier:
     val colors = KotlinConfTheme.colors
     val shape = KotlinConfTheme.shapes.roundedCornerSm
     val canBrowse = free.available.isNotEmpty()
-    val browseLabel = stringResource(Res.string.my_schedule_free_browse, free.available.size)
+    val browseLabel = pluralStringResource(Res.plurals.my_schedule_free_browse, free.available.size, free.available.size)
     val freeLabel = stringResource(Res.string.my_schedule_free, DateTimeFormatting.timeToTime(free.startsAt, free.endsAt))
     val blockModifier = modifier
         .padding(2.dp)
         .clip(shape)
-        // Solid, so the dotted hour lines don't run through it
-        .background(colors.mainBackground)
-        // Dashed: an open slot, not a session
-        .drawBehind {
-            drawRoundRect(
-                color = colors.strokeHalf,
-                cornerRadius = CornerRadius(8.dp.toPx()),
-                style = Stroke(
-                    width = 1.dp.toPx(),
-                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(4.dp.toPx(), 3.dp.toPx())),
-                ),
-            )
-        }
+        // No box: open time is just the timeline with a way to fill it
         .clickable(enabled = canBrowse, onClick = onClick)
         .padding(horizontal = 8.dp, vertical = BlockVerticalPadding)
 
     if (lines < 2) {
         // One line: time and link side by side
         Row(blockModifier, horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(freeLabel, style = KotlinConfTheme.typography.text2, color = colors.noteText, maxLines = 1)
-            if (canBrowse) {
-                Text("$browseLabel  →", style = KotlinConfTheme.typography.text2, color = colors.accentText, maxLines = 1)
-            }
+            Text(freeLabel, style = KotlinConfTheme.typography.text2, color = colors.noteText, maxLines = 1, modifier = Modifier.background(colors.mainBackground))
+            if (canBrowse) BrowsePill(browseLabel, compact = true)
         }
         return
     }
@@ -379,20 +382,14 @@ private fun FreeSlot(free: FreeBlock, lines: Int, onClick: () -> Unit, modifier:
             style = KotlinConfTheme.typography.text2,
             color = colors.noteText,
             maxLines = 1,
-            modifier = Modifier.align(Alignment.TopStart),
+            modifier = Modifier.align(Alignment.TopStart).background(colors.mainBackground),
         )
         if (canBrowse) {
             if (lines >= 3) {
                 // Centered in the open space below the time
                 BrowsePill(browseLabel, Modifier.align(Alignment.Center).padding(top = 12.dp))
             } else {
-                Text(
-                    "$browseLabel  →",
-                    style = KotlinConfTheme.typography.text2,
-                    color = colors.accentText,
-                    maxLines = 1,
-                    modifier = Modifier.align(Alignment.BottomCenter),
-                )
+                BrowsePill(browseLabel, Modifier.align(Alignment.BottomCenter), compact = true)
             }
         }
     }
@@ -490,7 +487,7 @@ private fun HourLine(color: Color, modifier: Modifier = Modifier) {
 
 /** A quiet button to find sessions for free time: tinted, not solid, so it invites without shouting. */
 @Composable
-internal fun BrowsePill(label: String, modifier: Modifier = Modifier) {
+internal fun BrowsePill(label: String, modifier: Modifier = Modifier, compact: Boolean = false) {
     val colors = KotlinConfTheme.colors
     val accent = if (colors.isDark) colors.accentText else colors.primaryBackground
     Text(
@@ -500,8 +497,10 @@ internal fun BrowsePill(label: String, modifier: Modifier = Modifier) {
         maxLines = 1,
         modifier = modifier
             .clip(CircleShape)
+            .background(colors.mainBackground)
             .background(accent.copy(alpha = 0.1f))
-            .padding(horizontal = 14.dp, vertical = 5.dp),
+            // Slimmer where the free time is short, so it still fits
+            .padding(horizontal = if (compact) 10.dp else 14.dp, vertical = if (compact) 1.dp else 5.dp),
     )
 }
 
