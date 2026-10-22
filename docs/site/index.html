@@ -17,7 +17,7 @@
   <header class="top">
     <div class="wrap">
       <h1>Sessionize Conference App</h1>
-      <p class="sub">A conference app for iPhone that I built for myself. Open source.</p>
+      <p class="sub">A conference app I built for myself, for iPhone and in a browser. Open source.</p>
     </div>
   </header>
 
@@ -89,10 +89,26 @@
     </section>
 
     <section>
+      <h2>In a browser</h2>
+      <p>
+        There is also a web version, with no install and no account:
+        <a href="app/">open it</a>. On an iPhone, open it in Safari and choose Share, then Add to Home Screen. On
+        Android, use Chrome's Install option. It is the same app compiled for the web.
+      </p>
+      <ul class="plain">
+        <li>It is rougher than the iPhone app. It is a large first download (several megabytes) and starts more slowly.</li>
+        <li>It is set up to keep working without a connection after you have opened it once online. I tested the logic, not yet on a real phone.</li>
+        <li>Your notes and ratings are stored in the browser. Clearing the site's data, or Safari not seeing the site for a long while, can erase them. Adding it to the Home Screen helps.</li>
+        <li>Session reminders and the bookmark sync with the Sessionize web app probably will not work in a browser. I have not tested the sync from a browser.</li>
+      </ul>
+    </section>
+
+    <section>
       <h2>Where it stands</h2>
       <ul class="plain">
-        <li>The iPhone app is in a TestFlight beta. That is the version I have tested.</li>
-        <li>The code is Kotlin Multiplatform, so Android, desktop and web builds exist, but I have not run them for this event. The Android sharing code has not even been compiled.</li>
+        <li>The iPhone app is in a TestFlight beta. It is the version I have tested most.</li>
+        <li>The web version works in a desktop browser (I checked the schedule, notes, ratings and calendar export). I have not tried it on phones.</li>
+        <li>Android and desktop builds exist but I have not run them for this event. The Android sharing code compiles but has not been run.</li>
         <li>The German translation is mine and nobody has reviewed it.</li>
         <li>There will be bugs. Accessibility got one pass from me (large text, contrast, tap sizes), not a full VoiceOver test.</li>
         <li>The venue map is the convention center's published floor plan; only some rooms have pins.</li>
@@ -111,7 +127,7 @@
     <section id="get">
       <h2>Trying it</h2>
       <p>
-        To try the beta, ask for a TestFlight invite and I will send one:
+        To try the iPhone beta, ask for a TestFlight invite and I will send one:
         <a href="https://github.com/ingo/sessionize-app/issues/new?title=TestFlight%20invite&amp;body=Please%20send%20me%20a%20TestFlight%20invite.%20My%20Apple%20ID%20email%3A%20">open an issue</a>
         (it is public, so you may prefer to message me instead).
       </p>

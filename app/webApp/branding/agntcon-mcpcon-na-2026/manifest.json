@@ -1,0 +1,15 @@
+{
+  "name": "AGNTCon + MCPCon North America 2026",
+  "short_name": "AGNTCon",
+  "description": "Schedule, notes and people for AGNTCon + MCPCon North America 2026",
+  "icons": [
+    { "src": "./images/icon-192.png", "type": "image/png", "sizes": "192x192" },
+    { "src": "./images/icon-512.png", "type": "image/png", "sizes": "512x512" },
+    { "src": "./images/icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "maskable" }
+  ],
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#1f213a",
+  "theme_color": "#1f213a"
+}

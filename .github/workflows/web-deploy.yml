@@ -1,15 +1,14 @@
-name: Publish the project page on GitHub Pages
+name: Publish the project page and web app on GitHub Pages
 
-# The page in docs/site is plain HTML and CSS: no build step. It is published from main.
-# GitHub Pages must be enabled for the repository with "GitHub Actions" as its source
-# (Settings > Pages), which is what the deploy job's earlier 404 was about.
+# Publishes, from main:
+#   /       the project page (docs/site, plain HTML and CSS)
+#   /app/   the web app (Kotlin/Wasm with a JavaScript fallback), built for the AGNTCon + MCPCon event,
+#           with that event's icons, manifest and offline service worker (scripts/web-brand.sh)
+# GitHub Pages must be enabled for the repository with "GitHub Actions" as its source (Settings > Pages).
 on:
   push:
     branches:
       - main
-    paths:
-      - 'docs/site/**'
-      - '.github/workflows/web-deploy.yml'
   workflow_dispatch:
 
 permissions:
@@ -19,18 +18,47 @@ concurrency:
   group: pages
   cancel-in-progress: false
 
+env:
+  EVENT: agntcon-mcpcon-na-2026
+  EVENT_TITLE: AGNTCon + MCPCon North America 2026
+  EVENT_DESCRIPTION: Schedule, notes and people for AGNTCon + MCPCon North America 2026. Unofficial.
+
 jobs:
   build:
-    name: Package the page
+    name: Build the page and the web app
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
         uses: actions/checkout@v4
 
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: 21
+
+      - name: Check the service worker
+        run: node app/webApp/branding/test/service-worker-test.js
+
+      - name: Build the web app
+        run: ./gradlew -Pevent=$EVENT :app:webApp:composeCompatibilityBrowserDistribution
+
+      - name: Put the page and the branded web app together
+        run: |
+          DIST=app/webApp/build/dist/composeWebCompatibility/productionExecutable
+          mkdir -p _site/app
+          cp -R docs/site/. _site/
+          cp -R "$DIST"/. _site/app/
+          scripts/web-brand.sh "$EVENT" _site/app "$EVENT_TITLE" "$EVENT_DESCRIPTION"
+          # Source maps are for debugging and about 13 MB
+          find _site/app -name '*.map' -delete
+          chmod -R +rX _site
+          du -sh _site _site/app
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: docs/site
+          path: _site
 
   deploy:
     name: Deploy to GitHub Pages
