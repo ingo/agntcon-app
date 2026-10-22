@@ -11,6 +11,7 @@ import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,6 +38,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -50,7 +52,10 @@ import org.jetbrains.kotlinconf.ui.generated.resources.action_state_description_
 import org.jetbrains.kotlinconf.ui.generated.resources.action_state_description_expanded
 import org.jetbrains.kotlinconf.ui.generated.resources.filter_by_tags
 import org.jetbrains.kotlinconf.ui.generated.resources.filter_by_tags_tag_count
+import org.jetbrains.kotlinconf.ui.generated.resources.filter_company_show_all
+import org.jetbrains.kotlinconf.ui.generated.resources.filter_company_show_fewer
 import org.jetbrains.kotlinconf.ui.generated.resources.filter_label_category
+import org.jetbrains.kotlinconf.ui.generated.resources.filter_label_company
 import org.jetbrains.kotlinconf.ui.generated.resources.filter_label_level
 import org.jetbrains.kotlinconf.ui.generated.resources.filter_label_session_format
 import org.jetbrains.kotlinconf.ui.generated.resources.up_24
@@ -59,7 +64,7 @@ import org.jetbrains.kotlinconf.ui.theme.PreviewHelper
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 
 enum class FilterItemType {
-    Category, Level, Format,
+    Category, Level, Format, Company,
 }
 
 data class FilterItem(
@@ -176,10 +181,20 @@ fun Filters(
                     toggle = toggleItem,
                     isExclusive = true,
                 )
+                FilterItemGroup(
+                    title = stringResource(UiRes.string.filter_label_company),
+                    items = tags.filter { it.type == FilterItemType.Company },
+                    toggle = toggleItem,
+                    isExclusive = true,
+                    collapsedCount = COLLAPSED_COMPANIES,
+                )
             }
         }
     }
 }
+
+/** Companies shown before "Show all": a conference can have a hundred of them. */
+private const val COLLAPSED_COMPANIES = 12
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -189,8 +204,14 @@ private fun FilterItemGroup(
     toggle: (FilterItem, Boolean) -> Unit,
     isExclusive: Boolean,
     modifier: Modifier = Modifier,
+    /** Show only this many items (and any selected one) until "Show all" is tapped; null shows all. */
+    collapsedCount: Int? = null,
 ) {
     if (items.isEmpty()) return
+
+    var showAll by rememberSaveable { mutableStateOf(false) }
+    val collapsed = collapsedCount != null && items.size > collapsedCount && !showAll
+    val shown = if (collapsed) items.filterIndexed { index, item -> index < collapsedCount!! || item.isSelected } else items
 
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -209,12 +230,24 @@ private fun FilterItemGroup(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            items.forEach { item ->
+            shown.forEach { item ->
                 FilterTag(
                     label = item.value,
                     selected = item.isSelected,
                     onSelect = { value -> toggle(item, value) },
                     isExclusive = isExclusive,
+                )
+            }
+            if (collapsedCount != null && items.size > collapsedCount) {
+                Text(
+                    text = if (showAll) stringResource(UiRes.string.filter_company_show_fewer)
+                    else stringResource(UiRes.string.filter_company_show_all, items.size),
+                    style = KotlinConfTheme.typography.text1,
+                    color = KotlinConfTheme.colors.accentText,
+                    modifier = Modifier
+                        .clip(KotlinConfTheme.shapes.roundedCornerMd)
+                        .clickable(role = Role.Button) { showAll = !showAll }
+                        .padding(horizontal = 4.dp, vertical = 10.dp),
                 )
             }
         }

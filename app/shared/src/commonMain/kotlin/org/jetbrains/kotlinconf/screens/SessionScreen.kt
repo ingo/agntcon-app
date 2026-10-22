@@ -9,6 +9,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.fillMaxSize
@@ -35,7 +36,14 @@ import org.jetbrains.kotlinconf.SessionId
 import org.jetbrains.kotlinconf.SessionState
 import org.jetbrains.kotlinconf.Speaker
 import org.jetbrains.kotlinconf.SpeakerId
+import org.jetbrains.kotlinconf.export.Exporter
+import org.jetbrains.kotlinconf.export.rememberExporter
 import org.jetbrains.kotlinconf.generated.resources.Res
+import org.jetbrains.kotlinconf.generated.resources.calendar_add_24
+import org.jetbrains.kotlinconf.generated.resources.session_add_to_calendar
+import org.jetbrains.kotlinconf.generated.resources.session_find_on_map
+import org.jetbrains.kotlinconf.generated.resources.session_share
+import org.jetbrains.kotlinconf.generated.resources.share_24
 import org.jetbrains.kotlinconf.generated.resources.arrow_left_24
 import org.jetbrains.kotlinconf.generated.resources.arrow_up_right_24
 import org.jetbrains.kotlinconf.generated.resources.down_24
@@ -82,6 +90,7 @@ fun SessionScreen(
     val speakers = viewModel.speakers.collectAsStateWithLifecycle().value
 
     val now by viewModel.now.collectAsStateWithLifecycle()
+    val exporter = rememberExporter()
     ErrorLoadingContent(
         state = sessionState,
         errorMessage = stringResource(Res.string.session_screen_error),
@@ -119,10 +128,12 @@ fun SessionScreen(
             unifiedContent = {
                 SlidesLink(session)
                 VideoLink(session, onWatchVideo)
+                SessionActions(session, exporter)
                 Feedback(session, onPrivacyNoticeNeeded)
                 Speakers(speakers, onSpeaker)
                 RoomSection(session.locationLine, onNavigateToMap)
                 Description(session.description)
+                PersonalSection(viewModel)
             },
             largeMainContent = {
                 if (session.description.isNotBlank()) {
@@ -134,11 +145,13 @@ fun SessionScreen(
             largeSideContent = {
                 SlidesLink(session)
                 VideoLink(session, onWatchVideo)
+                SessionActions(session, exporter)
                 Feedback(session, onPrivacyNoticeNeeded)
                 if (session.description.isNotBlank()) {
                     Speakers(speakers, onSpeaker)
                 }
                 RoomSection(session.locationLine, onNavigateToMap)
+                PersonalSection(viewModel)
             },
             onBack = onBack,
         )
@@ -212,6 +225,36 @@ private fun SlidesLink(session: SessionCardView) {
         drawableEnd = Res.drawable.arrow_up_right_24,
         modifier = Modifier.padding(bottom = 12.dp),
     )
+}
+
+/** Add the session to the calendar, or share it. */
+@Composable
+private fun SessionActions(session: SessionCardView, exporter: Exporter) {
+    PageMenuItem(
+        label = stringResource(Res.string.session_add_to_calendar),
+        onClick = { exporter.addSessionToCalendar(session.id) },
+        drawableStart = Res.drawable.calendar_add_24,
+        modifier = Modifier.padding(bottom = 12.dp),
+    )
+    PageMenuItem(
+        label = stringResource(Res.string.session_share),
+        onClick = { exporter.shareSession(session.id) },
+        drawableStart = Res.drawable.share_24,
+        modifier = Modifier.padding(bottom = 12.dp),
+    )
+}
+
+/** The attendee's private rating (where the event has no voting of its own) and notes, kept on the device. */
+@Composable
+private fun PersonalSection(viewModel: SessionViewModel) {
+    val note by viewModel.note.collectAsStateWithLifecycle()
+    val rating by viewModel.rating.collectAsStateWithLifecycle()
+    Column(Modifier.padding(top = 24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+        if (!ActiveEvent.hasBackend) {
+            RatingBlock(rating = rating, onThumb = viewModel::setThumb, onTakeaway = viewModel::setTakeaway)
+        }
+        NoteBlock(stored = note, onSave = viewModel::setNote)
+    }
 }
 
 @Composable
@@ -303,6 +346,12 @@ private fun RoomSection(
                         .heightIn(max = 400.dp),
                 )
             }
+
+            PageMenuItem(
+                label = stringResource(Res.string.session_find_on_map),
+                onClick = { onNavigateToMap(roomName) },
+                modifier = Modifier.padding(top = 12.dp),
+            )
         } else {
             Text(
                 text = roomName,

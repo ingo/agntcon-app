@@ -56,9 +56,11 @@ import org.jetbrains.kotlinconf.ui.generated.resources.action_state_description_
 import org.jetbrains.kotlinconf.ui.generated.resources.bookmark_24
 import org.jetbrains.kotlinconf.ui.generated.resources.bookmark_24_fill
 import org.jetbrains.kotlinconf.ui.generated.resources.lightning_16_fill
+import org.jetbrains.kotlinconf.ui.generated.resources.location_16
 import org.jetbrains.kotlinconf.ui.generated.resources.lightning_talk
 import org.jetbrains.kotlinconf.ui.generated.resources.session_codelab
 import org.jetbrains.kotlinconf.ui.generated.resources.session_education
+import org.jetbrains.kotlinconf.ui.generated.resources.talk_card_find_on_map
 import org.jetbrains.kotlinconf.ui.generated.resources.talk_card_icon_desc_codelab
 import org.jetbrains.kotlinconf.ui.generated.resources.talk_card_icon_desc_education
 import org.jetbrains.kotlinconf.ui.theme.KotlinConfTheme
@@ -112,6 +114,8 @@ fun TalkCard(
     onClick: () -> Unit,
     feedbackContent: (@Composable () -> Unit)?,
     modifier: Modifier = Modifier,
+    /** Shows a pin next to the room that opens it on the venue map; null when the room has no pin. */
+    onFindOnMap: (() -> Unit)? = null,
 ) {
     val backgroundColor by animateColorAsState(
         if (status == TalkStatus.Past) KotlinConfTheme.colors.cardBackgroundPast
@@ -164,6 +168,7 @@ fun TalkCard(
             status = status,
             lightning = lightning,
             time = time,
+            onFindOnMap = onFindOnMap,
         )
         AnimatedVisibility(
             visible = feedbackContent != null,
@@ -353,6 +358,7 @@ private fun TimeBlock(
     status: TalkStatus,
     lightning: Boolean,
     time: String,
+    onFindOnMap: (() -> Unit)?,
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -364,6 +370,20 @@ private fun TimeBlock(
             style = KotlinConfTheme.typography.text2,
             color = textColor,
         )
+        if (onFindOnMap != null) {
+            val description = stringResource(UiRes.string.talk_card_find_on_map, location)
+            Icon(
+                painter = painterResource(UiRes.drawable.location_16),
+                contentDescription = description,
+                tint = KotlinConfTheme.colors.accentText,
+                modifier = Modifier
+                    // The 16dp icon in a 24dp touch target, as tall as the text beside it
+                    .size(24.dp)
+                    .clip(KotlinConfTheme.shapes.roundedCornerMd)
+                    .clickable(role = Role.Button, onClick = onFindOnMap)
+                    .padding(4.dp),
+            )
+        }
 
         Spacer(Modifier.weight(1f))
 

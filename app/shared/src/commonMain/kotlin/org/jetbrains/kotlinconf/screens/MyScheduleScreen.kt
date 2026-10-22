@@ -43,6 +43,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -56,7 +57,11 @@ import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.kotlinconf.EVENT_TIME_ZONE
 import org.jetbrains.kotlinconf.SessionCardView
 import org.jetbrains.kotlinconf.SessionId
+import org.jetbrains.kotlinconf.export.rememberExporter
 import org.jetbrains.kotlinconf.generated.resources.Res
+import org.jetbrains.kotlinconf.generated.resources.my_schedule_add_to_calendar
+import org.jetbrains.kotlinconf.generated.resources.my_schedule_share
+import org.jetbrains.kotlinconf.generated.resources.my_schedule_trip_report
 import org.jetbrains.kotlinconf.generated.resources.my_schedule_all_day
 import org.jetbrains.kotlinconf.generated.resources.my_schedule_bookmark
 import org.jetbrains.kotlinconf.generated.resources.my_schedule_clash
@@ -155,6 +160,25 @@ fun MyScheduleScreen(
                     style = KotlinConfTheme.typography.text2,
                     color = KotlinConfTheme.colors.accentText,
                     modifier = Modifier.clickable(onClick = onSync),
+                )
+            }
+        }
+
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp).padding(bottom = 8.dp),
+        ) {
+            val exporter = rememberExporter()
+            listOf(
+                Res.string.my_schedule_add_to_calendar to exporter::addScheduleToCalendar,
+                Res.string.my_schedule_share to exporter::shareSchedule,
+                Res.string.my_schedule_trip_report to exporter::shareTripReport,
+            ).forEach { (label, action) ->
+                Text(
+                    stringResource(label),
+                    style = KotlinConfTheme.typography.text2,
+                    color = KotlinConfTheme.colors.accentText,
+                    modifier = Modifier.clickable(role = Role.Button, onClick = action),
                 )
             }
         }

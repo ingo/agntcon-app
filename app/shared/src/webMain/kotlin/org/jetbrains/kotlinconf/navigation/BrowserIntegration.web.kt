@@ -55,6 +55,11 @@ private fun AppRoute.toBrowserHistoryFragment() = when (val key = this) {
         mapOf("roomName" to key.roomName)
     )
 
+    is CompanyScreen -> buildBrowserHistoryFragment(
+        "company",
+        mapOf("name" to key.name)
+    )
+
     is PartnerDetailScreen -> buildBrowserHistoryFragment(
         "partner",
         mapOf("partnerId" to key.partnerId.id)
@@ -121,6 +126,7 @@ actual fun BrowserIntegration(navState: NavState) {
                     "map" -> MapScreen
                     "info" -> InfoScreen
                     "map_detail" -> params["roomName"]?.let { NestedMapScreen(it) }
+                    "company" -> params["name"]?.let { CompanyScreen(it) }
                     "partner" -> params["partnerId"]?.let { PartnerDetailScreen(PartnerId(it)) }
                     "session" -> params["sessionId"]?.let { SessionScreen(SessionId(it)) }
                     "speaker" -> params["speakerId"]?.let { SpeakerDetailScreen(SpeakerId(it)) }

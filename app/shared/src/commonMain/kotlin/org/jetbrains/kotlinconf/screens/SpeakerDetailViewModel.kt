@@ -26,8 +26,24 @@ import org.jetbrains.kotlinconf.utils.ErrorLoadingState
 @AssistedInject
 class SpeakerDetailViewModel(
     private val service: ConferenceService,
-    @Assisted speakerId: SpeakerId,
+    @Assisted private val speakerId: SpeakerId,
 ) : ViewModel() {
+    val note: StateFlow<String> = service.notes
+        .map { it.speakerNote(speakerId) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), service.notes.value.speakerNote(speakerId))
+
+    val met: StateFlow<Boolean> = service.metSpeakers
+        .map { speakerId in it }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), speakerId in service.metSpeakers.value)
+
+    fun setNote(text: String) {
+        viewModelScope.launch { service.setSpeakerNote(speakerId, text) }
+    }
+
+    fun setMet(met: Boolean) {
+        viewModelScope.launch { service.setMet(speakerId, met) }
+    }
+
     fun onBookmark(sessionId: SessionId, bookmarked: Boolean) {
         viewModelScope.launch {
             service.setFavorite(sessionId, bookmarked)

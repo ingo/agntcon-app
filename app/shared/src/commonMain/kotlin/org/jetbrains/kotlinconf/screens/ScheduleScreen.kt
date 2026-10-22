@@ -89,6 +89,7 @@ import org.jetbrains.kotlinconf.utils.topInsetPadding
 fun ScheduleScreen(
     onSession: (SessionId) -> Unit,
     onPrivacyNoticeNeeded: () -> Unit,
+    onNavigateToMap: (String) -> Unit,
     tabReselections: Flow<TopLevelRoute>,
     viewModel: ScheduleViewModel = metroViewModel(),
 ) {
@@ -225,6 +226,7 @@ fun ScheduleScreen(
 
                 val tags by viewModel.filterItems.collectAsStateWithLifecycle()
                 val dayInfoMap by viewModel.dayInfoMap.collectAsStateWithLifecycle()
+                val pinnedRooms by viewModel.pinnedRooms.collectAsStateWithLifecycle()
                 ScheduleList(
                     scheduleItems = items,
                     onSession = onSession,
@@ -235,6 +237,8 @@ fun ScheduleScreen(
                         viewModel.onBookmark(sessionId, isBookmarked)
                     },
                     onPrivacyNoticeNeeded = onPrivacyNoticeNeeded,
+                    pinnedRooms = pinnedRooms,
+                    onNavigateToMap = onNavigateToMap,
                     filterItems = tags,
                     onToggleFilter = { item, selected -> viewModel.toggleFilter(item, selected) },
                     modifier = Modifier.fillMaxSize()
@@ -372,6 +376,8 @@ private fun ScheduleList(
     dayInfoMap: Map<LocalDate, DayInfo>,
     onBookmark: (SessionId, Boolean) -> Unit,
     onPrivacyNoticeNeeded: () -> Unit,
+    pinnedRooms: Set<String>,
+    onNavigateToMap: (String) -> Unit,
     filterItems: List<FilterItem> = emptyList(),
     onToggleFilter: (FilterItem, Boolean) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
@@ -457,6 +463,8 @@ private fun ScheduleList(
                             onBookmark = onBookmark,
                             onSession = onSession,
                             onPrivacyNoticeNeeded = onPrivacyNoticeNeeded,
+                            onFindOnMap = item.value.locationLine.takeIf { it in pinnedRooms }
+                                ?.let { room -> { onNavigateToMap(room) } },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 12.dp, vertical = 8.dp)
@@ -514,6 +522,7 @@ private fun SessionCard(
     onSession: (SessionId) -> Unit,
     onPrivacyNoticeNeeded: () -> Unit,
     isSearch: Boolean,
+    onFindOnMap: (() -> Unit)?,
     modifier: Modifier = Modifier,
     titleHighlights: List<IntRange> = emptyList(),
     tagHighlights: List<String> = emptyList(),
@@ -542,6 +551,7 @@ private fun SessionCard(
         status = status,
         onClick = { onSession(session.id) },
         modifier = modifier,
+        onFindOnMap = onFindOnMap,
         feedbackContent = if (ActiveEvent.hasBackend && !isSearch && session.state != SessionState.Upcoming) {
             {
                 FeedbackBlock(

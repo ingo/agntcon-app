@@ -44,4 +44,8 @@
 
     <string name="talk_card_icon_desc_education">Bildung</string>
     <string name="talk_card_icon_desc_codelab">Codelab</string>
+    <string name="filter_label_company">Unternehmen</string>
+    <string name="filter_company_show_all">Alle %1$d Unternehmen anzeigen</string>
+    <string name="filter_company_show_fewer">Weniger anzeigen</string>
+    <string name="talk_card_find_on_map">%1$s auf der Karte zeigen</string>
 </resources>

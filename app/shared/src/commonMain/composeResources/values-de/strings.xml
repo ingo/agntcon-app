@@ -236,4 +236,57 @@ Bitte versuchen Sie es erneut.</string>
     <string name="session_starts_on">Beginnt am %1$s um %2$s</string>
     <string name="session_live">Läuft gerade · noch %1$s</string>
     <string name="session_ended">Diese Session ist vorbei</string>
+
+    <!-- Notes, ratings, people, companies and export -->
+    <string name="session_add_to_calendar">Zum Kalender hinzufügen</string>
+    <string name="session_share">Session teilen</string>
+    <string name="session_find_on_map">Auf der Karte zeigen</string>
+    <string name="session_my_notes">Meine Notizen</string>
+    <string name="session_my_notes_hint">Nur auf diesem Gerät</string>
+    <string name="session_my_rating">Meine Bewertung</string>
+    <string name="session_rating_thumb_up">Hat mir gefallen</string>
+    <string name="session_rating_thumb_down">Nichts für mich</string>
+    <string name="session_takeaway_hint">Wichtigste Erkenntnis in einem Satz</string>
+    <string name="speaker_links">Links</string>
+    <string name="speaker_met">Als getroffen markieren</string>
+    <string name="speaker_met_done">Getroffen</string>
+    <string name="speaker_notes_hint">Eine Notiz zu dieser Person. Nur auf diesem Gerät</string>
+    <string name="speaker_company_link">Mehr von %1$s</string>
+    <string name="speakers_tab_speakers">Sprecher</string>
+    <string name="speakers_tab_companies">Firmen</string>
+    <string name="speakers_tab_met">Getroffen</string>
+    <string name="speakers_met_empty">Noch niemand. Öffne einen Sprecher und tippe auf „Als getroffen markieren“, um hier eine Notiz und den Link zu behalten.</string>
+    <string name="companies_showcase_filter">Solutions Showcase</string>
+    <string name="companies_error_no_data">Noch keine Firmen.</string>
+    <string name="company_title">Firma</string>
+    <string name="company_website">Website der Firma</string>
+    <string name="company_speakers">Sprecher</string>
+    <string name="company_sessions">Sessions</string>
+    <string name="company_showcase">In der Solutions Showcase</string>
+    <string name="company_error_not_found">Wir konnten diese Firma nicht finden.</string>
+    <string name="my_schedule_add_to_calendar">Zum Kalender</string>
+    <string name="my_schedule_share">Teilen</string>
+    <string name="my_schedule_trip_report">Reisebericht</string>
+    <string name="export_speakers">Sprecher</string>
+    <string name="export_room">Raum</string>
+    <string name="export_my_notes">Meine Notizen</string>
+    <string name="export_rating">Bewertung</string>
+    <string name="export_slides">Folien</string>
+    <string name="export_recording">Aufzeichnung</string>
+    <string name="export_schedule_heading">Mein Programm</string>
+    <string name="export_trip_report_heading">Reisebericht</string>
+    <string name="export_people_met">Getroffene Personen</string>
+    <string name="export_no_sessions">Noch keine Sessions gemerkt</string>
+    <plurals name="companies_number_of_results">
+        <item quantity="one">%1$d Firma gefunden</item>
+        <item quantity="other">%1$d Firmen gefunden</item>
+    </plurals>
+    <plurals name="company_session_count">
+        <item quantity="one">%1$d Session</item>
+        <item quantity="other">%1$d Sessions</item>
+    </plurals>
+    <plurals name="company_showcase_count">
+        <item quantity="one">%1$d Vortrag in der Showcase</item>
+        <item quantity="other">%1$d Vorträge in der Showcase</item>
+    </plurals>
 </resources>

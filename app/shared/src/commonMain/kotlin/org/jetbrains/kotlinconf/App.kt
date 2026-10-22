@@ -40,6 +40,7 @@ fun App(
         LocalMetroViewModelFactory provides appGraph.metroViewModelFactory,
         LocalWindowSize provides windowSize(),
         LocalMapHandler provides rememberMapHandler(),
+        LocalShareHandler provides rememberShareHandler(),
         LocalNotificationBar provides rememberNotificationBarState(),
     ) {
         if (isOnboardingComplete != null) {

@@ -50,6 +50,7 @@ import org.jetbrains.kotlinconf.screens.MyScheduleScreen
 import org.jetbrains.kotlinconf.screens.NowScreen
 import org.jetbrains.kotlinconf.screens.SessionizeSyncScreen
 import org.jetbrains.kotlinconf.screens.CodeOfConduct
+import org.jetbrains.kotlinconf.screens.CompanyDetailScreen
 import org.jetbrains.kotlinconf.screens.GoldenKodeeFinalistScreen
 import org.jetbrains.kotlinconf.screens.GoldenKodeeScreen
 import org.jetbrains.kotlinconf.screens.InfoScreen
@@ -295,6 +296,7 @@ private fun EntryProviderScope<AppRoute>.screens(
         ScheduleScreen(
             onSession = { navigator.add(SessionScreen(it)) },
             onPrivacyNoticeNeeded = { navigator.add(AppPrivacyNoticePrompt) },
+            onNavigateToMap = { roomName -> navigator.add(NestedMapScreen(roomName)) },
             tabReselections = navigator.tabReselections(forRoute = ScheduleScreen),
         )
     }
@@ -320,7 +322,8 @@ private fun EntryProviderScope<AppRoute>.screens(
 
     entry<SpeakersScreen>(metadata = noAnimationMetadata) {
         SpeakersScreen(
-            onSpeaker = { navigator.add(SpeakerDetailScreen(it)) }
+            onSpeaker = { navigator.add(SpeakerDetailScreen(it)) },
+            onCompany = { navigator.add(CompanyScreen(it)) },
         )
     }
 
@@ -376,6 +379,15 @@ private fun EntryProviderScope<AppRoute>.screens(
             speakerId = it.speakerId,
             onBack = onBack,
             onSession = { sessionId -> navigator.add(SessionScreen(sessionId)) },
+            onCompany = { name -> navigator.add(CompanyScreen(name)) },
+        )
+    }
+    entry<CompanyScreen> {
+        CompanyDetailScreen(
+            name = it.name,
+            onBack = onBack,
+            onSession = { sessionId -> navigator.add(SessionScreen(sessionId)) },
+            onSpeaker = { speakerId -> navigator.add(SpeakerDetailScreen(speakerId)) },
         )
     }
     entry<SessionScreen> {
