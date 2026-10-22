@@ -1,6 +1,8 @@
 package org.jetbrains.kotlinconf.screens
 
 
+import org.jetbrains.kotlinconf.event.EventLogo
+import org.jetbrains.kotlinconf.event.ActiveEvent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -60,12 +62,17 @@ fun StartNotificationsScreen(
                 .padding(horizontal = 12.dp, vertical = 16.dp)
                 .weight(1f)
         ) {
-            Image(
-                imageVector = vectorResource(Res.drawable.kodee_notifications),
-                contentDescription = null,
-                modifier = Modifier.fillMaxWidth()
-                    .size(160.dp)
-            )
+            val eventTheme = ActiveEvent.theme
+            if (eventTheme != null) {
+                EventLogo(eventTheme, size = 160.dp, modifier = Modifier.fillMaxWidth())
+            } else {
+                Image(
+                    imageVector = vectorResource(Res.drawable.kodee_notifications),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxWidth()
+                        .size(160.dp)
+                )
+            }
             Text(
                 stringResource(Res.string.notifications_title),
                 style = KotlinConfTheme.typography.h1,

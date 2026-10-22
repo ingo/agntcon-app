@@ -1,0 +1,13 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="100dp"
+    android:height="100dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+  <!-- Neutral placeholder for speakers without a photo -->
+  <path
+      android:pathData="M50,21C59.39,21 67,28.61 67,38C67,47.39 59.39,55 50,55C40.61,55 33,47.39 33,38C33,28.61 40.61,21 50,21Z"
+      android:fillColor="#9A9AA2"/>
+  <path
+      android:pathData="M16,100C16,76 31,62 50,62C69,62 84,76 84,100Z"
+      android:fillColor="#9A9AA2"/>
+</vector>

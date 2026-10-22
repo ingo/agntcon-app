@@ -1,5 +1,6 @@
 package org.jetbrains.kotlinconf.screens
 
+import org.jetbrains.kotlinconf.event.ActiveEvent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.expandVertically
@@ -165,7 +166,7 @@ private fun Feedback(
     session: SessionCardView,
     onPrivacyNoticeNeeded: () -> Unit,
 ) {
-    if (session.state != SessionState.Upcoming) {
+    if (ActiveEvent.hasBackend && session.state != SessionState.Upcoming) {
         FeedbackPanel(
             sessionId = session.id,
             tags = session.tags,

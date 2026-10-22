@@ -4,6 +4,8 @@
     <string name="navigate_back">Back</string>
 
     <string name="nav_destination_info">Info</string>
+    <string name="nav_destination_my_schedule">Calendar</string>
+    <string name="nav_destination_now">Now</string>
     <string name="nav_destination_schedule">Schedule</string>
     <string name="nav_destination_speakers">Speakers</string>
     <string name="nav_destination_map">Map</string>
@@ -20,6 +22,7 @@
     <string name="about_app_description">The KotlinConf application is developed by the JetBrains team using Kotlin Multiplatform for shared logic and Compose Multiplatform for UI across Android, iOS, Desktop, and Web platforms.
 
 For the source code and more technical details, visit the GitHub repository.</string>
+    <string name="about_app_description_sessionize">This app shows the %1$s schedule, read directly from Sessionize. It is based on the open-source KotlinConf app by JetBrains, built with Kotlin Multiplatform for shared logic and Compose Multiplatform for UI.</string>
     <string name="about_app_link_github">GitHub repository</string>
     <string name="about_app_link_rate">Rate the app</string>
     <string name="about_app_link_privacy_notice">App privacy notice</string>
@@ -42,7 +45,6 @@ For the source code and more technical details, visit the GitHub repository.</st
 
     <string name="about_conference_privacy_notice_link">Privacy notice for visitors</string>
     <string name="about_conference_general_terms_link">General terms and conditions</string>
-    <string name="about_conference_website_link">kotlinconf.com</string>
 
     <string name="about_conference_day1_title_line1">Opening</string>
     <string name="about_conference_day1_title_line2">keynote</string>
@@ -172,4 +174,57 @@ Please try again.</string>
     <string name="partners_error">Partner information is not available.</string>
 
     <string name="partner_detail_title">Partner</string>
+    <string name="my_schedule_title">Calendar</string>
+    <string name="my_schedule_summary">Bookmarked: %1$d · Clashes: %2$d</string>
+    <string name="my_schedule_all_day">All day</string>
+    <string name="my_schedule_clash">Clash</string>
+    <string name="my_schedule_free">Free %1$s</string>
+    <string name="my_schedule_free_browse">Browse %1$d sessions</string>
+    <string name="my_schedule_no_sessions">No sessions on this day.</string>
+    <string name="my_schedule_close">Close</string>
+    <string name="my_schedule_bookmark">Bookmark</string>
+    <string name="sync_title">Sync with Sessionize</string>
+    <string name="sync_info_link">Sync bookmarks with the Sessionize app</string>
+    <string name="sync_my_schedule_link">Sync with the Sessionize web app</string>
+    <string name="sync_my_schedule_linked">Synced with the Sessionize web app</string>
+    <string name="sync_intro">Keep your bookmarks in step with this conference’s Sessionize web app (%1$s), for example a schedule you planned on your laptop.</string>
+    <string name="sync_have_code_title">Have a sync code?</string>
+    <string name="sync_have_code_steps">In the web app, open the menu, choose Sync favorites, then I don’t have the sync code. Enter the 6-digit code it shows.</string>
+    <string name="sync_code_hint">6-digit code</string>
+    <string name="sync_link">Sync</string>
+    <string name="sync_no_code_title">Or start here</string>
+    <string name="sync_no_code_steps">Show a code here, then in the web app choose Sync favorites, then I want to use sync code, and enter it.</string>
+    <string name="sync_show_code">Show a sync code</string>
+    <string name="sync_waiting">Waiting for the web app…</string>
+    <string name="sync_linked_title">Synced with the Sessionize web app</string>
+    <string name="sync_linked_text">Bookmarks you add or remove here or in the web app show up in both within a minute or two.</string>
+    <string name="sync_last_synced">Last synced at %1$s</string>
+    <string name="sync_not_synced_yet">Not synced yet</string>
+    <string name="sync_now">Sync now</string>
+    <string name="sync_stop">Stop syncing</string>
+    <string name="sync_error_code">That code didn’t work. Codes expire after a few minutes; make a new one in the web app.</string>
+    <string name="sync_error_network">Couldn’t reach Sessionize. Check your connection and try again.</string>
+    <string name="sync_error_expired">The code expired before it was used. Show a new one.</string>
+    <string name="up_next_now">Happening now</string>
+    <string name="up_next_next">Next</string>
+    <string name="up_next_later">Later today</string>
+    <string name="up_next_earlier">Earlier today: %1$d</string>
+    <string name="up_next_min_left">%1$s left</string>
+    <string name="up_next_starts_in">in %1$s</string>
+    <string name="up_next_minutes">%1$d min</string>
+    <string name="up_next_hours_minutes">%1$d h %2$d min</string>
+    <string name="up_next_pick_one">These overlap. Pick one.</string>
+    <string name="up_next_change_floor">Change floors: %1$s → %2$s</string>
+    <string name="up_next_nothing_now">Nothing bookmarked right now.</string>
+    <string name="up_next_nothing_next">No more bookmarked sessions today.</string>
+    <string name="up_next_clash">Clashes with another bookmarked session</string>
+    <string name="now_good_morning">Good morning</string>
+    <string name="now_good_afternoon">Good afternoon</string>
+    <string name="now_good_evening">Good evening</string>
+    <string name="now_welcome_hint">Bookmark the sessions you want to see. They’ll show up here, with where to go next.</string>
+    <string name="now_before">%1$s starts %2$s. Here’s how your first day looks.</string>
+    <string name="now_between">Nothing on today. Next up: %1$s.</string>
+    <string name="now_after">Thanks for coming to %1$s!</string>
+    <string name="now_on_now">On now</string>
+    <string name="now_starting_next">Starting next · %1$s</string>
 </resources>

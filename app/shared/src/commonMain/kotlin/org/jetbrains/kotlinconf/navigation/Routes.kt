@@ -15,6 +15,10 @@ sealed interface AppRoute
 sealed interface TopLevelRoute : AppRoute
 
 @Serializable
+@SerialName("Now")
+data object NowScreen : AppRoute, TopLevelRoute
+
+@Serializable
 @SerialName("Schedule")
 data object ScheduleScreen : AppRoute, TopLevelRoute
 
@@ -96,6 +100,14 @@ data object PartnersScreen : AppRoute
 @Serializable
 @SerialName("Partner")
 data class PartnerDetailScreen(val partnerId: PartnerId) : AppRoute
+
+@Serializable
+@SerialName("MySchedule")
+data object MyScheduleScreen : AppRoute, TopLevelRoute
+
+@Serializable
+@SerialName("SessionizeSync")
+data object SessionizeSyncScreen : AppRoute
 
 @Serializable
 @SerialName("Session")

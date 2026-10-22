@@ -1,5 +1,8 @@
 package org.jetbrains.kotlinconf.screens
 
+import org.jetbrains.kotlinconf.ui.components.Text
+import org.jetbrains.kotlinconf.event.EventLogo
+import org.jetbrains.kotlinconf.event.ActiveEvent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -37,6 +40,7 @@ import org.jetbrains.kotlinconf.generated.resources.info_link_description_twitte
 import org.jetbrains.kotlinconf.generated.resources.info_link_how_to_find_venue
 import org.jetbrains.kotlinconf.generated.resources.info_link_partners
 import org.jetbrains.kotlinconf.generated.resources.info_link_settings
+import org.jetbrains.kotlinconf.generated.resources.sync_info_link
 import org.jetbrains.kotlinconf.generated.resources.info_title
 import org.jetbrains.kotlinconf.generated.resources.slack
 import org.jetbrains.kotlinconf.generated.resources.twitter
@@ -54,12 +58,14 @@ fun InfoScreen(
     onAboutConf: () -> Unit,
     onHowToFindVenue: (String) -> Unit,
     onAboutApp: () -> Unit,
-    onOurPartners: () -> Unit,
-    onCodeOfConduct: () -> Unit,
-    onTwitter: () -> Unit,
-    onSlack: () -> Unit,
-    onBluesky: () -> Unit,
+    onOurPartners: (() -> Unit)?,
+    onCodeOfConduct: (() -> Unit)?,
+    codeOfConductIsExternal: Boolean,
+    onTwitter: (() -> Unit)?,
+    onSlack: (() -> Unit)?,
+    onBluesky: (() -> Unit)?,
     onSettings: () -> Unit,
+    onSessionizeSync: (() -> Unit)? = null,
     viewModel: InfoViewModel = metroViewModel(),
 ) {
     val venueAddress = viewModel.venueAddress.collectAsStateWithLifecycle().value
@@ -82,6 +88,7 @@ fun InfoScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            val eventTheme = ActiveEvent.theme
             if (logoUrl != null) {
                 AsyncImage(
                     model = logoUrl,
@@ -89,6 +96,13 @@ fun InfoScreen(
                     modifier = Modifier
                         .padding(24.dp)
                         .widthIn(max = 360.dp)
+                )
+            } else if (eventTheme != null) {
+                EventLogo(eventTheme, size = 96.dp, modifier = Modifier.padding(top = 24.dp))
+                Text(
+                    ActiveEvent.name,
+                    style = KotlinConfTheme.typography.h3,
+                    modifier = Modifier.padding(bottom = 16.dp),
                 )
             }
             PageMenuItem(stringResource(Res.string.info_link_about_conf), onClick = onAboutConf)
@@ -101,29 +115,52 @@ fun InfoScreen(
             }
             PageMenuItem(stringResource(Res.string.info_link_about_app), onClick = onAboutApp)
             PageMenuItem(stringResource(Res.string.info_link_settings), onClick = onSettings)
-            PageMenuItem(stringResource(Res.string.info_link_partners), onClick = onOurPartners)
-            PageMenuItem(stringResource(Res.string.info_link_code_of_conduct), onClick = onCodeOfConduct)
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                SocialSquare(
-                    image = vectorResource(Res.drawable.twitter),
-                    description = stringResource(Res.string.info_link_description_twitter),
-                    modifier = Modifier.weight(1f),
-                    onClick = onTwitter,
-                )
-                SocialSquare(
-                    image = vectorResource(Res.drawable.slack),
-                    description = stringResource(Res.string.info_link_description_slack),
-                    modifier = Modifier.weight(1f),
-                    onClick = onSlack,
-                )
-                SocialSquare(
-                    image = vectorResource(Res.drawable.bluesky),
-                    description = stringResource(Res.string.info_link_description_bluesky),
-                    modifier = Modifier.weight(1f),
-                    onClick = onBluesky,
-                )
+            if (onSessionizeSync != null) {
+                PageMenuItem(stringResource(Res.string.sync_info_link), onClick = onSessionizeSync)
+            }
+            if (onOurPartners != null) {
+                PageMenuItem(stringResource(Res.string.info_link_partners), onClick = onOurPartners)
+            }
+            if (onCodeOfConduct != null) {
+                if (codeOfConductIsExternal) {
+                    PageMenuItem(
+                        stringResource(Res.string.info_link_code_of_conduct),
+                        onClick = onCodeOfConduct,
+                        drawableEnd = Res.drawable.arrow_up_right_24,
+                    )
+                } else {
+                    PageMenuItem(stringResource(Res.string.info_link_code_of_conduct), onClick = onCodeOfConduct)
+                }
+            }
+            if (onTwitter != null || onSlack != null || onBluesky != null) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (onTwitter != null) {
+                        SocialSquare(
+                            image = vectorResource(Res.drawable.twitter),
+                            description = stringResource(Res.string.info_link_description_twitter),
+                            modifier = Modifier.weight(1f),
+                            onClick = onTwitter,
+                        )
+                    }
+                    if (onSlack != null) {
+                        SocialSquare(
+                            image = vectorResource(Res.drawable.slack),
+                            description = stringResource(Res.string.info_link_description_slack),
+                            modifier = Modifier.weight(1f),
+                            onClick = onSlack,
+                        )
+                    }
+                    if (onBluesky != null) {
+                        SocialSquare(
+                            image = vectorResource(Res.drawable.bluesky),
+                            description = stringResource(Res.string.info_link_description_bluesky),
+                            modifier = Modifier.weight(1f),
+                            onClick = onBluesky,
+                        )
+                    }
+                }
             }
         }
     }

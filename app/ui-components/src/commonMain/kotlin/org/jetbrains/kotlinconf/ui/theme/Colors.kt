@@ -1,5 +1,6 @@
 package org.jetbrains.kotlinconf.ui.theme
 
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import org.jetbrains.kotlinconf.ui.theme.Brand.magenta100
 import org.jetbrains.kotlinconf.ui.theme.Brand.magentaTextDark
@@ -63,6 +64,9 @@ data class Colors(
 
     val toggleOn: Color,
     val toggleOff: Color,
+
+    /** Background of day headers and the large switcher's selection. */
+    val headerGradient: Brush = Brand.colorGradient,
 )
 
 val KotlinConfLightColors = Colors(

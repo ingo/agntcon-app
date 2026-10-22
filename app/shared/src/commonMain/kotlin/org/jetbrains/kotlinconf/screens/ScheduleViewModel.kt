@@ -214,75 +214,6 @@ class ScheduleViewModel(
         }
     }.sortedBy { it.value.state == SessionState.Past }
 
-    private fun buildNonSearchItems(
-        days: List<Day>,
-        now: LocalDateTime,
-        isBookmarkedOnly: Boolean,
-    ): Triple<List<ScheduleListItem>, Int, Int> {
-        var firstActiveIndex = -1
-        var lastActiveIndex = -1
-        var seenPastSlot = false
-
-        val items = buildList {
-            days.forEachIndexed { index, day ->
-                if (index > 0) {
-                    add(DaySeparatorItem("day-separator-$index"))
-                }
-                add(DayHeaderItem(day))
-
-                day.timeSlots.forEachIndexed { index, timeSlot ->
-                    var activeTimeSlot = false
-
-                    if (firstActiveIndex == -1) { // We didn't find the active slot yet
-                        if (index == 0 && // This is the first slot of the day AND
-                            ((seenPastSlot && now < timeSlot.startsAt) || // There was a slot in the past before and this one is still upcoming OR
-                                    (day.date == now.date && now < timeSlot.startsAt)) // This is today and the day didn't start yet
-                        ) {
-                            firstActiveIndex = lastIndex // We'll consider the DayHeader and this first slot active
-                            activeTimeSlot = true
-                        } else if (
-                            (seenPastSlot && now < timeSlot.startsAt) || // There was a slot in the past before and this one is still upcoming OR
-                            (now in timeSlot.startsAt..<timeSlot.endsAt) // We're in this slot right now
-                        ) {
-                            firstActiveIndex = lastIndex + 1 // This is the active slot, starting with its title
-                            activeTimeSlot = true
-                        }
-                    }
-
-                    add(TimeSlotTitleItem(timeSlot))
-
-                    val (serviceEvents, allTalks) = timeSlot.sessions.partition { it.isServiceEvent }
-                    if (serviceEvents.size == 1) {
-                        add(ServiceEventItem(serviceEvents.first()))
-                    } else if (serviceEvents.size > 1) {
-                        add(ServiceEventGroupItem(serviceEvents))
-                    }
-
-                    val validTalks = if (isBookmarkedOnly) allTalks.filter { it.isFavorite } else allTalks
-                    validTalks.forEach { session ->
-                        add(SessionItem(session))
-                    }
-
-                    if (last() is TimeSlotTitleItem && isBookmarkedOnly) {
-                        add(NoBookmarksItem(id = "empty-${timeSlot.startsAt}"))
-                    }
-
-                    if (activeTimeSlot) { // This was the active slot
-                        lastActiveIndex = lastIndex // Mark its end
-                    }
-
-                    if (!seenPastSlot) { // No slots were in the past yet
-                        if (timeSlot.endsAt < now) { // This slot is in the past!
-                            seenPastSlot = true
-                        }
-                    }
-                }
-            }
-        }
-
-        return Triple(items, firstActiveIndex, lastActiveIndex)
-    }
-
     private class MatchResult(
         val matched: Boolean,
         val tagMatches: List<String> = emptyList(),
@@ -340,3 +271,87 @@ class ScheduleViewModel(
     }
 
 }
+
+internal fun buildNonSearchItems(
+    days: List<Day>,
+    now: LocalDateTime,
+    isBookmarkedOnly: Boolean,
+): Triple<List<ScheduleListItem>, Int, Int> {
+    var firstActiveIndex = -1
+    var lastActiveIndex = -1
+    var seenPastSlot = false
+
+    val items = buildList {
+        days.forEachIndexed { index, day ->
+            if (index > 0) {
+                add(DaySeparatorItem("day-separator-$index"))
+            }
+            add(DayHeaderItem(day))
+
+            day.timeSlots.forEachIndexed { index, timeSlot ->
+                var activeTimeSlot = false
+
+                if (firstActiveIndex == -1) { // We didn't find the active slot yet
+                    if (index == 0 && // This is the first slot of the day AND
+                        ((seenPastSlot && now < timeSlot.startsAt) || // There was a slot in the past before and this one is still upcoming OR
+                                (day.date == now.date && now < timeSlot.startsAt)) // This is today and the day didn't start yet
+                    ) {
+                        firstActiveIndex = lastIndex // We'll consider the DayHeader and this first slot active
+                        activeTimeSlot = true
+                    } else if (
+                        (seenPastSlot && now < timeSlot.startsAt) || // There was a slot in the past before and this one is still upcoming OR
+                        (now in timeSlot.startsAt..<timeSlot.endsAt) // We're in this slot right now
+                    ) {
+                        firstActiveIndex = lastIndex + 1 // This is the active slot, starting with its title
+                        activeTimeSlot = true
+                    }
+                }
+
+                add(TimeSlotTitleItem(timeSlot))
+
+                val (serviceEvents, allTalks) = timeSlot.sessions.partition { it.isServiceEvent }
+                if (serviceEvents.size == 1) {
+                    add(ServiceEventItem(serviceEvents.first()))
+                } else if (serviceEvents.size > 1) {
+                    add(ServiceEventGroupItem(serviceEvents))
+                }
+
+                val validTalks = if (isBookmarkedOnly) allTalks.filter { it.isFavorite } else allTalks
+                validTalks.forEach { session ->
+                    add(SessionItem(session))
+                }
+
+                if (last() is TimeSlotTitleItem && isBookmarkedOnly) {
+                    add(NoBookmarksItem(id = "empty-${timeSlot.startsAt}-${timeSlot.endsAt}"))
+                }
+
+                if (activeTimeSlot) { // This was the active slot
+                    lastActiveIndex = lastIndex // Mark its end
+                }
+
+                if (!seenPastSlot) { // No slots were in the past yet
+                    if (timeSlot.endsAt < now) { // This slot is in the past!
+                        seenPastSlot = true
+                    }
+                }
+            }
+        }
+    }
+
+    return Triple(items, firstActiveIndex, lastActiveIndex)
+}
+
+/**
+ * Stable, unique key of a schedule list item for the lazy list. Time slots can share a start
+ * time and differ in their end, so their keys include both.
+ */
+internal val ScheduleListItem.listKey: Any
+    get() = when (this) {
+        is DaySeparatorItem -> id
+        is DayHeaderItem -> value.date.toString()
+        is ServiceEventGroupItem -> value.map { it.id.id }
+        is ServiceEventItem -> value.id.id
+        is SessionItem -> value.id.id
+        is TimeSlotTitleItem -> "${value.startsAt}-${value.endsAt}"
+        is NoBookmarksItem -> id
+    }

@@ -4,6 +4,8 @@
     <string name="navigate_back">Zurück</string>
 
     <string name="nav_destination_info">Info</string>
+    <string name="nav_destination_my_schedule">Kalender</string>
+    <string name="nav_destination_now">Jetzt</string>
     <string name="nav_destination_schedule">Programm</string>
     <string name="nav_destination_speakers">Sprecher</string>
     <string name="nav_destination_map">Karte</string>
@@ -20,6 +22,7 @@
     <string name="about_app_description">Die KotlinConf-Anwendung wird vom JetBrains-Team mit Kotlin Multiplatform für geteilte Logik und Compose Multiplatform für die Benutzeroberfläche auf Android-, iOS-, Desktop- und Web-Plattformen entwickelt.
 
 Für den Quellcode und weitere technische Details besuchen Sie das GitHub-Repository.</string>
+    <string name="about_app_description_sessionize">Diese App zeigt das Programm von %1$s, direkt aus Sessionize gelesen. Sie basiert auf der Open-Source-App der KotlinConf von JetBrains, entwickelt mit Kotlin Multiplatform für geteilte Logik und Compose Multiplatform für die Benutzeroberfläche.</string>
     <string name="about_app_link_github">GitHub-Repository</string>
     <string name="about_app_link_rate">App bewerten</string>
     <string name="about_app_link_privacy_notice">Datenschutzhinweis der App</string>
@@ -42,7 +45,6 @@ Für den Quellcode und weitere technische Details besuchen Sie das GitHub-Reposi
 
     <string name="about_conference_privacy_notice_link">Datenschutzhinweis für Besucher</string>
     <string name="about_conference_general_terms_link">Allgemeine Geschäftsbedingungen</string>
-    <string name="about_conference_website_link">kotlinconf.com</string>
 
     <string name="about_conference_day1_title_line1">Eröffnungs-</string>
     <string name="about_conference_day1_title_line2">keynote</string>
@@ -172,4 +174,57 @@ Bitte versuchen Sie es erneut.</string>
     <string name="partners_error">Partnerinformationen sind nicht verfügbar.</string>
 
     <string name="partner_detail_title">Partner</string>
+    <string name="my_schedule_title">Kalender</string>
+    <string name="my_schedule_summary">Gemerkt: %1$d · Überschneidungen: %2$d</string>
+    <string name="my_schedule_all_day">Ganztägig</string>
+    <string name="my_schedule_clash">Überschneidung</string>
+    <string name="my_schedule_free">Frei %1$s</string>
+    <string name="my_schedule_free_browse">%1$d Sessions ansehen</string>
+    <string name="my_schedule_no_sessions">An diesem Tag gibt es keine Sessions.</string>
+    <string name="my_schedule_close">Schließen</string>
+    <string name="my_schedule_bookmark">Merken</string>
+    <string name="sync_title">Mit Sessionize synchronisieren</string>
+    <string name="sync_info_link">Merkliste mit der Sessionize-App synchronisieren</string>
+    <string name="sync_my_schedule_link">Mit der Sessionize-Web-App synchronisieren</string>
+    <string name="sync_my_schedule_linked">Mit der Sessionize-Web-App synchronisiert</string>
+    <string name="sync_intro">Halte deine Merkliste mit der Sessionize-Web-App dieser Konferenz (%1$s) abgeglichen, zum Beispiel mit einem Programm, das du am Laptop geplant hast.</string>
+    <string name="sync_have_code_title">Hast du einen Sync-Code?</string>
+    <string name="sync_have_code_steps">Öffne in der Web-App das Menü, wähle Sync favorites und dann I don’t have the sync code. Gib den 6-stelligen Code hier ein.</string>
+    <string name="sync_code_hint">6-stelliger Code</string>
+    <string name="sync_link">Synchronisieren</string>
+    <string name="sync_no_code_title">Oder hier beginnen</string>
+    <string name="sync_no_code_steps">Lass dir hier einen Code anzeigen und gib ihn in der Web-App unter Sync favorites, I want to use sync code ein.</string>
+    <string name="sync_show_code">Sync-Code anzeigen</string>
+    <string name="sync_waiting">Warte auf die Web-App…</string>
+    <string name="sync_linked_title">Mit der Sessionize-Web-App synchronisiert</string>
+    <string name="sync_linked_text">Was du hier oder in der Web-App merkst oder entfernst, erscheint innerhalb von ein, zwei Minuten in beiden.</string>
+    <string name="sync_last_synced">Zuletzt synchronisiert um %1$s</string>
+    <string name="sync_not_synced_yet">Noch nicht synchronisiert</string>
+    <string name="sync_now">Jetzt synchronisieren</string>
+    <string name="sync_stop">Synchronisierung beenden</string>
+    <string name="sync_error_code">Der Code hat nicht funktioniert. Codes laufen nach wenigen Minuten ab; erstelle in der Web-App einen neuen.</string>
+    <string name="sync_error_network">Sessionize ist nicht erreichbar. Prüfe die Verbindung und versuche es erneut.</string>
+    <string name="sync_error_expired">Der Code ist abgelaufen, bevor er benutzt wurde. Lass dir einen neuen anzeigen.</string>
+    <string name="up_next_now">Läuft gerade</string>
+    <string name="up_next_next">Als Nächstes</string>
+    <string name="up_next_later">Später heute</string>
+    <string name="up_next_earlier">Früher heute: %1$d</string>
+    <string name="up_next_min_left">noch %1$s</string>
+    <string name="up_next_starts_in">in %1$s</string>
+    <string name="up_next_minutes">%1$d Min.</string>
+    <string name="up_next_hours_minutes">%1$d Std. %2$d Min.</string>
+    <string name="up_next_pick_one">Diese überschneiden sich. Wähle eine.</string>
+    <string name="up_next_change_floor">Etage wechseln: %1$s → %2$s</string>
+    <string name="up_next_nothing_now">Gerade ist nichts gemerkt.</string>
+    <string name="up_next_nothing_next">Heute ist nichts weiter gemerkt.</string>
+    <string name="up_next_clash">Überschneidet sich mit einer anderen gemerkten Session</string>
+    <string name="now_good_morning">Guten Morgen</string>
+    <string name="now_good_afternoon">Guten Tag</string>
+    <string name="now_good_evening">Guten Abend</string>
+    <string name="now_welcome_hint">Merke dir die Sessions, die du sehen willst. Sie erscheinen hier, mit dem Weg zur nächsten.</string>
+    <string name="now_before">%1$s beginnt am %2$s. So sieht dein erster Tag aus.</string>
+    <string name="now_between">Heute ist nichts geplant. Weiter geht es am %1$s.</string>
+    <string name="now_after">Danke, dass du bei %1$s warst!</string>
+    <string name="now_on_now">Läuft gerade</string>
+    <string name="now_starting_next">Beginnt als Nächstes · %1$s</string>
 </resources>

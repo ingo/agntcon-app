@@ -95,6 +95,7 @@ kotlin {
         }
 
         jvmTest.dependencies {
+            implementation(libs.ktor.client.mock)
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutines.test)
         }
@@ -144,6 +145,26 @@ kotlin {
     jvmToolchain(21)
 }
 
+// The conference this build is for, chosen with -Pevent=<id> (see EventProfiles.kt)
+val generateActiveEvent by tasks.registering {
+    val event = providers.gradleProperty("event").orElse("kotlinconf")
+    val outputDir = layout.buildDirectory.dir("generated/activeEvent/kotlin")
+    inputs.property("event", event)
+    outputs.dir(outputDir)
+    doLast {
+        val file = outputDir.get().file("org/jetbrains/kotlinconf/event/ActiveEventId.kt").asFile
+        file.parentFile.mkdirs()
+        file.writeText(
+            "package org.jetbrains.kotlinconf.event\n\n" +
+                "internal const val ACTIVE_EVENT_ID = \"${event.get()}\"\n"
+        )
+    }
+}
+
+kotlin.sourceSets.commonMain {
+    kotlin.srcDir(generateActiveEvent)
+}
+
 powerAssert {
     functions = listOf(
         "kotlin.test.assertTrue",
@@ -168,4 +189,11 @@ aboutLibraries {
     library.duplicationMode = DuplicateMode.MERGE
     library.duplicationRule = DuplicateRule.SIMPLE
     export.outputFile = File("src/commonMain/composeResources/files/aboutlibraries.json")
+}
+
+// Real Sessionize feed snapshots for the JVM tests (see testdata/sessionize/README.md)
+tasks.named<Test>("jvmTest") {
+    val testData = rootProject.layout.projectDirectory.dir("testdata/sessionize")
+    inputs.dir(testData)
+    systemProperty("sessionize.testdata", testData.asFile.absolutePath)
 }

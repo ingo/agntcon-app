@@ -1,5 +1,6 @@
 package org.jetbrains.kotlinconf.storage
 
+import org.jetbrains.kotlinconf.sync.SessionizeSyncState
 import com.russhwolf.settings.ExperimentalSettingsApi
 import com.russhwolf.settings.ObservableSettings
 import com.russhwolf.settings.coroutines.getBooleanFlow
@@ -51,6 +52,7 @@ class YearlyStorageImpl(
     val FAVORITES = key("favorites")
     val NOTIFICATION_SETTINGS = key("notificationSettings")
     val VOTES = key("votes")
+    val SESSIONIZE_SYNC = key("sessionizeSync")
 
     override fun isPolicySigned(): Flow<Boolean> = settings.getBooleanFlow(POLICY_SIGNED, false)
     override suspend fun setPolicySigned(value: Boolean) = settings.set(POLICY_SIGNED, value)
@@ -69,6 +71,11 @@ class YearlyStorageImpl(
 
     override fun getNotificationSettings(): Flow<NotificationSettings?> = settings.getStringOrNullFlow(NOTIFICATION_SETTINGS).map { it.decodeOrNull<NotificationSettings>() }
     override suspend fun setNotificationSettings(value: NotificationSettings) = settings.set(NOTIFICATION_SETTINGS, json.encodeToString(value))
+
+    override fun getSessionizeSync(): Flow<SessionizeSyncState?> = settings.getStringOrNullFlow(SESSIONIZE_SYNC).map { it.decodeOrNull<SessionizeSyncState>() }
+    override suspend fun setSessionizeSync(value: SessionizeSyncState?) {
+        if (value == null) settings.remove(SESSIONIZE_SYNC) else settings.set(SESSIONIZE_SYNC, json.encodeToString(value))
+    }
 
     override fun getVotes(): Flow<List<VoteInfo>> = settings.getStringOrNullFlow(VOTES).map { it.decodeOrNull<List<VoteInfo>>() ?: emptyList() }
     override suspend fun setVotes(value: List<VoteInfo>) = settings.set(VOTES, json.encodeToString(value))

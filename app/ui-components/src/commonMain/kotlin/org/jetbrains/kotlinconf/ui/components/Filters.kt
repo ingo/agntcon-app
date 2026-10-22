@@ -190,6 +190,8 @@ private fun FilterItemGroup(
     isExclusive: Boolean,
     modifier: Modifier = Modifier,
 ) {
+    if (items.isEmpty()) return
+
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier,

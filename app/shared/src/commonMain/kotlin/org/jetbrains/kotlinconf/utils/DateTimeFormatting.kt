@@ -3,6 +3,7 @@ package org.jetbrains.kotlinconf.utils
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.format
+import kotlinx.datetime.format.DayOfWeekNames
 import kotlinx.datetime.format.MonthNames
 import kotlinx.datetime.format.Padding
 import kotlinx.datetime.format.char
@@ -18,6 +19,20 @@ object DateTimeFormatting {
         monthName(MonthNames.ENGLISH_FULL)
         char(' ')
         day(padding = Padding.ZERO)
+    }
+
+    private val weekdayDateFormat = LocalDate.Format {
+        dayOfWeek(DayOfWeekNames.ENGLISH_FULL)
+        chars(", ")
+        monthName(MonthNames.ENGLISH_FULL)
+        char(' ')
+        day(padding = Padding.NONE)
+    }
+
+    private val shortDateFormat = LocalDate.Format {
+        monthName(MonthNames.ENGLISH_ABBREVIATED)
+        char(' ')
+        day(padding = Padding.NONE)
     }
 
     private val monthFormat = LocalDate.Format {
@@ -37,6 +52,11 @@ object DateTimeFormatting {
     internal fun date(dateTime: LocalDateTime): String = date(dateTime.date)
 
     internal fun date(date: LocalDate): String = date.format(dateFormat)
+
+    internal fun shortDate(date: LocalDate): String = date.format(shortDateFormat)
+
+    /** "Thursday, October 22" */
+    internal fun weekdayDate(date: LocalDate): String = date.format(weekdayDateFormat)
 
     internal fun month(date: LocalDate): String = date.format(monthFormat)
 

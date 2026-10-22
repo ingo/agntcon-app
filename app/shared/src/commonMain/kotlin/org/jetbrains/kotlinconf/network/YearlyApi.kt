@@ -26,6 +26,9 @@ import org.jetbrains.kotlinconf.VoteInfo
 import org.jetbrains.kotlinconf.Votes
 import org.jetbrains.kotlinconf.di.Year
 import org.jetbrains.kotlinconf.di.YearScope
+import org.jetbrains.kotlinconf.event.ActiveEvent
+import org.jetbrains.kotlinconf.event.toConferenceInfo
+import org.jetbrains.kotlinconf.sessionize.toConference
 import org.jetbrains.kotlinconf.storage.ApplicationStorage
 import org.jetbrains.kotlinconf.utils.Logger
 import org.jetbrains.kotlinconf.utils.tagged
@@ -35,6 +38,7 @@ import org.jetbrains.kotlinconf.utils.tagged
 class YearlyApi(
     @Year private val year: Int,
     private val client: HttpClient,
+    private val sessionizeFeed: SessionizeFeed,
     applicationStorage: ApplicationStorage,
     logger: Logger,
 ) {
@@ -42,24 +46,36 @@ class YearlyApi(
 
     private val userId = applicationStorage.userId
 
+    /** Without a backend the schedule comes straight from Sessionize and the other calls are unavailable. */
+    private val event = ActiveEvent
+    private val sessionizeUrl: String? = event.sessionizeUrl.takeUnless { event.hasBackend }
+
     suspend fun downloadConferenceData(): Conference? = safeApiCall {
-        client.get { apiUrl("conference") }.body()
+        if (sessionizeUrl != null) {
+            sessionizeFeed.get(sessionizeUrl).toConference(event.timeZone, event.sessionizeRules)
+        } else {
+            client.get { apiUrl("conference") }.body()
+        }
     }
 
     suspend fun downloadConferenceInfo(): ConferenceInfo? = safeApiCall {
-        client.get { apiUrl("conference-info") }.body()
+        if (sessionizeUrl != null) {
+            event.toConferenceInfo(sessionizeFeed.get(sessionizeUrl))
+        } else {
+            client.get { apiUrl("conference-info") }.body()
+        }
     }
 
-    suspend fun downloadGoldenKodeeData(): GoldenKodeeData? = safeApiCall {
+    suspend fun downloadGoldenKodeeData(): GoldenKodeeData? = backendCall {
         client.get { apiUrl("golden-kodee") }.body()
     }
 
-    suspend fun downloadAsset(path: String): String? = safeApiCall {
+    suspend fun downloadAsset(path: String): String? = backendCall {
         client.get { apiUrl(path) }.bodyAsText()
     }
 
     suspend fun sign(userId: String): Boolean {
-        return safeApiCall {
+        return backendCall {
             client.post {
                 apiUrl("sign")
                 setBody(userId)
@@ -68,12 +84,12 @@ class YearlyApi(
     }
 
     suspend fun getPolicySigned(): Boolean? {
-        return safeApiCall {
+        return backendCall {
             client.get { apiUrl("sign") }.status.isSuccess()
         }
     }
 
-    suspend fun vote(sessionId: SessionId, score: Score?): Boolean = safeApiCall {
+    suspend fun vote(sessionId: SessionId, score: Score?): Boolean = backendCall {
         client.post {
             apiUrl("vote")
             json()
@@ -81,7 +97,7 @@ class YearlyApi(
         }.status.isSuccess()
     } ?: false
 
-    suspend fun sendFeedback(sessionId: SessionId, feedback: String): Boolean = safeApiCall {
+    suspend fun sendFeedback(sessionId: SessionId, feedback: String): Boolean = backendCall {
         client.post {
             apiUrl("feedback")
             json()
@@ -89,9 +105,12 @@ class YearlyApi(
         }.status.isSuccess()
     } ?: false
 
-    suspend fun myVotes(): List<VoteInfo> = safeApiCall {
+    suspend fun myVotes(): List<VoteInfo> = backendCall {
         client.get { apiUrl("vote") }.body<Votes>().votes
     } ?: emptyList()
+
+    private suspend fun <T> backendCall(call: suspend () -> T): T? =
+        if (event.hasBackend) safeApiCall(call) else null
 
     private suspend fun <T> safeApiCall(
         call: suspend () -> T,

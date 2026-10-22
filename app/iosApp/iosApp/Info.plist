@@ -14,6 +14,8 @@
 	<string>6.0</string>
 	<key>CFBundleName</key>
 	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundleDisplayName</key>
+	<string>$(INFOPLIST_KEY_CFBundleDisplayName)</string>
 	<key>CFBundlePackageType</key>
 	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
 	<key>CFBundleShortVersionString</key>
@@ -36,10 +38,14 @@
 		<integer>1</integer>
 		<integer>2</integer>
 	</array>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>UILaunchScreen</key>
 	<dict>
+		<key>UIColorName</key>
+		<string>$(EVENT_LAUNCH_BACKGROUND)</string>
 		<key>UIImageName</key>
-		<string>KotlinConf 2026 icon</string>
+		<string>$(EVENT_LAUNCH_IMAGE)</string>
 		<key>UIImageRespectsSafeAreaInsets</key>
 		<false/>
 	</dict>

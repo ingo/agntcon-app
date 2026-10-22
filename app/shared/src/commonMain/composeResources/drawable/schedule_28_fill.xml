@@ -1,0 +1,11 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="28dp"
+    android:height="28dp"
+    android:viewportWidth="28"
+    android:viewportHeight="28">
+  <!-- Full schedule, selected: the list cut out of a filled tile -->
+  <path
+      android:pathData="M6,3H22Q25,3 25,6V22Q25,25 22,25H6Q3,25 3,22V6Q3,3 6,3ZM8,7.5A1.25,1.25 0,1 0,8 10A1.25,1.25 0,1 0,8 7.5ZM8,12.75A1.25,1.25 0,1 0,8 15.25A1.25,1.25 0,1 0,8 12.75ZM8,18A1.25,1.25 0,1 0,8 20.5A1.25,1.25 0,1 0,8 18ZM11.5,8H21Q21.75,8 21.75,8.75Q21.75,9.5 21,9.5H11.5Q10.75,9.5 10.75,8.75Q10.75,8 11.5,8ZM11.5,13.25H21Q21.75,13.25 21.75,14Q21.75,14.75 21,14.75H11.5Q10.75,14.75 10.75,14Q10.75,13.25 11.5,13.25ZM11.5,18.5H21Q21.75,18.5 21.75,19.25Q21.75,20 21,20H11.5Q10.75,20 10.75,19.25Q10.75,18.5 11.5,18.5Z"
+      android:fillColor="#19191C"
+      android:fillType="evenOdd"/>
+</vector>

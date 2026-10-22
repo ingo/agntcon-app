@@ -4,6 +4,7 @@ import androidx.compose.ui.uikit.OnFocusBehavior
 import androidx.compose.ui.window.ComposeUIViewController
 import dev.zacsweers.metro.createGraphFactory
 import org.jetbrains.kotlinconf.di.IosAppGraph
+import org.jetbrains.kotlinconf.event.ActiveEvent
 import org.jetbrains.kotlinconf.flags.Flags
 import org.jetbrains.kotlinconf.utils.Logger
 import platform.Foundation.NSLog
@@ -14,6 +15,10 @@ fun initApp() = initApp(
     appGraph = appGraph,
     platformLogger = IOSLogger(),
 )
+
+/** Push notifications come from the conference backend; without one Firebase is not set up. */
+@Suppress("unused") // Called from Swift
+fun usesPushNotifications(): Boolean = ActiveEvent.hasBackend
 
 class IOSLogger : Logger {
     override fun log(tag: String, lazyMessage: () -> String) {

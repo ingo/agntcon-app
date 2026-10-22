@@ -1,6 +1,7 @@
 package org.jetbrains.kotlinconf.screens
 
 
+import org.jetbrains.kotlinconf.event.ActiveEvent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -200,7 +201,10 @@ fun ScheduleScreen(
                         items = remember(conferenceDates) {
                             conferenceDates.map { DateTimeFormatting.date(it) }
                         },
-                        shortItems = null,
+                        // Used when the full dates don't fit, e.g. four or more days on a phone
+                        shortItems = remember(conferenceDates) {
+                            conferenceDates.map { DateTimeFormatting.shortDate(it) }
+                        },
                         selectedIndex = selectedDayIndex,
                         onSelect = { index ->
                             scope.launch {
@@ -408,17 +412,7 @@ private fun ScheduleList(
 
         items(
             scheduleItems,
-            key = {
-                when (it) {
-                    is DaySeparatorItem -> it.id
-                    is DayHeaderItem -> it.value.date.toString()
-                    is ServiceEventGroupItem -> it.value.map { it.id.id }
-                    is ServiceEventItem -> it.value.id.id
-                    is SessionItem -> it.value.id.id
-                    is TimeSlotTitleItem -> it.value.startsAt.toString()
-                    is NoBookmarksItem -> it.id
-                }
-            },
+            key = { it.listKey },
         ) { item ->
             Box(Modifier.animateItem()) {
                 when (item) {
@@ -548,7 +542,7 @@ private fun SessionCard(
         status = status,
         onClick = { onSession(session.id) },
         modifier = modifier,
-        feedbackContent = if (!isSearch && session.state != SessionState.Upcoming) {
+        feedbackContent = if (ActiveEvent.hasBackend && !isSearch && session.state != SessionState.Upcoming) {
             {
                 FeedbackBlock(
                     sessionId = session.id,

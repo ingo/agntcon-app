@@ -1,5 +1,6 @@
 package org.jetbrains.kotlinconf.navigation
 
+import org.jetbrains.kotlinconf.event.ActiveEvent
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.togetherWith
@@ -45,6 +46,9 @@ import org.jetbrains.kotlinconf.screens.AboutConference
 import org.jetbrains.kotlinconf.screens.AppPrivacyNotice
 import org.jetbrains.kotlinconf.screens.AppPrivacyNoticePrompt
 import org.jetbrains.kotlinconf.screens.AppTermsOfUse
+import org.jetbrains.kotlinconf.screens.MyScheduleScreen
+import org.jetbrains.kotlinconf.screens.NowScreen
+import org.jetbrains.kotlinconf.screens.SessionizeSyncScreen
 import org.jetbrains.kotlinconf.screens.CodeOfConduct
 import org.jetbrains.kotlinconf.screens.GoldenKodeeFinalistScreen
 import org.jetbrains.kotlinconf.screens.GoldenKodeeScreen
@@ -107,20 +111,29 @@ internal fun NavHost(
     isDarkTheme: Boolean,
     onThemeChange: ((Boolean) -> Unit)?,
 ) {
+    val skipNotificationsOnboarding = LocalFlags.current.supportsNotifications.not()
     val startRoute = remember {
-        if (isOnboardingComplete) ScheduleScreen else StartPrivacyNoticeScreen
+        when {
+            isOnboardingComplete -> NowScreen
+            // The app privacy notice covers the backend; without one there is nothing to accept
+            ActiveEvent.hasBackend -> StartPrivacyNoticeScreen
+            skipNotificationsOnboarding -> NowScreen
+            else -> StartNotificationsScreen
+        }
     }
 
     val navState = rememberNavState(
         startRoute = startRoute,
         topLevelRoutes = setOf(
+            NowScreen,
+            MyScheduleScreen,
             ScheduleScreen,
             SpeakersScreen,
             GoldenKodeeScreen,
             MapScreen,
             InfoScreen,
         ),
-        primaryTopLevelRoute = ScheduleScreen,
+        primaryTopLevelRoute = NowScreen,
     )
 
     val topLevelBackEnabled = LocalFlags.current.enableBackOnTopLevelScreens
@@ -142,6 +155,8 @@ internal fun NavHost(
     val conferenceService = LocalAppGraph.current.conferenceService
     val showGoldenKodee by remember { conferenceService.goldenKodeeData.map { it != null } }
         .collectAsStateWithLifecycle(false)
+    val showMap by remember { conferenceService.mapData.map { it == null || it.floors.isNotEmpty() } }
+        .collectAsStateWithLifecycle(ActiveEvent.hasBackend)
 
     val isGoldenKodee = navState.topLevelRoute is GoldenKodeeScreen
 
@@ -151,8 +166,8 @@ internal fun NavHost(
     ) { appliedIsDarkTheme ->
         val colors = when {
             isGoldenKodee -> GoldenKodeeColors
-            appliedIsDarkTheme -> KotlinConfDarkColors
-            else -> KotlinConfLightColors
+            appliedIsDarkTheme -> ActiveEvent.theme?.dark ?: KotlinConfDarkColors
+            else -> ActiveEvent.theme?.light ?: KotlinConfLightColors
         }
 
         if (onThemeChange != null) {
@@ -175,6 +190,7 @@ internal fun NavHost(
                     navState = navState,
                     navigator = navigator,
                     showGoldenKodee = showGoldenKodee,
+                    showMap = showMap,
                 ) {
                     NavDisplay(
                         entries = navState.toDecoratedEntries(entryProvider),
@@ -247,14 +263,14 @@ private fun EntryProviderScope<AppRoute>.screens(
         AppPrivacyNoticePrompt(
             onRejectNotice = {
                 if (skipNotifications) {
-                    navigator.set(ScheduleScreen)
+                    navigator.set(NowScreen)
                 } else {
                     navigator.set(StartNotificationsScreen)
                 }
             },
             onAcceptNotice = {
                 if (skipNotifications) {
-                    navigator.set(ScheduleScreen)
+                    navigator.set(NowScreen)
                 } else {
                     navigator.set(StartNotificationsScreen)
                 }
@@ -266,7 +282,7 @@ private fun EntryProviderScope<AppRoute>.screens(
     entry<StartNotificationsScreen> {
         StartNotificationsScreen(
             onDone = {
-                navigator.set(ScheduleScreen)
+                navigator.set(NowScreen)
             }
         )
     }
@@ -280,6 +296,25 @@ private fun EntryProviderScope<AppRoute>.screens(
             onSession = { navigator.add(SessionScreen(it)) },
             onPrivacyNoticeNeeded = { navigator.add(AppPrivacyNoticePrompt) },
             tabReselections = navigator.tabReselections(forRoute = ScheduleScreen),
+        )
+    }
+
+    entry<NowScreen>(metadata = noAnimationMetadata) {
+        val service: ConferenceService = LocalAppGraph.current.conferenceService
+        LaunchedEffect(Unit) {
+            service.completeOnboarding()
+        }
+        NowScreen(onSession = { navigator.add(SessionScreen(it)) })
+    }
+
+    entry<SessionizeSyncScreen> {
+        SessionizeSyncScreen(onBack = onBack)
+    }
+
+    entry<MyScheduleScreen>(metadata = noAnimationMetadata) {
+        MyScheduleScreen(
+            onSession = { navigator.add(SessionScreen(it)) },
+            onSync = if (ActiveEvent.sessionizeAppUrl != null) { { navigator.add(SessionizeSyncScreen) } } else null,
         )
     }
 
@@ -314,17 +349,25 @@ private fun EntryProviderScope<AppRoute>.screens(
 
     entry<InfoScreen>(metadata = noAnimationMetadata) {
         val uriHandler = LocalUriHandler.current
+        val conferenceService = LocalAppGraph.current.conferenceService
+        val hasPartners by remember { conferenceService.conferenceInfo.map { it?.partners?.isNotEmpty() ?: false } }
+            .collectAsStateWithLifecycle(false)
         val mapHandler = LocalMapHandler.current
         InfoScreen(
             onAboutConf = { navigator.add(AboutConferenceScreen) },
             onHowToFindVenue = { address -> mapHandler.openNavigation(address) },
             onAboutApp = { navigator.add(AboutAppScreen) },
-            onOurPartners = { navigator.add(PartnersScreen) },
-            onCodeOfConduct = { navigator.add(CodeOfConductScreen) },
-            onTwitter = { uriHandler.openUri(URLs.TWITTER) },
-            onSlack = { uriHandler.openUri(URLs.SLACK) },
-            onBluesky = { uriHandler.openUri(URLs.BLUESKY) },
+            onOurPartners = if (hasPartners) { { navigator.add(PartnersScreen) } } else null,
+            onCodeOfConduct = when {
+                ActiveEvent.hasBackend -> { { navigator.add(CodeOfConductScreen) } }
+                else -> ActiveEvent.codeOfConductUrl?.let { url -> { uriHandler.openUri(url) } }
+            },
+            codeOfConductIsExternal = !ActiveEvent.hasBackend,
+            onTwitter = URLs.TWITTER?.let { url -> { uriHandler.openUri(url) } },
+            onSlack = URLs.SLACK?.let { url -> { uriHandler.openUri(url) } },
+            onBluesky = URLs.BLUESKY?.let { url -> { uriHandler.openUri(url) } },
             onSettings = { navigator.add(SettingsScreen) },
+            onSessionizeSync = if (ActiveEvent.sessionizeAppUrl != null) { { navigator.add(SessionizeSyncScreen) } } else null,
         )
     }
 
@@ -355,8 +398,8 @@ private fun EntryProviderScope<AppRoute>.screens(
             onBack = onBack,
             onGitHubRepo = { uriHandler.openUri(URLs.GITHUB_REPO) },
             onRateApp = { getStoreUrl()?.let { uriHandler.openUri(it) } },
-            onPrivacyNotice = { navigator.add(AppPrivacyNoticeScreen) },
-            onTermsOfUse = { navigator.add(AppTermsOfUseScreen) },
+            onPrivacyNotice = if (ActiveEvent.hasBackend) { { navigator.add(AppPrivacyNoticeScreen) } } else null,
+            onTermsOfUse = if (ActiveEvent.hasBackend) { { navigator.add(AppTermsOfUseScreen) } } else null,
             onLicenses = { navigator.add(LicensesScreen) },
             onJunie = { uriHandler.openUri(URLs.JUNIE_LANDING_PAGE) },
             onDeveloperMenu = { skipDelay -> navigator.add(DeveloperMenuScreen(skipWarningDelay = skipDelay)) },
@@ -380,9 +423,9 @@ private fun EntryProviderScope<AppRoute>.screens(
     entry<AboutConferenceScreen> {
         val urlHandler = LocalUriHandler.current
         AboutConference(
-            onPrivacyNotice = { navigator.add(VisitorPrivacyNoticeScreen) },
-            onGeneralTerms = { navigator.add(TermsOfUseScreen) },
-            onWebsiteLink = { urlHandler.openUri(URLs.KOTLINCONF_HOMEPAGE) },
+            onPrivacyNotice = if (ActiveEvent.hasBackend) { { navigator.add(VisitorPrivacyNoticeScreen) } } else null,
+            onGeneralTerms = if (ActiveEvent.hasBackend) { { navigator.add(TermsOfUseScreen) } } else null,
+            onWebsiteLink = URLs.CONFERENCE_HOMEPAGE?.let { url -> { urlHandler.openUri(url) } },
             onBack = onBack,
             onSpeaker = { speakerId -> navigator.add(SpeakerDetailScreen(speakerId)) },
         )

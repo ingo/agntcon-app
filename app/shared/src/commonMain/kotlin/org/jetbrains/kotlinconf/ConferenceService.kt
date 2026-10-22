@@ -1,5 +1,18 @@
 package org.jetbrains.kotlinconf
 
+import kotlin.uuid.Uuid
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Clock
+import org.jetbrains.kotlinconf.sync.withChange
+import org.jetbrains.kotlinconf.sync.mergeAfterSync
+import org.jetbrains.kotlinconf.sync.SessionizeSyncState
+import org.jetbrains.kotlinconf.sync.SessionizeSyncApi
+import org.jetbrains.kotlinconf.sync.CodeStatus
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.CancellationException
 import com.mmk.kmpnotifier.notification.NotifierManager
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
@@ -25,6 +38,7 @@ import kotlinx.datetime.LocalDateTime
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.kotlinconf.LocalNotificationId.Type
 import org.jetbrains.kotlinconf.di.YearGraph
+import org.jetbrains.kotlinconf.event.ActiveEvent
 import org.jetbrains.kotlinconf.flags.FakeGoldenKodeeData
 import org.jetbrains.kotlinconf.flags.FlagsManager
 import org.jetbrains.kotlinconf.generated.resources.Res
@@ -50,16 +64,23 @@ class ConferenceService(
     private val yearGraphFactory: YearGraph.Factory,
     private val localNotificationService: LocalNotificationService,
     private val flagsManager: FlagsManager,
+    private val syncApi: SessionizeSyncApi,
     private val scope: CoroutineScope,
     logger: Logger,
 ) {
     companion object {
         private const val LOG_TAG = "ConferenceService"
+        private val SYNC_INTERVAL = 60.seconds
     }
 
     private val taggedLogger = logger.tagged(LOG_TAG)
 
     private val currentYearGraph: MutableStateFlow<YearGraph?> = MutableStateFlow(null)
+
+    // Declared before init: the sync loop started there uses them
+    private val sessionizeAppUrl: String? = ActiveEvent.sessionizeAppUrl
+    private val syncMutex = Mutex()
+    private val syncStateMutex = Mutex()
 
     private val currentYearlyStorage: Flow<YearlyStorage> =
         currentYearGraph.map { it?.storage }.filterNotNull()
@@ -104,7 +125,16 @@ class ConferenceService(
             timeProvider.run()
         }
 
-        scope.launch {
+        // Keep bookmarks in step with the event's Sessionize web app while linked
+        if (sessionizeAppUrl != null) scope.launch {
+            currentYearGraph.filterNotNull().first()
+            while (true) {
+                if (currentSyncState()?.linked == true) syncFavorites()
+                delay(SYNC_INTERVAL)
+            }
+        }
+
+        if (ActiveEvent.hasBackend) scope.launch {
             currentYearlyStorage.flatMapLatest { it.getNotificationSettings() }
                 .filterNotNull()
                 .collect { settings ->
@@ -143,10 +173,7 @@ class ConferenceService(
 
     val speakers: StateFlow<List<Speaker>> =
         currentYearlyStorage.flatMapLatest { it.getConferenceCache() }
-            .map {
-                (it?.speakers ?: emptyList())
-                    .filter { speaker -> speaker.photoUrl.isNotBlank() }
-            }
+            .map { it?.speakers ?: emptyList() }
             .stateIn(scope, SharingStarted.Eagerly, emptyList())
 
     private val speakersById: StateFlow<Map<SpeakerId, Speaker>> = speakers
@@ -380,6 +407,10 @@ class ConferenceService(
             if (favorite) favorites.add(sessionId) else favorites.remove(sessionId)
             storage.setFavorites(favorites)
 
+            if (recordSyncChange(sessionId, favorite)) {
+                scope.launch { syncFavorites() }
+            }
+
             if (favorite) {
                 val remindersEnabled = getNotificationSettings().first().sessionReminders
                 if (remindersEnabled) {
@@ -436,8 +467,8 @@ class ConferenceService(
             )
         }
 
-        // Notifications for session end
-        if (end > now) {
+        // Notifications for session end, asking for feedback
+        if (ActiveEvent.hasBackend && end > now) {
             localNotificationService.post(
                 time = end,
                 localNotificationId = LocalNotificationId(Type.SessionEnd, sessionId.id),
@@ -508,7 +539,7 @@ class ConferenceService(
         val storage = currentYearGraph.storage
         val client = currentYearGraph.api
 
-        val docPaths = listOf(
+        val docPaths = if (!ActiveEvent.hasBackend) emptyList() else listOf(
             "documents/app-privacy-notice.md",
             "documents/app-terms.md",
             "documents/code-of-conduct.md",
@@ -572,6 +603,162 @@ class ConferenceService(
             storage.setAsset(path, content)
         } else {
             taggedLogger.log { "Failed to download asset: $path" }
+        }
+    }
+
+    // Bookmark sync with the event's Sessionize web app, see SessionizeSync.kt
+
+
+    val supportsSessionizeSync: Boolean get() = sessionizeAppUrl != null
+
+    val sessionizeSyncState: StateFlow<SessionizeSyncState?> =
+        currentYearlyStorage.flatMapLatest { it.getSessionizeSync() }
+            .stateIn(scope, SharingStarted.Eagerly, null)
+
+    private suspend fun currentSyncState(): SessionizeSyncState? =
+        currentYearGraph.value?.storage?.getSessionizeSync()?.first()
+
+    private fun nowMillis(): Long = Clock.System.now().toEpochMilliseconds()
+
+    @OptIn(ExperimentalUuidApi::class)
+    private fun newSyncState() = SessionizeSyncState(deviceId = Uuid.random().toString())
+
+    private suspend fun updateSyncState(transform: (SessionizeSyncState?) -> SessionizeSyncState?) =
+        syncStateMutex.withLock {
+            val storage = currentYearGraph.value?.storage ?: return@withLock
+            storage.setSessionizeSync(transform(storage.getSessionizeSync().first()))
+        }
+
+    /** Records a bookmark change for the next sync; false when not linked. */
+    private suspend fun recordSyncChange(sessionId: SessionId, bookmarked: Boolean): Boolean {
+        if (sessionizeAppUrl == null) return false
+        var recorded = false
+        updateSyncState { state ->
+            if (state?.linked == true) {
+                recorded = true
+                state.withChange(sessionId, bookmarked, nowMillis())
+            } else state
+        }
+        return recorded
+    }
+
+    /**
+     * Sends pending bookmark changes and takes the server's list, keeping changes made in the
+     * meantime. Returns false when there is nothing to sync with or the server can't be reached.
+     */
+    suspend fun syncFavorites(first: Boolean = false): Boolean = syncMutex.withLock {
+        val baseUrl = sessionizeAppUrl ?: return false
+        val sent = currentSyncState() ?: return false
+        val items = try {
+            syncApi.favorites(baseUrl, sent.deviceId, sent.changedAt, first, sent.toAdd, sent.toRemove)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            taggedLogger.log { "Sessionize sync failed: ${e.message}" }
+            return false
+        }
+
+        var pending: SessionizeSyncState? = null
+        updateSyncState { latest ->
+            (latest ?: return@updateSyncState null).copy(
+                toAdd = latest.toAdd - sent.toAdd,
+                toRemove = latest.toRemove - sent.toRemove,
+                lastSyncedAt = nowMillis(),
+            ).also { pending = it }
+        }
+        pending?.let { applyFavorites(mergeAfterSync(items, it)) }
+        taggedLogger.log { "Sessionize sync: ${items.size} bookmarks" }
+        true
+    }
+
+    /** Links to the web app that shows [code]; this app's bookmarks are added to the web app's. */
+    suspend fun linkSessionize(code: String): Boolean {
+        val baseUrl = sessionizeAppUrl ?: return false
+        val state = currentSyncState()?.takeUnless { it.linked } ?: newSyncState()
+        val ok = try {
+            // Register the device first, as the web app does on start; unregistered devices fail later
+            syncApi.favorites(baseUrl, state.deviceId, 0, first = true, toAdd = emptySet(), toRemove = emptySet())
+            syncApi.useCode(baseUrl, state.deviceId, code.trim())
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            taggedLogger.log { "Sessionize code failed: ${e.message}" }
+            false
+        }
+        if (!ok) return false
+
+        startLinkedSync(state)
+        return true
+    }
+
+    /**
+     * Shares this app's bookmarks and returns a code to enter in the web app. Poll
+     * [sessionizeCodeStatus] and call [completeSessionizeLink] once the code was used.
+     */
+    suspend fun startSessionizeCode(): String? {
+        val baseUrl = sessionizeAppUrl ?: return null
+        val local = currentYearGraph.value?.storage?.getFavorites()?.first()?.map { it.id }?.toSet() ?: return null
+        val state = (currentSyncState()?.takeUnless { it.linked } ?: newSyncState())
+            .copy(toAdd = local, toRemove = emptySet(), changedAt = nowMillis())
+        updateSyncState { state }
+        if (!syncFavorites(first = true)) return null
+        return try {
+            syncApi.startCode(baseUrl, state.deviceId)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            taggedLogger.log { "Sessionize code failed: ${e.message}" }
+            null
+        }
+    }
+
+    suspend fun sessionizeCodeStatus(code: String): CodeStatus? {
+        val baseUrl = sessionizeAppUrl ?: return null
+        return try {
+            syncApi.codeStatus(baseUrl, code)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    suspend fun completeSessionizeLink() {
+        val state = currentSyncState() ?: return
+        startLinkedSync(state)
+    }
+
+    private suspend fun startLinkedSync(state: SessionizeSyncState) {
+        // Keep the bookmarks made in this app: send them with the first sync
+        val local = currentYearGraph.value?.storage?.getFavorites()?.first()?.map { it.id }?.toSet() ?: emptySet()
+        updateSyncState { state.copy(linked = true, toAdd = state.toAdd + local, toRemove = emptySet(), changedAt = nowMillis()) }
+        syncFavorites(first = true)
+    }
+
+    /** Stops syncing; bookmarks stay as they are. */
+    suspend fun unlinkSessionize() {
+        updateSyncState { null }
+    }
+
+    /** Applies a bookmark list from the server, updating session reminders for what changed. */
+    private suspend fun applyFavorites(favorites: Set<SessionId>) {
+        val storage = currentYearGraph.value?.storage ?: return
+        val old = storage.getFavorites().first()
+        if (old == favorites) return
+        storage.setFavorites(favorites)
+
+        (old - favorites).forEach { cancelNotifications(it) }
+        if (getNotificationSettings().first().sessionReminders) {
+            (favorites - old).forEach { sessionId ->
+                val session = sessionByIdFlow(sessionId).first() ?: return@forEach
+                scheduleNotification(
+                    start = session.startsAt,
+                    end = session.endsAt,
+                    sessionId = session.id,
+                    title = session.title,
+                    room = session.locationLine,
+                )
+            }
         }
     }
 

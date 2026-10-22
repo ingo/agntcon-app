@@ -24,7 +24,6 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.jetbrains.kotlinconf.ui.theme.Brand.colorGradient
 import org.jetbrains.kotlinconf.ui.theme.JetBrainsSans
 import org.jetbrains.kotlinconf.ui.theme.KotlinConfTheme
 import org.jetbrains.kotlinconf.ui.theme.PreviewHelper
@@ -65,7 +64,7 @@ fun DayHeader(
                 shape = RoundedCornerShape(cornerRadius)
                 clip = true
             }
-            .background(colorGradient)
+            .background(KotlinConfTheme.colors.headerGradient)
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 12.dp)
             .semantics(mergeDescendants = true) {

@@ -38,7 +38,17 @@ kotlin {
             api(libs.kotlinx.serialization.core)
             api(libs.kotlinx.serialization.json)
         }
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
+        }
     }
 
     jvmToolchain(21)
+}
+
+// Real Sessionize feed snapshots for the JVM tests (see testdata/sessionize/README.md)
+tasks.named<Test>("jvmTest") {
+    val testData = rootProject.layout.projectDirectory.dir("testdata/sessionize")
+    inputs.dir(testData)
+    systemProperty("sessionize.testdata", testData.asFile.absolutePath)
 }

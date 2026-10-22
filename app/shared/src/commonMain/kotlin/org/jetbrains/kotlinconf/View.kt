@@ -43,7 +43,9 @@ fun Conference.buildAgenda(
 private data class SlotTimes(
     val startsAt: LocalDateTime,
     val endsAt: LocalDateTime,
-)
+) {
+    fun contains(start: LocalDateTime, end: LocalDateTime): Boolean = start >= startsAt && end <= endsAt
+}
 
 fun List<Session>.groupByTime(
     conference: Conference,
@@ -51,19 +53,33 @@ fun List<Session>.groupByTime(
     favorites: Set<SessionId>,
     votes: Map<SessionId, VoteInfo>,
 ): List<TimeSlot> {
-    val slots: List<SlotTimes> =
-        filterNot { it.isLightning }
-            .sortedBy { it.startsAt }
-            .map { SlotTimes(it.startsAt, it.endsAt) }
+    val regularSlots: List<SlotTimes> = filterNot { it.isLightning }
+        .map { SlotTimes(it.startsAt, it.endsAt) }
+        .distinct()
+    // Slots spanning other slots (all-day registration, an exhibition hall) don't take in shorter sessions
+    val enclosingSlots = regularSlots.filter { slot ->
+        regularSlots.none { other -> other != slot && slot.contains(other.startsAt, other.endsAt) }
+    }
 
-    val slotsToSessions: Map<SlotTimes, MutableList<SessionCardView>> =
-        slots.associateWith { mutableListOf() }
+    // Regular sessions get their own slot; lightning talks join the smallest slot around them, or get their own
+    val slotOf: Map<Session, SlotTimes> = associateWith { session ->
+        val own = SlotTimes(session.startsAt, session.endsAt)
+        if (!session.isLightning) return@associateWith own
+        enclosingSlots
+            .filter { it.contains(session.startsAt, session.endsAt) }
+            .minByOrNull { it.endsAt - it.startsAt }
+            ?: own
+    }
+
+    val slotsToSessions: Map<SlotTimes, MutableList<SessionCardView>> = slotOf.values
+        .distinct()
+        .sortedWith(compareBy({ it.startsAt }, { it.endsAt }))
+        .associateWith { mutableListOf() }
 
     val speakersById = conference.speakers.associateBy { it.id }
 
     this.forEach { session ->
-        val slot = slots.find { (start, end) -> session.startsAt >= start && session.endsAt <= end } ?: return@forEach
-        slotsToSessions.getValue(slot).add(
+        slotsToSessions.getValue(slotOf.getValue(session)).add(
             session.asSessionCard(speakersById, now, favorites, votes[session.id])
         )
     }

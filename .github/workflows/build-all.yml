@@ -26,6 +26,24 @@ jobs:
       - name: Run JVM tests
         run: ./gradlew jvmTest
 
+  test-events:
+    name: Test app (${{ matrix.event }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        event: [kotlinconf, agntcon-mcpcon-na-2026]
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: 21
+      - name: Run core and app JVM tests
+        run: ./gradlew -Pevent=${{ matrix.event }} :core:jvmTest :app:shared:jvmTest
+
   build-jvm-release:
     name: Build desktop release
     runs-on: ubuntu-latest
@@ -55,8 +73,15 @@ jobs:
         run: ./gradlew :app:androidApp:assembleDebug --stacktrace
 
   build-ios:
-    name: Build iOS
+    name: Build iOS (${{ matrix.event }})
     runs-on: macOS-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Conference profiles in app/shared/.../event/EventProfiles.kt
+        event: [kotlinconf, agntcon-mcpcon-na-2026]
+    env:
+      ORG_GRADLE_PROJECT_event: ${{ matrix.event }}
     steps:
       - name: Check out code
         uses: actions/checkout@v4
