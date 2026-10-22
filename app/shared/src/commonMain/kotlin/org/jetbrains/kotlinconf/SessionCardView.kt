@@ -21,6 +21,7 @@ data class SessionCardView(
     val tags: Set<String>,
     val startsInMinutes: Int?,
     val videoUrl: String?,
+    val slidesUrl: String? = null,
 ) {
     val fullTimeline: String = DateTimeFormatting.dateAndTime(startsAt, endsAt)
     val shortTimeline: String = DateTimeFormatting.timeToTime(startsAt, endsAt)

@@ -127,6 +127,7 @@ Bitte versuchen Sie es erneut.
     <string name="session_screen_error">Die Details dieser Sitzung sind derzeit nicht verfügbar.</string>
     <string name="session_feedback_sent">Ihr Kommentar wurde gesendet.</string>
     <string name="session_watch_video">Aufzeichnung ansehen</string>
+    <string name="session_slides">Folien</string>
     <string name="session_room_state_description_expanded">Erweitert</string>
     <string name="session_room_state_description_collapsed">Eingeklappt</string>
 

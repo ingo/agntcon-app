@@ -29,7 +29,10 @@ class Session(
     val startsAt: LocalDateTime,
     val endsAt: LocalDateTime,
     val tags: List<String>? = null,
+    /** The session's recording, once published. */
     val videoUrl: String? = null,
+    /** The speakers' slides (or poster), when uploaded to Sessionize. */
+    val slidesUrl: String? = null,
 )
 
 @Serializable

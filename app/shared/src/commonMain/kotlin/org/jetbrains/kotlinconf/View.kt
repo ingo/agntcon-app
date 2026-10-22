@@ -122,5 +122,6 @@ fun Session.asSessionCard(
             if (diff in 1..30) diff else null
         },
         videoUrl = videoUrl,
+        slidesUrl = slidesUrl,
     )
 }

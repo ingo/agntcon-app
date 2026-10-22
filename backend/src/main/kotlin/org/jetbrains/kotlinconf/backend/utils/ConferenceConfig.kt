@@ -13,6 +13,7 @@ class ConferenceConfig(config: ApplicationConfig) {
         multipartWorkshopTag = config.propertyOrNull("sessionize.multipartWorkshopTag")?.getString()
             ?.takeIf { it.isNotBlank() },
         roomSuffixesToStrip = config.propertyOrNull("sessionize.roomSuffixesToStrip")?.getList() ?: emptyList(),
+        slidesQuestion = config.propertyOrNull("sessionize.slidesQuestion")?.getString()?.takeIf { it.isNotBlank() },
     )
 
     val adminSecret: String = config.property("service.secret").getString()
