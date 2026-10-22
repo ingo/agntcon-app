@@ -35,7 +35,7 @@ class EventProfilesTest {
         assertEquals(listOf("MCPCon"), info.tags.categories)
         assertEquals(listOf("Beginner"), info.tags.levels)
         assertTrue(info.partners.isEmpty())
-        assertTrue(info.mapData.floors.isEmpty())
+        assertEquals(listOf("Concourse level", "Street & lower level"), info.mapData.floors.map { it.name })
         assertNotNull(info.mapData.venueAddress)
     }
 }

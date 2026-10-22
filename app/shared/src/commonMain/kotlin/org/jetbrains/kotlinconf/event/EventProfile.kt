@@ -29,6 +29,8 @@ data class EventProfile(
     val websiteUrl: String? = null,
     val codeOfConductUrl: String? = null,
     val venueAddress: String? = null,
+    /** A floor plan shipped with the app, for events without a backend; the backend serves its own. */
+    val venueMap: VenueMap? = null,
     val social: SocialLinks = SocialLinks(),
     val appStoreUrl: String? = null,
     val playStoreUrl: String? = null,

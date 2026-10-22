@@ -39,6 +39,8 @@ import org.jetbrains.compose.resources.getString
 import org.jetbrains.kotlinconf.LocalNotificationId.Type
 import org.jetbrains.kotlinconf.di.YearGraph
 import org.jetbrains.kotlinconf.event.ActiveEvent
+import org.jetbrains.kotlinconf.event.BUNDLED_ASSET_PREFIX
+import org.jetbrains.kotlinconf.event.bundledMapSvg
 import org.jetbrains.kotlinconf.flags.FakeGoldenKodeeData
 import org.jetbrains.kotlinconf.flags.FlagsManager
 import org.jetbrains.kotlinconf.generated.resources.Res
@@ -548,7 +550,8 @@ class ConferenceService(
         )
         val mapData = storage.getConferenceInfoCache().first()?.mapData
         val mapPaths =
-            mapData?.floors?.flatMap { listOf(it.svgPathLight, it.svgPathDark) } ?: emptyList()
+            mapData?.floors?.flatMap { listOf(it.svgPathLight, it.svgPathDark) }
+                ?.filterNot { it.startsWith(BUNDLED_ASSET_PREFIX) } ?: emptyList()
 
         val allFiles = (docPaths + mapPaths)
         val missing = allFiles.filter { storage.getAsset(it) == null }
@@ -577,6 +580,12 @@ class ConferenceService(
      */
     suspend fun getAsset(path: String): String? {
         taggedLogger.log { "Reading asset: $path" }
+
+        if (path.startsWith(BUNDLED_ASSET_PREFIX)) {
+            return runCatching { bundledMapSvg(path) }
+                .onFailure { taggedLogger.log { "Failed to read bundled asset: $path" } }
+                .getOrNull()
+        }
 
         val storage = currentYearGraph.filterNotNull().first().storage
         val cached = storage.getAsset(path)
