@@ -23,9 +23,12 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.map
+import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.kotlinconf.ConferenceService
 import org.jetbrains.kotlinconf.flags.LocalFlags
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.jetbrains.kotlinconf.generated.resources.Res
+import org.jetbrains.kotlinconf.generated.resources.app_version
 import org.jetbrains.kotlinconf.LocalAppGraph
 import org.jetbrains.kotlinconf.LocalMapHandler
 import org.jetbrains.kotlinconf.LocalNotificationId
@@ -237,6 +240,7 @@ private fun EntryProviderScope<AppRoute>.screens(
         val uriHandler = LocalUriHandler.current
         val conferenceService = LocalAppGraph.current.conferenceService
         val mapHandler = LocalMapHandler.current
+        val appVersion = stringResource(Res.string.app_version)
         InfoScreen(
             onAboutConf = { navigator.add(AboutConferenceScreen) },
             onHowToFindVenue = { address -> mapHandler.openNavigation(address) },
@@ -246,6 +250,7 @@ private fun EntryProviderScope<AppRoute>.screens(
             onSlack = URLs.SLACK?.let { url -> { uriHandler.openUri(url) } },
             onBluesky = URLs.BLUESKY?.let { url -> { uriHandler.openUri(url) } },
             onSettings = { navigator.add(SettingsScreen) },
+            onReportProblem = { uriHandler.openUri(URLs.reportProblem(appVersion)) },
             onSessionizeSync = if (ActiveEvent.sessionizeAppUrl != null) { { navigator.add(SessionizeSyncScreen) } } else null,
         )
     }

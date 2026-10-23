@@ -36,6 +36,7 @@ import org.jetbrains.kotlinconf.generated.resources.info_link_description_bluesk
 import org.jetbrains.kotlinconf.generated.resources.info_link_description_slack
 import org.jetbrains.kotlinconf.generated.resources.info_link_description_twitter
 import org.jetbrains.kotlinconf.generated.resources.info_link_how_to_find_venue
+import org.jetbrains.kotlinconf.generated.resources.info_link_report_problem
 import org.jetbrains.kotlinconf.generated.resources.info_link_settings
 import org.jetbrains.kotlinconf.generated.resources.sync_info_link
 import org.jetbrains.kotlinconf.generated.resources.info_title
@@ -60,6 +61,7 @@ fun InfoScreen(
     onSlack: (() -> Unit)?,
     onBluesky: (() -> Unit)?,
     onSettings: () -> Unit,
+    onReportProblem: (() -> Unit)? = null,
     onSessionizeSync: (() -> Unit)? = null,
     viewModel: InfoViewModel = metroViewModel(),
 ) {
@@ -99,6 +101,13 @@ fun InfoScreen(
             }
             PageMenuItem(stringResource(Res.string.info_link_about_app), onClick = onAboutApp)
             PageMenuItem(stringResource(Res.string.info_link_settings), onClick = onSettings)
+            if (onReportProblem != null) {
+                PageMenuItem(
+                    stringResource(Res.string.info_link_report_problem),
+                    onClick = onReportProblem,
+                    drawableEnd = Res.drawable.arrow_up_right_24,
+                )
+            }
             if (onSessionizeSync != null) {
                 PageMenuItem(stringResource(Res.string.sync_info_link), onClick = onSessionizeSync)
             }

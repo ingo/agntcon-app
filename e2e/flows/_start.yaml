@@ -1,0 +1,12 @@
+# Fresh install: clear the app's data, get past the notifications screen, end on the Now tab.
+appId: com.muschenetz.agntcon
+---
+- launchApp:
+    clearState: true
+- tapOn: "Let’s get started!"
+- runFlow:
+    when:
+      visible: "Allow"
+    commands:
+      - tapOn: "Allow"
+- assertVisible: "Now"

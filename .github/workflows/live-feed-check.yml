@@ -1,0 +1,44 @@
+name: Check the live Sessionize feed
+
+# The app reads the event's public Sessionize feed directly. This downloads it as it is right now and runs the
+# real-feed tests (schedule slots, unique list keys, personal calendar, search, map pins) against it, so a change
+# in the feed that the app cannot handle shows up here before attendees find it. Runs every six hours and on demand;
+# a failure sends the usual GitHub Actions notification.
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FEED_URL: https://sessionize.com/api/v2/asqam7rn/view/All
+  FEED_FILE: agntcon-mcpcon-na-2026.json
+
+jobs:
+  check:
+    name: Real-feed tests on the live feed
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: 21
+
+      - name: Download the live feed
+        run: |
+          mkdir -p live-feed
+          cp testdata/sessionize/*.json live-feed/
+          curl --fail --silent --show-error --retry 3 --max-time 60 -H 'Accept-Encoding: gzip' --compressed \
+            -o "live-feed/$FEED_FILE" "$FEED_URL"
+          sessions=$(python3 -c "import json,sys; d=json.load(open('live-feed/$FEED_FILE')); print(len(d['sessions']), len(d['speakers']))")
+          echo "Live feed: $sessions (sessions, speakers)"
+          python3 -c "import json; d=json.load(open('live-feed/$FEED_FILE')); assert len(d['sessions'])>=20, 'the feed has almost no sessions'"
+
+      - name: Run the real-feed tests on it
+        run: ./gradlew -PliveFeedDir=live-feed :app:shared:jvmTest --rerun --tests '*RealFeed*' --tests '*SessionLinks*'

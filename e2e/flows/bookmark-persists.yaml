@@ -1,0 +1,10 @@
+# A bookmark is still there after the app is closed and opened again, and shows on the calendar.
+appId: com.muschenetz.agntcon
+---
+- runFlow: _start.yaml
+- tapOn: "Schedule"
+- tapOn: "Bookmark OpenAI MCPCon Happy Hour"
+- stopApp
+- launchApp
+- tapOn: "Calendar"
+- assertVisible: "1 bookmarked"

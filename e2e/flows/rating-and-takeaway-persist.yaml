@@ -1,0 +1,20 @@
+# A private rating and one-line takeaway are saved on the device and are still there after a restart.
+appId: com.muschenetz.agntcon
+---
+- runFlow: _start.yaml
+- tapOn: "Schedule"
+- tapOn: "OpenAI MCPCon Happy Hour"
+- scrollUntilVisible:
+    element: "My notes"
+- tapOn: "Liked it"
+- tapOn: "One-line takeaway"
+- inputText: "Free drinks"
+- hideKeyboard
+- tapOn: "Back"
+- stopApp
+- launchApp
+- tapOn: "Schedule"
+- tapOn: "OpenAI MCPCon Happy Hour"
+- scrollUntilVisible:
+    element: "My notes"
+- assertVisible: "Free drinks"
