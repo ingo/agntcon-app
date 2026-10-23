@@ -1,5 +1,6 @@
 package org.jetbrains.kotlinconf
 
+import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import androidx.compose.runtime.Composable
@@ -32,6 +33,9 @@ private class AndroidShareHandler(private val context: Context) : ShareHandler {
         val send = Intent(Intent.ACTION_SEND).apply {
             type = mimeType
             putExtra(Intent.EXTRA_STREAM, uri)
+            // The chooser and the app picked from it read the file through the grant, which Android takes from
+            // the ClipData; without it the system chooser logs "Permission Denial" while previewing the file
+            clipData = ClipData.newRawUri(fileName, uri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
         start(send)
