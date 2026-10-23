@@ -1,7 +1,7 @@
 # "Add to calendar" hands a .ics file for the session to the system share sheet.
 appId: com.muschenetz.agntcon
 ---
-- runFlow: _start.yaml
+- runFlow: ../shared/start.yaml
 - tapOn: "Schedule"
 - tapOn: "OpenAI MCPCon Happy Hour"
 - tapOn: "Add to calendar"

@@ -1,7 +1,7 @@
 # A private rating and one-line takeaway are saved on the device and are still there after a restart.
 appId: com.muschenetz.agntcon
 ---
-- runFlow: _start.yaml
+- runFlow: ../shared/start.yaml
 - tapOn: "Schedule"
 - tapOn: "OpenAI MCPCon Happy Hour"
 - scrollUntilVisible:

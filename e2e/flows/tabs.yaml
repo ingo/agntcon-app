@@ -1,7 +1,7 @@
 # Every tab opens and shows its own content, with the schedule loaded from Sessionize.
 appId: com.muschenetz.agntcon
 ---
-- runFlow: _start.yaml
+- runFlow: ../shared/start.yaml
 - assertVisible: "AGNTCon + MCPCon North America 2026"
 - tapOn: "Calendar"
 - assertVisible: "0 bookmarked"
@@ -13,3 +13,4 @@ appId: com.muschenetz.agntcon
 - assertVisible: "Concourse level"
 - tapOn: "Info"
 - assertVisible: "About the conference"
+- assertVisible: "Report a problem"
