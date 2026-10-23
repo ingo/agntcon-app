@@ -42,3 +42,5 @@ android-build
 app/desktopApp/files
 /tmp/
 .junie
+live-feed/
+live-feed-local/

@@ -7,7 +7,6 @@ import org.jetbrains.kotlinconf.sessionize.parseSessionizeData
 import org.jetbrains.kotlinconf.sessionize.toConference
 import java.io.File
 import kotlin.test.Test
-import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /** The slides and recording links on the session page, from the AGNTCon profile and its real feed. */
@@ -24,7 +23,8 @@ class SessionLinksTest {
     @Test
     fun everySessionWithAnUploadShowsSlides() {
         val withSlides = cards.filter { it.slidesUrl != null }
-        assertEquals(67, withSlides.size)
+        // 67 when the snapshot was taken; speakers keep uploading, so on the live feed (live-feed-check.yml) it only grows
+        assertTrue(withSlides.size >= 67, "only ${withSlides.size} sessions show slides")
         assertTrue(withSlides.any { it.slidesUrl!!.endsWith(".pptx") }, "PowerPoint decks count as slides")
         assertTrue(cards.filter { it.title == "Prompt à la Carte" }.all { it.slidesUrl == null }, "an event logo is not slides")
     }

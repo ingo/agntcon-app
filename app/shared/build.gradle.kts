@@ -193,7 +193,10 @@ aboutLibraries {
 
 // Real Sessionize feed snapshots for the JVM tests (see testdata/sessionize/README.md)
 tasks.named<Test>("jvmTest") {
-    val testData = rootProject.layout.projectDirectory.dir("testdata/sessionize")
+    // -PliveFeedDir=<dir> runs the real-feed tests on a fresh download instead of the snapshots (see live-feed-check.yml)
+    val testData = providers.gradleProperty("liveFeedDir")
+        .map { rootProject.layout.projectDirectory.dir(it) }
+        .orElse(rootProject.layout.projectDirectory.dir("testdata/sessionize"))
     inputs.dir(testData)
-    systemProperty("sessionize.testdata", testData.asFile.absolutePath)
+    systemProperty("sessionize.testdata", testData.get().asFile.absolutePath)
 }
