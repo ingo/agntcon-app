@@ -7,6 +7,8 @@ import androidx.compose.animation.core.EaseInCubic
 import androidx.compose.animation.core.EaseOutCubic
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
@@ -14,7 +16,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -48,11 +49,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.resources.vectorResource
+import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.kotlinconf.ui.generated.resources.UiRes
 import org.jetbrains.kotlinconf.ui.generated.resources.action_error_reload
-import org.jetbrains.kotlinconf.ui.generated.resources.kodee_error_loading_anim_bg
-import org.jetbrains.kotlinconf.ui.generated.resources.kodee_error_lost
+import org.jetbrains.kotlinconf.ui.generated.resources.info_28
 import org.jetbrains.kotlinconf.ui.generated.resources.loading
 import org.jetbrains.kotlinconf.ui.theme.KotlinConfTheme
 import org.jetbrains.kotlinconf.ui.theme.PreviewHelper
@@ -89,9 +89,11 @@ fun MajorError(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Image(
-            imageVector = vectorResource(UiRes.drawable.kodee_error_lost),
+        Icon(
+            painter = painterResource(UiRes.drawable.info_28),
             contentDescription = null,
+            tint = KotlinConfTheme.colors.secondaryText,
+            modifier = Modifier.size(48.dp),
         )
         Spacer(Modifier.height(16.dp))
         ErrorText(
@@ -165,82 +167,48 @@ private fun ErrorText(
     )
 }
 
+/** A ring of dots with a brighter one travelling around it; faded and still when [enabled] is false. */
 @Composable
 fun Loading(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
 ) {
-    Box(modifier = modifier.size(95.dp, 80.dp)) {
-        val kodeeLoadingPainter = rememberVectorPainter(
-            vectorResource(UiRes.drawable.kodee_error_loading_anim_bg)
-        )
+    val dots = 8
+    val progress = if (enabled) {
+        val transition = rememberInfiniteTransition(label = "loading")
+        transition.animateFloat(
+            initialValue = 0f,
+            targetValue = dots.toFloat(),
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = 1000, easing = LinearEasing),
+                repeatMode = RepeatMode.Restart,
+            ),
+            label = "loading-progress",
+        ).value
+    } else {
+        0f
+    }
+    val color = KotlinConfTheme.colors.primaryText
 
-        var lastValue by remember { mutableStateOf(0f) }
-        val animationProgress = remember { Animatable(lastValue) }
-
-        LaunchedEffect(enabled) {
-            if (enabled) {
-                try {
-                    animationProgress.animateTo(
-                        targetValue = lastValue + 2 * PI.toFloat(),
-                        animationSpec = infiniteRepeatable(
-                            animation = tween(durationMillis = 1000, easing = LinearEasing),
-                            repeatMode = RepeatMode.Restart,
-                        )
-                    )
-                } finally {
-                    withContext(NonCancellable) {
-                        animationProgress.animateTo(
-                            targetValue = animationProgress.value + 1.25f * PI.toFloat(),
-                            animationSpec = tween(durationMillis = 800, easing = EaseOutCubic),
-                        ) {
-                            lastValue = value
-                        }
-                    }
-                }
-            }
-        }
-
-        Canvas(
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(95f / 80f),
-        ) {
-            val scaleFactor = size.width / 95.dp.toPx() * density
-
-            val circleSize = 4.3f * scaleFactor
-            val circleRadius = 12f * scaleFactor
-
-            fun drawEye(offsetX: Float, offsetY: Float) {
-                val eyeCenterX = offsetX + circleRadius + circleSize
-                val eyeCenterY = offsetY + circleRadius + circleSize
-
-                for (i in 0..<6) {
-                    val angle = i * (2 * PI / 6) + (PI / 6)
-                    val x = eyeCenterX + circleRadius * cos(angle).toFloat()
-                    val y = eyeCenterY + circleRadius * sin(angle).toFloat()
-
-                    val dotAngle = i * (2 * PI / 6) + (PI / 6)
-                    val alpha = ((sin(animationProgress.value - dotAngle) + 1) / 2).toFloat()
-
-                    drawCircle(
-                        color = lerp(UI.white20, UI.white100, alpha),
-                        radius = circleSize,
-                        center = Offset(x, y),
-                    )
-                }
-            }
-
-            with(kodeeLoadingPainter) {
-                draw(Size(95f, 80f) * scaleFactor)
-            }
-
-            drawEye(12f * scaleFactor, 34f * scaleFactor)
-            drawEye(50.5f * scaleFactor, 34f * scaleFactor)
+    Canvas(modifier = modifier.size(48.dp)) {
+        val ringRadius = size.minDimension / 2 - 5.dp.toPx()
+        val dotRadius = 4.dp.toPx()
+        for (i in 0 until dots) {
+            val angle = i * (2 * PI / dots) - PI / 2
+            // Distance behind the bright dot, 0 (bright) to 1 (faint)
+            val behind = ((progress - i) % dots + dots) % dots / dots
+            val alpha = if (enabled) 1f - 0.8f * behind else 0.2f
+            drawCircle(
+                color = color.copy(alpha = alpha),
+                radius = dotRadius,
+                center = Offset(
+                    center.x + ringRadius * cos(angle).toFloat(),
+                    center.y + ringRadius * sin(angle).toFloat(),
+                ),
+            )
         }
     }
 }
-
 
 @PreviewLightDark
 @Composable
