@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
@@ -24,7 +23,6 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil3.compose.AsyncImage
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.resources.vectorResource
@@ -38,7 +36,6 @@ import org.jetbrains.kotlinconf.generated.resources.info_link_description_bluesk
 import org.jetbrains.kotlinconf.generated.resources.info_link_description_slack
 import org.jetbrains.kotlinconf.generated.resources.info_link_description_twitter
 import org.jetbrains.kotlinconf.generated.resources.info_link_how_to_find_venue
-import org.jetbrains.kotlinconf.generated.resources.info_link_partners
 import org.jetbrains.kotlinconf.generated.resources.info_link_report_problem
 import org.jetbrains.kotlinconf.generated.resources.info_link_settings
 import org.jetbrains.kotlinconf.generated.resources.sync_info_link
@@ -59,9 +56,7 @@ fun InfoScreen(
     onAboutConf: () -> Unit,
     onHowToFindVenue: (String) -> Unit,
     onAboutApp: () -> Unit,
-    onOurPartners: (() -> Unit)?,
     onCodeOfConduct: (() -> Unit)?,
-    codeOfConductIsExternal: Boolean,
     onTwitter: (() -> Unit)?,
     onSlack: (() -> Unit)?,
     onBluesky: (() -> Unit)?,
@@ -71,9 +66,6 @@ fun InfoScreen(
     viewModel: InfoViewModel = metroViewModel(),
 ) {
     val venueAddress = viewModel.venueAddress.collectAsStateWithLifecycle().value
-    val isDark = KotlinConfTheme.colors.isDark
-    val images = viewModel.images.collectAsStateWithLifecycle().value
-    val logoUrl = if (isDark) images?.kotlinConfDark else images?.kotlinConfLight
     Column(
         Modifier.fillMaxSize()
             .background(color = KotlinConfTheme.colors.mainBackground)
@@ -91,15 +83,7 @@ fun InfoScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             val eventTheme = ActiveEvent.theme
-            if (logoUrl != null) {
-                AsyncImage(
-                    model = logoUrl,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .padding(24.dp)
-                        .widthIn(max = 360.dp)
-                )
-            } else if (eventTheme != null) {
+            if (eventTheme != null) {
                 EventLogo(eventTheme, size = 96.dp, modifier = Modifier.padding(top = 24.dp))
                 Text(
                     ActiveEvent.name,
@@ -127,19 +111,12 @@ fun InfoScreen(
             if (onSessionizeSync != null) {
                 PageMenuItem(stringResource(Res.string.sync_info_link), onClick = onSessionizeSync)
             }
-            if (onOurPartners != null) {
-                PageMenuItem(stringResource(Res.string.info_link_partners), onClick = onOurPartners)
-            }
             if (onCodeOfConduct != null) {
-                if (codeOfConductIsExternal) {
-                    PageMenuItem(
-                        stringResource(Res.string.info_link_code_of_conduct),
-                        onClick = onCodeOfConduct,
-                        drawableEnd = Res.drawable.arrow_up_right_24,
-                    )
-                } else {
-                    PageMenuItem(stringResource(Res.string.info_link_code_of_conduct), onClick = onCodeOfConduct)
-                }
+                PageMenuItem(
+                    stringResource(Res.string.info_link_code_of_conduct),
+                    onClick = onCodeOfConduct,
+                    drawableEnd = Res.drawable.arrow_up_right_24,
+                )
             }
             if (onTwitter != null || onSlack != null || onBluesky != null) {
                 Row(

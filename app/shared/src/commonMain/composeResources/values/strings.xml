@@ -22,7 +22,9 @@
     <string name="about_app_description">The KotlinConf application is developed by the JetBrains team using Kotlin Multiplatform for shared logic and Compose Multiplatform for UI across Android, iOS, Desktop, and Web platforms.
 
 For the source code and more technical details, visit the GitHub repository.</string>
-    <string name="about_app_description_sessionize">This app shows the %1$s schedule, read directly from Sessionize. It is based on the open-source KotlinConf app by JetBrains, built with Kotlin Multiplatform for shared logic and Compose Multiplatform for UI.</string>
+    <string name="about_app_description_sessionize">This app shows the %1$s schedule, read directly from the event's public Sessionize feed.</string>
+    <string name="about_app_unofficial">This is an unofficial app. It is not made, endorsed or supported by Sessionize or the organisers of the event. It is based on the open-source KotlinConf app by JetBrains and is published under the Apache License 2.0.</string>
+    <string name="about_app_privacy">Your notes, ratings and bookmarks stay on this device. The app has no account, no analytics and no tracking. It only downloads the public schedule from Sessionize.</string>
     <string name="about_app_link_github">GitHub repository</string>
     <string name="about_app_link_rate">Rate the app</string>
     <string name="about_app_link_privacy_notice">App privacy notice</string>

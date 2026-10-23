@@ -10,8 +10,6 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import com.mmk.kmpnotifier.extensions.onCreateOrOnNewIntent
-import com.mmk.kmpnotifier.notification.NotifierManager
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.binding
@@ -68,13 +66,8 @@ class MainActivity(
         try {
             val notificationId = intent.getStringExtra(EXTRA_LOCAL_NOTIFICATION_ID)
             if (notificationId != null) {
-                // Local notification clicked
                 navigateByLocalNotificationId(notificationId)
-                return
             }
-
-            // Process push notifications
-            NotifierManager.onCreateOrOnNewIntent(intent)
         } catch (e: Exception) {
             return
         }

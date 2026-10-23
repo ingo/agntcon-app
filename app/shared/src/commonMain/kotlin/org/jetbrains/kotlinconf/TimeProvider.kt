@@ -1,20 +1,14 @@
 package org.jetbrains.kotlinconf
 
-import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
-import org.jetbrains.kotlinconf.network.ApplicationApi
-import org.jetbrains.kotlinconf.utils.Logger
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.minutes
-import kotlin.time.Duration.Companion.seconds
 
 interface TimeProvider {
     fun now(): LocalDateTime
@@ -31,64 +25,22 @@ operator fun LocalDateTime.minus(other: LocalDateTime): Duration =
 operator fun LocalDateTime.minus(duration: Duration): LocalDateTime =
     (toInstant(EVENT_TIME_ZONE) - duration).toLocalDateTime(EVENT_TIME_ZONE)
 
-class ServerBasedTimeProvider(private val client: ApplicationApi) : TimeProvider {
-    private var offset: Duration = Duration.ZERO
-
-    override fun now(): LocalDateTime {
-        return (Clock.System.now() + offset).toLocalDateTime(EVENT_TIME_ZONE)
-    }
+/** The device clock in the event's time zone, ticking just after each whole minute. */
+class DeviceTimeProvider : TimeProvider {
+    override fun now(): LocalDateTime = Clock.System.now().toLocalDateTime(EVENT_TIME_ZONE)
 
     final override val time: StateFlow<LocalDateTime>
-        field = MutableStateFlow(Clock.System.now().toLocalDateTime(EVENT_TIME_ZONE))
+        field = MutableStateFlow(now())
 
     override suspend fun run(): Nothing {
-        val serverTime = client.getServerTime()
-        if (serverTime != null) {
-            val requestTime = Clock.System.now()
-            offset = serverTime - requestTime
-        }
         time.value = now()
 
         while (true) {
             // Tick just after each whole minute, so "starts in 1 min" turns into "happening now" at 11:45:00,
             // not up to a minute later depending on when the app was opened
-            val intoMinute = (Clock.System.now() + offset).toEpochMilliseconds().mod(60_000L)
+            val intoMinute = Clock.System.now().toEpochMilliseconds().mod(60_000L)
             delay((60_000L - intoMinute + 50).milliseconds)
             time.value = now()
         }
     }
-}
-
-class FakeTimeProvider(
-    private val logger: Logger,
-    baseTime: LocalDateTime = LocalDateTime.parse("2026-05-21T14:30:00"),
-    private val freezeTime: Boolean = false,
-    private val speedMultiplier: Double = 60.0,
-) : TimeProvider {
-    final override val time: StateFlow<LocalDateTime>
-        field = MutableStateFlow(baseTime)
-    override fun now(): LocalDateTime = time.value
-    override suspend fun run(): Nothing {
-        if (freezeTime) {
-            awaitCancellation()
-        } else {
-            while (true) {
-                delay((60.0 / speedMultiplier).seconds)
-                time.update { t ->
-                    t.toInstant(EVENT_TIME_ZONE)
-                        .plus(1.minutes)
-                        .toLocalDateTime(EVENT_TIME_ZONE)
-                        .also {
-                            logger.log("FakeTimeProvider") { "Fake time is now $it" }
-                        }
-                }
-            }
-        }
-    }
-
-    override fun getNotificationTime(notificationTime: LocalDateTime): LocalDateTime =
-        (Clock.System.now() + getNotificationDelay(notificationTime)).toLocalDateTime(EVENT_TIME_ZONE)
-
-    override fun getNotificationDelay(notificationTime: LocalDateTime): Duration =
-        (notificationTime - now()) / speedMultiplier
 }

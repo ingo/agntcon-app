@@ -1,6 +1,5 @@
 package org.jetbrains.kotlinconf.di
 
-import com.mmk.kmpnotifier.notification.configuration.NotificationPlatformConfiguration
 import dev.zacsweers.metrox.viewmodel.ViewModelGraph
 import kotlinx.coroutines.CoroutineScope
 import org.jetbrains.kotlinconf.ConferenceService
@@ -15,10 +14,6 @@ interface AppGraph : ViewModelGraph {
     val timeProvider: TimeProvider
     val logger: Logger
 
-    @BaseUrl
-    val baseUrl: String
-
     val scope: CoroutineScope
     val bufferedDelegatingLogger: BufferedDelegatingLogger
-    val notificationConfiguration: NotificationPlatformConfiguration
 }

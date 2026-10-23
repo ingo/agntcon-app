@@ -88,7 +88,6 @@ import org.jetbrains.kotlinconf.utils.topInsetPadding
 @Composable
 fun ScheduleScreen(
     onSession: (SessionId) -> Unit,
-    onPrivacyNoticeNeeded: () -> Unit,
     onNavigateToMap: (String) -> Unit,
     tabReselections: Flow<TopLevelRoute>,
     viewModel: ScheduleViewModel = metroViewModel(),
@@ -236,7 +235,6 @@ fun ScheduleScreen(
                     onBookmark = { sessionId, isBookmarked ->
                         viewModel.onBookmark(sessionId, isBookmarked)
                     },
-                    onPrivacyNoticeNeeded = onPrivacyNoticeNeeded,
                     pinnedRooms = pinnedRooms,
                     onNavigateToMap = onNavigateToMap,
                     filterItems = tags,
@@ -375,7 +373,6 @@ private fun ScheduleList(
     isSearch: Boolean,
     dayInfoMap: Map<LocalDate, DayInfo>,
     onBookmark: (SessionId, Boolean) -> Unit,
-    onPrivacyNoticeNeeded: () -> Unit,
     pinnedRooms: Set<String>,
     onNavigateToMap: (String) -> Unit,
     filterItems: List<FilterItem> = emptyList(),
@@ -462,7 +459,6 @@ private fun ScheduleList(
                             speakerHighlights = item.speakerHighlights,
                             onBookmark = onBookmark,
                             onSession = onSession,
-                            onPrivacyNoticeNeeded = onPrivacyNoticeNeeded,
                             onFindOnMap = item.value.locationLine.takeIf { it in pinnedRooms }
                                 ?.let { room -> { onNavigateToMap(room) } },
                             modifier = Modifier
@@ -520,7 +516,6 @@ private fun SessionCard(
     session: SessionCardView,
     onBookmark: (SessionId, Boolean) -> Unit,
     onSession: (SessionId) -> Unit,
-    onPrivacyNoticeNeeded: () -> Unit,
     isSearch: Boolean,
     onFindOnMap: (() -> Unit)?,
     modifier: Modifier = Modifier,
@@ -552,15 +547,5 @@ private fun SessionCard(
         onClick = { onSession(session.id) },
         modifier = modifier,
         onFindOnMap = onFindOnMap,
-        feedbackContent = if (ActiveEvent.hasBackend && !isSearch && session.state != SessionState.Upcoming) {
-            {
-                FeedbackBlock(
-                    sessionId = session.id,
-                    tags = session.tags,
-                    status = status,
-                    onPrivacyNoticeNeeded = onPrivacyNoticeNeeded,
-                )
-            }
-        } else null,
     )
 }

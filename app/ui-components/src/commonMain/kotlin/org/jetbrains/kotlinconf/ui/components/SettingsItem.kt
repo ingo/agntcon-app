@@ -84,7 +84,7 @@ fun SettingsItem(
 private fun SettingsItemSimplePreview() = PreviewHelper {
     var enabled by remember { mutableStateOf(true) }
     SettingsItem(
-        title = "Kodee containment",
+        title = "Dark mode",
         enabled = enabled,
         onToggle = { enabled = it },
     )

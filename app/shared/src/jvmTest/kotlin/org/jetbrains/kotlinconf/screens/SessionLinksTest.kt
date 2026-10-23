@@ -17,7 +17,7 @@ class SessionLinksTest {
         File(System.getProperty("sessionize.testdata"), "agntcon-mcpcon-na-2026.json").readText()
     ).toConference(event.timeZone, event.sessionizeRules).let { conference ->
         val speakers = conference.speakers.associateBy { it.id }
-        conference.sessions.map { it.asSessionCard(speakers, LocalDateTime(2026, 10, 22, 11, 0), emptySet(), null) }
+        conference.sessions.map { it.asSessionCard(speakers, LocalDateTime(2026, 10, 22, 11, 0), emptySet()) }
     }
 
     @Test

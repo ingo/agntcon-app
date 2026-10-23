@@ -126,12 +126,6 @@ private fun MainNavigationBarPreview() = PreviewHelper(paddingEnabled = false) {
             ),
             MainNavDestination(
                 label = UiRes.string.now,
-                icon = UiRes.drawable.award_28,
-                iconSelected = UiRes.drawable.award_28_fill,
-                route = "GoldenKodee"
-            ),
-            MainNavDestination(
-                label = UiRes.string.now,
                 icon = UiRes.drawable.location_28,
                 iconSelected = UiRes.drawable.location_28_fill,
                 route = "Map"

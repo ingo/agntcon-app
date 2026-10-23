@@ -56,7 +56,7 @@ class ExportTest {
         endsAt = LocalDateTime.parse("${day}T$end"),
         tags = listOf("Keynote"),
         slidesUrl = slides,
-    ).asSessionCard(speakers, now, if (favorite) setOf(SessionId(id)) else emptySet(), null)
+    ).asSessionCard(speakers, now, if (favorite) setOf(SessionId(id)) else emptySet())
 
     /** The content lines, with folded lines joined. */
     private fun lines(ics: String) = ics.replace("\r\n ", "").split("\r\n").dropLast(1)

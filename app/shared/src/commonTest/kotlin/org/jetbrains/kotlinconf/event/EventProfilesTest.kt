@@ -14,7 +14,7 @@ class EventProfilesTest {
 
         for (event in EventProfiles.all) {
             event.timeZone // throws for an unknown zone id
-            assertTrue(event.hasBackend || event.sessionizeUrl != null, "${event.id} has no data source")
+            assertTrue(event.sessionizeUrl.isNotBlank(), "${event.id} has no data source")
         }
     }
 
@@ -34,7 +34,6 @@ class EventProfilesTest {
         assertEquals("AGNTCon + MCPCon North America 2026", info.aboutHeader)
         assertEquals(listOf("MCPCon"), info.tags.categories)
         assertEquals(listOf("Beginner"), info.tags.levels)
-        assertTrue(info.partners.isEmpty())
         assertEquals(listOf("Concourse level", "Street & lower level"), info.mapData.floors.map { it.name })
         assertNotNull(info.mapData.venueAddress)
     }

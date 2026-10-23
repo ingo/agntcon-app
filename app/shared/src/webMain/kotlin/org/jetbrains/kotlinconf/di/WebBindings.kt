@@ -1,6 +1,5 @@
 package org.jetbrains.kotlinconf.di
 
-import com.mmk.kmpnotifier.notification.configuration.NotificationPlatformConfiguration
 import com.russhwolf.settings.ExperimentalSettingsApi
 import com.russhwolf.settings.ObservableSettings
 import com.russhwolf.settings.StorageSettings
@@ -19,9 +18,4 @@ object WebBindings {
     @SingleIn(AppScope::class)
     @OptIn(ExperimentalSettingsApi::class)
     fun provideSettings(): ObservableSettings = StorageSettings().makeObservable()
-
-    @Provides
-    @SingleIn(AppScope::class)
-    fun provideNotificationPlatformConfiguration(): NotificationPlatformConfiguration =
-        NotificationPlatformConfiguration.Web(false, null)
 }

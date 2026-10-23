@@ -28,13 +28,7 @@ data class ServiceEventData(
 
 @Composable
 private fun ServiceEventItem(event: ServiceEventData) {
-    if (event.title.contains("Party", ignoreCase = true)) {
-        PartyEventCard(active = event.now) {
-            ServiceEventRow(event)
-        }
-    } else {
-        ServiceEventRow(event)
-    }
+    ServiceEventRow(event)
 }
 
 @Composable

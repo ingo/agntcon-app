@@ -11,8 +11,7 @@ enum class Theme {
 
 @Serializable
 data class NotificationSettings(
-    val sessionReminders: Boolean,
-    val scheduleUpdates: Boolean,
+    val sessionReminders: Boolean = true,
 ) {
-    fun hasAnyEnabled() = sessionReminders || scheduleUpdates
+    fun hasAnyEnabled() = sessionReminders
 }
