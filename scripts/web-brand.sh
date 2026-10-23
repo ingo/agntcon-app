@@ -61,8 +61,9 @@ sub(
 loading = """
         <div id="loading" role="status" aria-live="polite">
             <div class="track"><div class="bar"></div></div>
-            <p>Loading the schedule&hellip;</p>
-            <p class="note">The first visit downloads a few megabytes. After that the app starts from your device and works offline.</p>
+            <p id="loading-text">Loading the schedule&hellip;</p>
+            <p class="note" id="loading-note">The first visit downloads a few megabytes. After that the app starts from your device and works offline.</p>
+            <p id="loading-error" hidden><button type="button" onclick="location.reload()">Try again</button></p>
         </div>
         <style>
             #loading { position: fixed; left: 0; right: 0; bottom: 9%; padding: 0 28px; text-align: center;
@@ -72,6 +73,7 @@ loading = """
             #loading .track { width: 160px; height: 4px; margin: 0 auto; border-radius: 2px; overflow: hidden; background: rgba(127,127,150,0.25); }
             #loading .bar { width: 40%; height: 100%; border-radius: 2px; background: #ea6289; animation: slide 1.2s ease-in-out infinite; }
             @keyframes slide { from { transform: translateX(-100%); } to { transform: translateX(260%); } }
+            #loading button { font: inherit; padding: 8px 18px; border: 0; border-radius: 999px; color: #fff; background: #c2527a; }
             @media (prefers-color-scheme: dark) { #loading { color: #c9cbe3; } }
             @media (prefers-reduced-motion: reduce) { #loading .bar { animation: none; width: 100%; opacity: 0.5; } }
         </style>
@@ -81,6 +83,61 @@ sub(r"</body>", loading + "    </body>")
 # The app replaces everything in <body> when it starts, which also removes the loading message. This script
 # lives in <head>, notices that, and tells the service worker what was loaded so the next visit starts from
 # the cache (the worker takes control only after the first load).
+# The app is two WebAssembly files of a few megabytes each. If the connection drops or changes while one is
+# downloading (Wi-Fi to mobile, a VPN reconnecting), the browser aborts the download and the app stops with an
+# error nobody sees. This downloads the files itself, retries, and says what is happening.
+sub(r"</head>", """        <script>
+            (() => {
+                const nativeFetch = window.fetch.bind(window);
+                const text = (id, value) => { const el = document.getElementById(id); if (el && !failed) el.textContent = value; };
+                const megabytes = (bytes) => (bytes / 1048576).toFixed(1);
+                let finished = 0;
+                let failed = false;
+                const fail = (message) => {
+                    failed = true;
+                    const set = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
+                    set("loading-text", message);
+                    set("loading-note", "Check your connection, then try again.");
+                    const retry = document.getElementById("loading-error");
+                    if (retry) retry.hidden = false;
+                };
+                window.fetch = async (input, init) => {
+                    const url = typeof input === "string" ? input : input.url;
+                    if (!/\\.wasm(\\?|$)/.test(url)) return nativeFetch(input, init);
+                    let lastError;
+                    for (let attempt = 1; attempt <= 6; attempt++) {
+                        try {
+                            const response = await nativeFetch(input, init);
+                            if (!response.ok) throw new Error("HTTP " + response.status);
+                            const reader = response.body && response.body.getReader();
+                            if (!reader) return response;
+                            const chunks = [];
+                            let size = 0;
+                            for (;;) {
+                                const { done, value } = await reader.read();
+                                if (done) break;
+                                chunks.push(value);
+                                size += value.length;
+                                text("loading-text", "Downloading the app\u2026 " + megabytes(finished + size) + " MB");
+                            }
+                            finished += size;
+                            return new Response(new Blob(chunks), { status: 200, headers: { "Content-Type": "application/wasm" } });
+                        } catch (error) {
+                            lastError = error;
+                            text("loading-text", "Connection interrupted, trying again\u2026");
+                            await new Promise((resolve) => setTimeout(resolve, Math.min(1000 * attempt, 5000)));
+                        }
+                    }
+                    fail("The app could not be downloaded.");
+                    throw lastError;
+                };
+                // Anything else that stops the app before it has taken over the page
+                const startupFailed = () => { if (document.getElementById("loading")) fail("The app did not start."); };
+                addEventListener("unhandledrejection", startupFailed);
+                addEventListener("error", startupFailed);
+            })();
+        </script>
+    </head>""")
 sub(r"</head>", """        <script>
             addEventListener("DOMContentLoaded", () => {
                 new MutationObserver((_, observer) => {
