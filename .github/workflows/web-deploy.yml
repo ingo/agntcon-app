@@ -38,7 +38,9 @@ jobs:
           java-version: 21
 
       - name: Check the service worker
-        run: node app/webApp/branding/test/service-worker-test.js
+        run: |
+          node app/webApp/branding/test/service-worker-test.js
+          node app/webApp/branding/test/loader-test.js
 
       - name: Build the web app
         run: ./gradlew -Pevent=$EVENT :app:webApp:composeCompatibilityBrowserDistribution
