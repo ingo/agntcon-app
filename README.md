@@ -1,8 +1,8 @@
 # AGNTCon + MCPCon North America 2026 app
 
-A conference app for any event that publishes its schedule on [Sessionize](https://sessionize.com): Android, iOS,
-desktop and web from one Kotlin Multiplatform codebase. It is currently set up for
-[AGNTCon + MCPCon North America 2026](https://events.linuxfoundation.org/agntcon-mcpcon-north-america/).
+An unofficial schedule app for [AGNTCon + MCPCon North America 2026](https://events.linuxfoundation.org/agntcon-mcpcon-north-america/)
+(October 22–23, 2026, San Jose): iOS, Android, desktop and web from one Kotlin Multiplatform codebase. It reads the
+event's public [Sessionize](https://sessionize.com) schedule directly; there is no server, no account and no tracking.
 
 This repository is the AGNTCon build: it is where the TestFlight and web builds of this app are made. It was split off from
 [ingo/sessionize-app](https://github.com/ingo/sessionize-app), which is becoming a generic Sessionize conference app.
@@ -14,7 +14,7 @@ This repository is the AGNTCon build: it is where the TestFlight and web builds 
 This is a fork of the [KotlinConf app](https://github.com/JetBrains/kotlinconf-app) by
 [JetBrains](https://www.jetbrains.com/) and its [contributors](https://github.com/JetBrains/kotlinconf-app/graphs/contributors).
 Its architecture, screens, design system and most of the code are theirs: the shared Compose Multiplatform UI,
-navigation, schedule, speakers, search and filters, session reminders, and the Ktor backend. Thank you to the KotlinConf
+navigation, schedule, speakers, search and filters, and session reminders. Thank you to the KotlinConf
 team for building it so well and for publishing it under the Apache License 2.0.
 
 This fork is not affiliated with or endorsed by JetBrains, KotlinConf, Sessionize or the Linux Foundation.
@@ -24,13 +24,13 @@ the changes made in this fork are listed below and in the git history.
 
 ## What this fork adds
 
-**Any Sessionize conference, with or without a backend**
+**Any Sessionize conference, and no backend**
 - Conference profiles ([`EventProfiles.kt`](app/shared/src/commonMain/kotlin/org/jetbrains/kotlinconf/event/EventProfiles.kt)):
   name, time zone, links, theme and data source per conference, picked at build time with `-Pevent=<id>`.
 - Reads a public Sessionize feed directly, so a conference needs no server of its own. Times work whether the feed sends
   UTC or event-local times; schedule filters (topic, level, format) come from the feed's categories.
-- Features that need the KotlinConf backend (voting, feedback, Golden Kodee, maps, partners, legal documents, push
-  notifications) are hidden for such conferences; KotlinConf itself still builds as before (`-Pevent=kotlinconf`, the default).
+- The KotlinConf backend and what depended on it (voting, feedback, Golden Kodee, partners, legal documents, push
+  notifications, Firebase) were removed, so this app contains no JetBrains credentials and talks only to Sessionize.
 - Per-conference look: light and dark colors, logo, app icon and launch screen.
 
 **Planning your conference**
@@ -124,20 +124,12 @@ repository.
      (needs an App Store Connect app record and API key; see the script)
    * Tests: `./gradlew -Pevent=agntcon-mcpcon-na-2026 :core:jvmTest :app:shared:jvmTest`
 
-   Android and desktop share the same code but have not yet been tried with a profile that has no backend; Android
-   still uses KotlinConf's application id and Firebase setup.
+   Android is described above; the desktop app (`./gradlew :app:desktopApp:hotRun -DmainClass=org.jetbrains.kotlinconf.MainKt`)
+   shares the code but has not been tried for this event.
 
-The backend (`:backend`) reads the same feed format; set `conference.timeZone` and the `sessionize.*` rules in
-`application.yaml` for another conference.
+## Tests
 
-## The original KotlinConf app
-
-The KotlinConf app is published for [Android](https://play.google.com/store/apps/details?id=com.jetbrains.kotlinconf),
-[iOS](https://apps.apple.com/us/app/kotlinconf/id1299196584) and the [web](https://jetbrains.github.io/kotlinconf-app/).
-To build it from this fork, leave out `-Pevent` or use `-Pevent=kotlinconf`:
-
-* Android: use the `app.androidApp` run configuration
-* iOS: use `KotlinConfAppScheme`
-* Desktop: `./gradlew :app:desktopApp:hotRun -DmainClass=org.jetbrains.kotlinconf.MainKt`
-* Web: `./gradlew :app:webApp:wasmJsBrowserDevelopmentRun`
-* Backend: `./gradlew :backend:run`
+* `./gradlew :core:jvmTest :app:shared:jvmTest`: unit tests and tests on snapshots of real feeds ([`testdata`](testdata)).
+* `live-feed-check.yml` runs the real-feed tests on the live Sessionize feed every six hours.
+* [`e2e`](e2e): Maestro flows that drive the Android app on an emulator.
+* `scripts/web-smoke-test.mjs` opens the built web app in headless Chromium; the Pages deploy runs it before publishing.
