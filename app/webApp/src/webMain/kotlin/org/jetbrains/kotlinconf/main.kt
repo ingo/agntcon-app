@@ -3,6 +3,10 @@
 package org.jetbrains.kotlinconf
 
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.platform.LocalFontFamilyResolver
 import androidx.compose.ui.text.font.FontFamily
@@ -16,21 +20,18 @@ import org.jetbrains.kotlinconf.ui.initCoil
 import org.jetbrains.kotlinconf.utils.Logger
 import org.jetbrains.kotlinconf.web.generated.resources.NotoColorEmoji
 import org.jetbrains.kotlinconf.web.generated.resources.Res
+import kotlinx.coroutines.delay
 import kotlin.js.ExperimentalWasmJsInterop
+import kotlin.time.Duration.Companion.seconds
 
-external object Window {
-    val supportsNotifications: Boolean?
-}
-
-external val window: Window
+private val EMOJI_FONT_DELAY = 5.seconds
 
 fun main() {
     initCoil()
 
     val appGraph = createGraphFactory<WebAppGraph.Factory>().create(
-        platformFlags = Flags(
-            supportsNotifications = window.supportsNotifications ?: false
-        )
+        // A web page cannot schedule reminders for when it is closed, so there is nothing to ask about
+        platformFlags = Flags(supportsNotifications = false)
     )
 
     initApp(
@@ -44,8 +45,15 @@ fun main() {
 
     @OptIn(ExperimentalComposeUiApi::class)
     ComposeViewport {
+        // The emoji font is 10 MB. Fetching it alongside the app makes the first visit much slower, and only
+        // emoji need it, so it waits until the app has been on screen for a while.
+        var loadEmojiFont by remember { mutableStateOf(false) }
+        LaunchedEffect(Unit) {
+            delay(EMOJI_FONT_DELAY)
+            loadEmojiFont = true
+        }
         @OptIn(ExperimentalResourceApi::class)
-        val emojiFont = preloadFont(Res.font.NotoColorEmoji).value
+        val emojiFont = if (loadEmojiFont) preloadFont(Res.font.NotoColorEmoji).value else null
         val fontFamilyResolver = LocalFontFamilyResolver.current
         LaunchedEffect(fontFamilyResolver, emojiFont) {
             if (emojiFont != null) {

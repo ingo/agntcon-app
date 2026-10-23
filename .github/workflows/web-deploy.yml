@@ -55,6 +55,19 @@ jobs:
           chmod -R +rX _site
           du -sh _site _site/app
 
+      - name: Check that the web app starts
+        # Serves the finished site and opens it in headless Chromium, once with WebAssembly and once with
+        # the JavaScript fallback. A site that does not start must not be published.
+        run: |
+          python3 -m http.server 8080 --directory _site &
+          mkdir "$RUNNER_TEMP/pw" && cp scripts/web-smoke-test.mjs "$RUNNER_TEMP/pw/"
+          cd "$RUNNER_TEMP/pw"
+          npm init -y > /dev/null
+          npm install playwright
+          npx playwright install --with-deps chromium
+          node web-smoke-test.mjs http://localhost:8080/app/
+          node web-smoke-test.mjs http://localhost:8080/app/ --js
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:

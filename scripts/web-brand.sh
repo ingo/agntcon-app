@@ -55,6 +55,46 @@ sub(
     f'\n        <meta name="apple-mobile-web-app-title" content="AGNTCon">'
     f'\n        <meta name="theme-color" content="#1f213a">',
 )
+
+# Shown over the splash screen until the app has drawn its first frame. The app is several megabytes of
+# WebAssembly, and a splash that never changes looks like a page that is stuck.
+loading = """
+        <div id="loading" role="status" aria-live="polite">
+            <div class="track"><div class="bar"></div></div>
+            <p>Loading the schedule&hellip;</p>
+            <p class="note">The first visit downloads a few megabytes. After that the app starts from your device and works offline.</p>
+        </div>
+        <style>
+            #loading { position: fixed; left: 0; right: 0; bottom: 9%; padding: 0 28px; text-align: center;
+                font: 15px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #55565f; }
+            #loading p { margin: 10px 0 0; }
+            #loading .note { font-size: 13px; opacity: 0.8; }
+            #loading .track { width: 160px; height: 4px; margin: 0 auto; border-radius: 2px; overflow: hidden; background: rgba(127,127,150,0.25); }
+            #loading .bar { width: 40%; height: 100%; border-radius: 2px; background: #ea6289; animation: slide 1.2s ease-in-out infinite; }
+            @keyframes slide { from { transform: translateX(-100%); } to { transform: translateX(260%); } }
+            @media (prefers-color-scheme: dark) { #loading { color: #c9cbe3; } }
+            @media (prefers-reduced-motion: reduce) { #loading .bar { animation: none; width: 100%; opacity: 0.5; } }
+        </style>
+"""
+sub(r"</body>", loading + "    </body>")
+
+# The app replaces everything in <body> when it starts, which also removes the loading message. This script
+# lives in <head>, notices that, and tells the service worker what was loaded so the next visit starts from
+# the cache (the worker takes control only after the first load).
+sub(r"</head>", """        <script>
+            addEventListener("DOMContentLoaded", () => {
+                new MutationObserver((_, observer) => {
+                    if (document.getElementById("loading")) return;
+                    observer.disconnect();
+                    if (!("serviceWorker" in navigator)) return;
+                    navigator.serviceWorker.ready.then((registration) => {
+                        const urls = performance.getEntriesByType("resource").map((e) => e.name);
+                        if (registration.active) registration.active.postMessage({ type: "precache", urls });
+                    });
+                }).observe(document.body, { childList: true });
+            });
+        </script>
+    </head>""")
 open(path, "w", encoding="utf-8").write(text)
 PY
 
