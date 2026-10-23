@@ -1,10 +1,13 @@
-# Sessionize Conference App
+# AGNTCon + MCPCon North America 2026 app
 
 A conference app for any event that publishes its schedule on [Sessionize](https://sessionize.com): Android, iOS,
 desktop and web from one Kotlin Multiplatform codebase. It is currently set up for
 [AGNTCon + MCPCon North America 2026](https://events.linuxfoundation.org/agntcon-mcpcon-north-america/).
 
-**Project page:** https://muschenetz.com/sessionize-app/ (what the app does, with screenshots, and how to join the TestFlight beta).
+This repository is the AGNTCon build: it is where the TestFlight and web builds of this app are made. It was split off from
+[ingo/sessionize-app](https://github.com/ingo/sessionize-app), which is becoming a generic Sessionize conference app.
+
+**Project page:** https://muschenetz.com/agntcon-app/ (what the app does, with screenshots, and how to join the TestFlight beta).
 
 ## Credit
 
@@ -81,6 +84,13 @@ the changes made in this fork are listed below and in the git history.
   random sets of bookmarks; each was confirmed to fail with the bug it guards against.
 - The Sessionize sync client is tested against a mock server with the requests and responses of the real web app.
 - The GitHub Actions workflow runs the core and app tests and the iOS build for each conference profile.
+
+## Publishing to TestFlight
+
+The iOS beta is published from this repository: `scripts/testflight.sh --upload` archives the app (bundle id
+`com.muschenetz.agntcon`, team `4M7MX9FB66`) and uploads it. It needs an App Store Connect API key
+(`ASC_KEY_ID`, `ASC_ISSUER_ID` and the `.p8` key); see the header of [`scripts/ios-testflight.sh`](scripts/ios-testflight.sh).
+Run it from an up-to-date `main`.
 
 ## Building for a conference
 
