@@ -1,5 +1,6 @@
 package org.jetbrains.kotlinconf
 
+import io.ktor.http.encodeURLParameter
 import org.jetbrains.kotlinconf.event.ActiveEvent
 
 object URLs {
@@ -20,6 +21,11 @@ object URLs {
 
     // Repository URL
     const val GITHUB_REPO = "https://github.com/ingo/agntcon-app"
+
+    /** A new GitHub issue with the app version filled in, so a bug report says which build it is about. */
+    fun reportProblem(appVersion: String): String =
+        "$GITHUB_REPO/issues/new?body=" +
+            "What happened?\n\n\n\nApp version: $appVersion".encodeURLParameter()
 
     // App stores
     val PLAY_STORE: String? get() = ActiveEvent.playStoreUrl
