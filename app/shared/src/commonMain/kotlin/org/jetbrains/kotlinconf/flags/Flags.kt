@@ -9,8 +9,6 @@ data class Flags(
     val supportsNotifications: Boolean = true,
     val rippleEnabled: Boolean = true,
     val hideKeyboardOnDrag: Boolean = false,
-    val useFakeTime:  Boolean = false,
-    val useFakeGoldenKodeeData: Boolean = false,
     val debugLogging: Boolean = false,
 )
 

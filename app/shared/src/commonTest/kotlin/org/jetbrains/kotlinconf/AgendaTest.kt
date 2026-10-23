@@ -19,7 +19,7 @@ class AgendaTest {
 
     private fun slotsOf(vararg sessions: Session): List<Pair<String, List<String>>> =
         Conference(sessions.toList())
-            .buildAgenda(favorites = emptySet(), votes = emptyList(), now = now)
+            .buildAgenda(favorites = emptySet(), now = now)
             .single()
             .timeSlots
             .map { it.title to it.sessions.map { s -> s.id.id } }

@@ -21,10 +21,8 @@ data class TimeSlot(
 
 fun Conference.buildAgenda(
     favorites: Set<SessionId>,
-    votes: List<VoteInfo>,
     now: LocalDateTime,
 ): List<Day> {
-    val votesBySessionId = votes.associateBy { it.sessionId }
     return sessions
         .groupBy { it.startsAt.date }
         .map { (date, sessions) ->
@@ -34,7 +32,6 @@ fun Conference.buildAgenda(
                     conference = this,
                     now = now,
                     favorites = favorites,
-                    votes = votesBySessionId,
                 )
             )
         }
@@ -52,7 +49,6 @@ fun List<Session>.groupByTime(
     conference: Conference,
     now: LocalDateTime,
     favorites: Set<SessionId>,
-    votes: Map<SessionId, VoteInfo>,
 ): List<TimeSlot> {
     val regularSlots: List<SlotTimes> = filterNot { it.isLightning }
         .map { SlotTimes(it.startsAt, it.endsAt) }
@@ -81,7 +77,7 @@ fun List<Session>.groupByTime(
 
     this.forEach { session ->
         slotsToSessions.getValue(slotOf.getValue(session)).add(
-            session.asSessionCard(speakersById, now, favorites, votes[session.id])
+            session.asSessionCard(speakersById, now, favorites)
         )
     }
 
@@ -103,7 +99,6 @@ fun Session.asSessionCard(
     speakersById: Map<SpeakerId, Speaker>,
     now: LocalDateTime,
     favorites: Set<SessionId>,
-    vote: VoteInfo?,
 ): SessionCardView {
     return SessionCardView(
         id = id,
@@ -115,7 +110,6 @@ fun Session.asSessionCard(
         endsAt = endsAt,
         state = SessionState.from(startsAt, endsAt, now),
         speakerIds = speakerIds,
-        vote = vote?.score,
         description = description,
         tags = tags?.toSet() ?: emptySet(),
         startsInMinutes = minutesUntil(startsAt, now).let { diff ->

@@ -48,7 +48,7 @@ class RealFeedScheduleTest {
 
     @Test
     fun everySessionIsInExactlyOneTimeSlotThatContainsIt() = forEachCase { event, conference, favorites, now ->
-        val days = conference.buildAgenda(favorites, emptyList(), now)
+        val days = conference.buildAgenda(favorites, now)
         val placed = days.flatMap { day -> day.timeSlots.flatMap { slot -> slot.sessions.map { slot to it } } }
 
         assertEquals(conference.sessions.size, placed.size, "${event.file}: sessions lost or duplicated")
@@ -64,7 +64,7 @@ class RealFeedScheduleTest {
 
     @Test
     fun scheduleListKeysAreUnique() = forEachCase { event, conference, favorites, now ->
-        val days = conference.buildAgenda(favorites, emptyList(), now)
+        val days = conference.buildAgenda(favorites, now)
         for (bookmarkedOnly in listOf(false, true)) {
             val keys = buildNonSearchItems(days, now, bookmarkedOnly).first.map { it.listKey }
             val duplicates = keys.groupingBy { it }.eachCount().filterValues { it > 1 }.keys
@@ -76,7 +76,7 @@ class RealFeedScheduleTest {
 
     @Test
     fun myScheduleIsConsistent() = forEachCase { event, conference, favorites, now ->
-        val days = buildMySchedule(conference.buildAgenda(favorites, emptyList(), now))
+        val days = buildMySchedule(conference.buildAgenda(favorites, now))
         for (day in days) {
             val where = "${event.file} ${day.date} (${favorites.size} bookmarks)"
             val timedFavorites = day.sessions.filter { it.isFavorite }
@@ -125,7 +125,7 @@ class RealFeedScheduleTest {
             .toSet()
         assertEquals(2, favorites.size)
 
-        val day = buildMySchedule(conference.buildAgenda(favorites, emptyList(), nows[2]))
+        val day = buildMySchedule(conference.buildAgenda(favorites, nows[2]))
             .single { it.date.toString() == "2026-10-22" }
         assertEquals(
             listOf("11:00-11:35", "11:35-12:10", "12:10-13:25", "13:25-14:20"),

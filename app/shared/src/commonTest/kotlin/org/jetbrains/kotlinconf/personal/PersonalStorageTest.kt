@@ -9,7 +9,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.jetbrains.kotlinconf.SessionId
 import org.jetbrains.kotlinconf.SpeakerId
-import org.jetbrains.kotlinconf.storage.AssetStorage
 import org.jetbrains.kotlinconf.storage.YearlyStorageImpl
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -20,13 +19,8 @@ import kotlin.test.assertTrue
 class PersonalStorageTest {
     private val settings: ObservableSettings = MapSettings().makeObservable()
 
-    private val noAssets = object : AssetStorage {
-        override suspend fun read(key: String): String? = null
-        override suspend fun write(key: String, content: String) {}
-    }
-
     private fun storage(year: Int = 2026, settings: ObservableSettings = this.settings) =
-        YearlyStorageImpl(year, settings, noAssets)
+        YearlyStorageImpl(year, settings)
 
     @Test
     fun nothingStoredYetReadsAsEmpty() = runTest {

@@ -33,15 +33,12 @@ import org.jetbrains.kotlinconf.generated.resources.schedule_28
 import org.jetbrains.kotlinconf.generated.resources.schedule_28_fill
 import org.jetbrains.kotlinconf.generated.resources.calendar_28_fill
 import org.jetbrains.kotlinconf.generated.resources.nav_destination_my_schedule
-import org.jetbrains.kotlinconf.generated.resources.award_28
-import org.jetbrains.kotlinconf.generated.resources.award_28_fill
 import org.jetbrains.kotlinconf.generated.resources.clock_28
 import org.jetbrains.kotlinconf.generated.resources.clock_28_fill
 import org.jetbrains.kotlinconf.generated.resources.info_28
 import org.jetbrains.kotlinconf.generated.resources.info_28_fill
 import org.jetbrains.kotlinconf.generated.resources.location_28
 import org.jetbrains.kotlinconf.generated.resources.location_28_fill
-import org.jetbrains.kotlinconf.generated.resources.nav_destination_golden_kodee
 import org.jetbrains.kotlinconf.generated.resources.nav_destination_info
 import org.jetbrains.kotlinconf.generated.resources.nav_destination_map
 import org.jetbrains.kotlinconf.generated.resources.nav_destination_schedule
@@ -87,12 +84,6 @@ private val bottomNavDestinations: List<MainNavDestination<TopLevelRoute>> = lis
         route = SpeakersScreen,
     ),
     MainNavDestination(
-        label = Res.string.nav_destination_golden_kodee,
-        icon = Res.drawable.award_28,
-        iconSelected = Res.drawable.award_28_fill,
-        route = GoldenKodeeScreen,
-    ),
-    MainNavDestination(
         label = Res.string.nav_destination_map,
         icon = Res.drawable.location_28,
         iconSelected = Res.drawable.location_28_fill,
@@ -110,7 +101,6 @@ private val bottomNavDestinations: List<MainNavDestination<TopLevelRoute>> = lis
 internal fun NavScaffold(
     navState: NavState,
     navigator: Navigator,
-    showGoldenKodee: Boolean,
     showMap: Boolean,
     content: @Composable (() -> Unit)
 ) {
@@ -118,9 +108,9 @@ internal fun NavScaffold(
         navigator.activate(route)
     }
 
-    val destinations = remember(showGoldenKodee, showMap) {
+    val destinations = remember(showMap) {
         bottomNavDestinations.filter {
-            (showGoldenKodee || it.route !is GoldenKodeeScreen) && (showMap || it.route !is MapScreen)
+            showMap || it.route !is MapScreen
         }
     }
 

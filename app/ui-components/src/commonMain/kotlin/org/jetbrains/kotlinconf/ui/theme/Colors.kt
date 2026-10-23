@@ -139,6 +139,3 @@ val KotlinConfDarkColors = Colors(
     toggleOn = purpleTextDark,
 )
 
-val GoldenKodeeColors = KotlinConfDarkColors.copy(
-    mainBackground = Color(0xFF3A0057),
-)

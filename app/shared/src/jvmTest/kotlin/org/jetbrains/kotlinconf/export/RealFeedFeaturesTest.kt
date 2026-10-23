@@ -46,7 +46,7 @@ class RealFeedFeaturesTest {
     private val showcaseRoom = "Solutions Showcase"
 
     private fun cards(favorites: Set<SessionId> = emptySet()): List<SessionCardView> =
-        conference.buildAgenda(favorites, emptyList(), now).flatMap { it.timeSlots }.flatMap { it.sessions }
+        conference.buildAgenda(favorites, now).flatMap { it.timeSlots }.flatMap { it.sessions }
 
     private fun unfolded(ics: String) = ics.replace("\r\n ", "").split("\r\n").dropLast(1)
 

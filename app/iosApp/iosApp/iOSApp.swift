@@ -1,5 +1,3 @@
-import FirebaseCore
-import FirebaseMessaging
 import SwiftUI
 import shared
 
@@ -25,7 +23,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
         completionHandler([.banner, .sound, .badge])
     }
 
-    // Called when notifications are clicked, whether local or remote
+    // Called when a notification is clicked
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse,
@@ -40,29 +38,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
-        if Main_iosKt.usesPushNotifications() {
-            FirebaseApp.configure()
-        }
         Main_iosKt.doInitApp()
         UNUserNotificationCenter.current().delegate = self
         return true
-    }
-
-    // Forwards notification payload data to NotifierManager
-    func application(
-        _ application: UIApplication,
-        didReceiveRemoteNotification userInfo: [AnyHashable: Any]
-    ) async -> UIBackgroundFetchResult {
-        IOSNotificationsKt.handleRemoteNotification(userInfo: userInfo)
-        return UIBackgroundFetchResult.newData
-    }
-
-    // Passes new APN tokens to Firebase messaging
-    func application(
-        _ application: UIApplication,
-        didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
-    ) {
-        guard FirebaseApp.app() != nil else { return }
-        Messaging.messaging().apnsToken = deviceToken
     }
 }

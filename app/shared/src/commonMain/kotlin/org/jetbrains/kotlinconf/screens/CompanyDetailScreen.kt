@@ -165,7 +165,6 @@ private fun SessionList(
                     SessionState.Past -> TalkStatus.Past
                     SessionState.Upcoming -> TalkStatus.Upcoming
                 },
-                feedbackContent = null,
                 onClick = { onSession(session.id) },
                 modifier = Modifier.fillMaxWidth(),
             )

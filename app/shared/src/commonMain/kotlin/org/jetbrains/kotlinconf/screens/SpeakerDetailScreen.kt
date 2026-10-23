@@ -256,7 +256,6 @@ private fun Talks(
                     stringResource(Res.string.schedule_in_x_minutes, count)
                 },
                 status = TalkStatus.Upcoming,
-                feedbackContent = null,
                 onClick = { onSession(session.id) },
                 modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
             )

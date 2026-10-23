@@ -3,12 +3,9 @@ package org.jetbrains.kotlinconf.ui.components
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.EaseOut
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -112,7 +109,6 @@ fun TalkCard(
     timeNote: String?,
     status: TalkStatus,
     onClick: () -> Unit,
-    feedbackContent: (@Composable () -> Unit)?,
     modifier: Modifier = Modifier,
     /** Shows a pin next to the room that opens it on the venue map; null when the room has no pin. */
     onFindOnMap: (() -> Unit)? = null,
@@ -170,22 +166,6 @@ fun TalkCard(
             time = time,
             onFindOnMap = onFindOnMap,
         )
-        AnimatedVisibility(
-            visible = feedbackContent != null,
-            enter = fadeIn(tween(300, 70, EaseOut)) + expandVertically(tween(150, 0, EaseOut)),
-            exit = fadeOut(tween(300, 70, EaseOut)) + shrinkVertically(tween(150, 0, EaseOut)),
-        ) {
-            Column(
-                // Prevent clicks on the non-interactive elements of the feedback area
-                Modifier.clickable(interactionSource = null, indication = null, onClick = {})
-            ) {
-                HorizontalDivider(
-                    thickness = 1.dp,
-                    color = KotlinConfTheme.colors.strokePale,
-                )
-                feedbackContent?.invoke()
-            }
-        }
     }
 }
 
@@ -459,27 +439,6 @@ private fun TalkCardLivePreview() = PreviewHelper {
         timeNote = null,
         status = TalkStatus.Live,
         onClick = { println("Clicked session") },
-        feedbackContent = {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(start = 16.dp),
-            ) {
-                Text(
-                    "Thanks for your rating!",
-                    color = KotlinConfTheme.colors.primaryText,
-                    style = KotlinConfTheme.typography.h4,
-                    modifier = Modifier.weight(1f),
-                )
-                Emotion.entries.forEach { emotion ->
-                    KodeeIconSmall(
-                        emotion = emotion,
-                        selected = emotion == Emotion.Positive,
-                        modifier = Modifier.padding(12.dp),
-                    )
-                }
-            }
-        },
     )
 }
 
@@ -504,6 +463,5 @@ private fun TalkCardUpcomingPreview() = PreviewHelper {
         timeNote = "In 10 min",
         status = TalkStatus.Upcoming,
         onClick = { println("Clicked session") },
-        feedbackContent = null,
     )
 }

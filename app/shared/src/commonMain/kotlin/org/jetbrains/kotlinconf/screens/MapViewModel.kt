@@ -39,7 +39,6 @@ class MapViewModel(
             try {
                 taggedLogger.log { "Download started" }
                 service.loadConferenceData()
-                service.downloadAllAssets()
                 taggedLogger.log { "Download done" }
             } finally {
                 taggedLogger.log { "Loading complete" }

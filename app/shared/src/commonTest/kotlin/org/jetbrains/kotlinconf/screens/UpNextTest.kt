@@ -34,7 +34,7 @@ class UpNextTest {
 
     private fun at(time: String): UpNext? {
         val now = LocalDateTime.parse("2026-10-22T$time")
-        return upNext(buildMySchedule(conference.buildAgenda(favorites, emptyList(), now)), now)
+        return upNext(buildMySchedule(conference.buildAgenda(favorites, now)), now)
     }
 
     private fun List<org.jetbrains.kotlinconf.SessionCardView>.ids() = map { it.id.id }
@@ -61,7 +61,7 @@ class UpNextTest {
     @Test
     fun beforeTheConferenceShowsTheFirstDayFromItsStart() {
         val now = LocalDateTime.parse("2026-10-01T09:00")
-        val upNext = upNext(buildMySchedule(conference.buildAgenda(favorites, emptyList(), now)), now)!!
+        val upNext = upNext(buildMySchedule(conference.buildAgenda(favorites, now)), now)!!
         assertEquals(ConferenceMoment.BeforeConference, upNext.moment)
         assertEquals(LocalDateTime.parse("2026-10-22T10:00"), upNext.at)
         assertEquals(listOf("a"), upNext.current.ids())
@@ -70,7 +70,7 @@ class UpNextTest {
     @Test
     fun withNothingBookmarkedShowsWhatIsOnAndTheNextRound() {
         val now = LocalDateTime.parse("2026-10-22T10:20")
-        val upNext = upNext(buildMySchedule(conference.buildAgenda(emptySet(), emptyList(), now)), now)!!
+        val upNext = upNext(buildMySchedule(conference.buildAgenda(emptySet(), now)), now)!!
         assertEquals(true, upNext.nothingBookmarked)
         assertEquals(listOf("a"), upNext.happening.ids())
         // b and c both start at 11:00
@@ -89,7 +89,7 @@ class UpNextTest {
             )
         )
         val now = LocalDateTime.parse("2026-10-23T12:00")
-        val upNext = upNext(buildMySchedule(twoDays.buildAgenda(emptySet(), emptyList(), now)), now)!!
+        val upNext = upNext(buildMySchedule(twoDays.buildAgenda(emptySet(), now)), now)!!
         assertEquals(ConferenceMoment.BetweenDays, upNext.moment)
         assertEquals("2026-10-24", upNext.day.date.toString())
     }
@@ -97,7 +97,7 @@ class UpNextTest {
     @Test
     fun afterTheConferenceThereIsNothing() {
         val now = LocalDateTime.parse("2026-11-01T09:00")
-        assertNull(upNext(buildMySchedule(conference.buildAgenda(favorites, emptyList(), now)), now))
+        assertNull(upNext(buildMySchedule(conference.buildAgenda(favorites, now)), now))
     }
 
     @Test

@@ -7,18 +7,9 @@ import kotlinx.serialization.Serializable
 data class ConferenceInfo(
     val aboutHeader: String,
     val aboutDescription: String,
-    val images: ConferenceImages? = null,
-    val partners: List<PartnerGroup>,
     val days: List<DayInfo>,
-    val aboutBlocks: List<AboutBlockInfo>,
     val tags: TagInfo,
     val mapData: MapData,
-)
-
-@Serializable
-data class ConferenceImages(
-    val kotlinConfLight: String,
-    val kotlinConfDark: String,
 )
 
 @Serializable
@@ -50,36 +41,10 @@ data class RoomData(
 )
 
 @Serializable
-data class PartnerGroup(
-    val level: String,
-    val partners: List<PartnerInfo>,
-)
-
-@Serializable
-data class PartnerInfo(
-    val id: PartnerId,
-    val name: String,
-    val description: String,
-    val logoUrlLight: String,
-    val logoUrlDark: String,
-    val url: String,
-)
-
-@Serializable
 data class DayInfo(
     val date: LocalDate,
     val line1: String,
     val line2: String,
-)
-
-@Serializable
-data class AboutBlockInfo(
-    val sessionId: SessionId?,
-    val month: String,
-    val day: String,
-    val title1: String,
-    val title2: String,
-    val description: String?,
 )
 
 @Serializable

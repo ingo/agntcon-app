@@ -29,14 +29,5 @@ fun NotificationSettings(
             onToggle = { enabled -> onChangeSettings(notificationSettings.copy(sessionReminders = enabled)) },
             note = stringResource(Res.string.notifications_session_reminders_description),
         )
-        // Schedule updates are push notifications sent by the conference backend
-        if (ActiveEvent.hasBackend) {
-            SettingsItem(
-                title = stringResource(Res.string.notifications_schedule_update_title),
-                enabled = notificationSettings.scheduleUpdates,
-                onToggle = { enabled -> onChangeSettings(notificationSettings.copy(scheduleUpdates = enabled)) },
-                note = stringResource(Res.string.notifications_schedule_update_description),
-            )
-        }
     }
 }

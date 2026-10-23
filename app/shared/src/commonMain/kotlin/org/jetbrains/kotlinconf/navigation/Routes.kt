@@ -2,9 +2,6 @@ package org.jetbrains.kotlinconf.navigation
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import org.jetbrains.kotlinconf.AwardCategoryId
-import org.jetbrains.kotlinconf.NomineeId
-import org.jetbrains.kotlinconf.PartnerId
 import org.jetbrains.kotlinconf.SessionId
 import org.jetbrains.kotlinconf.SpeakerId
 
@@ -31,10 +28,6 @@ data object SpeakersScreen : AppRoute, TopLevelRoute
 data object MapScreen : AppRoute, TopLevelRoute
 
 @Serializable
-@SerialName("GoldenKodee")
-data object GoldenKodeeScreen : AppRoute, TopLevelRoute
-
-@Serializable
 @SerialName("Info")
 data object InfoScreen : AppRoute, TopLevelRoute
 
@@ -43,44 +36,16 @@ data object InfoScreen : AppRoute, TopLevelRoute
 data object AboutConferenceScreen : AppRoute
 
 @Serializable
-@SerialName("CodeOfConduct")
-data object CodeOfConductScreen : AppRoute
-
-@Serializable
 @SerialName("AboutApp")
 data object AboutAppScreen : AppRoute
-
-@Serializable
-@SerialName("WelcomePrivacyNotice")
-data object StartPrivacyNoticeScreen : AppRoute
 
 @Serializable
 @SerialName("WelcomeSetupNotifications")
 data object StartNotificationsScreen : AppRoute
 
 @Serializable
-@SerialName("AppPrivacyNoticePrompt")
-data object AppPrivacyNoticePrompt : AppRoute
-
-@Serializable
 @SerialName("Settings")
 data object SettingsScreen : AppRoute
-
-@Serializable
-@SerialName("VisitorPrivacyNotice")
-data object VisitorPrivacyNoticeScreen : AppRoute
-
-@Serializable
-@SerialName("AppPrivacyNotice")
-data object AppPrivacyNoticeScreen : AppRoute
-
-@Serializable
-@SerialName("TermsOfUse")
-data object TermsOfUseScreen : AppRoute
-
-@Serializable
-@SerialName("AppTermsOfUse")
-data object AppTermsOfUseScreen : AppRoute
 
 @Serializable
 @SerialName("Licenses")
@@ -92,14 +57,6 @@ data class SingleLicenseScreen(
     val licenseName: String,
     val licenseText: String,
 ) : AppRoute
-
-@Serializable
-@SerialName("Partners")
-data object PartnersScreen : AppRoute
-
-@Serializable
-@SerialName("Partner")
-data class PartnerDetailScreen(val partnerId: PartnerId) : AppRoute
 
 @Serializable
 @SerialName("MySchedule")
@@ -126,11 +83,3 @@ data class CompanyScreen(val name: String) : AppRoute
 @Serializable
 @SerialName("MapDetail")
 data class NestedMapScreen(val roomName: String) : AppRoute
-
-@Serializable
-@SerialName("GoldenKodeeFinalist")
-data class GoldenKodeeFinalistScreen(val categoryId: AwardCategoryId, val nomineeId: NomineeId) : AppRoute
-
-@Serializable
-@SerialName("DeveloperMenu")
-data class DeveloperMenuScreen(val skipWarningDelay: Boolean = false) : AppRoute

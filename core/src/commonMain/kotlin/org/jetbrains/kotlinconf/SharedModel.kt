@@ -68,47 +68,4 @@ value class SpeakerId(val id: String)
 
 @Serializable
 @JvmInline
-value class PartnerId(val id: String)
-
-@Serializable
-@JvmInline
 value class SessionId(val id: String)
-
-@Serializable
-data class VoteInfo(
-    val sessionId: SessionId,
-    val score: Score?,
-)
-
-@Serializable
-class FeedbackInfo(
-    val sessionId: SessionId,
-    val value: String
-)
-
-@Serializable
-enum class Score(val value: Int) {
-    GOOD(1),
-    OK(0),
-    BAD(-1);
-
-    companion object {
-        fun fromValue(value: Int): Score? = when (value) {
-            1 -> GOOD
-            0 -> OK
-            -1 -> BAD
-            else -> null
-        }
-    }
-}
-
-@Serializable
-class Votes(
-    val votes: List<VoteInfo> = emptyList()
-)
-
-@Serializable
-data class AppConfig(
-    val currentYear: Int,
-    val supportedYears: List<Int>,
-)

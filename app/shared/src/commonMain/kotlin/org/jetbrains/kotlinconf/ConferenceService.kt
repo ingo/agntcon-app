@@ -13,7 +13,6 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.CancellationException
-import com.mmk.kmpnotifier.notification.NotifierManager
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
@@ -41,7 +40,6 @@ import org.jetbrains.kotlinconf.di.YearGraph
 import org.jetbrains.kotlinconf.event.ActiveEvent
 import org.jetbrains.kotlinconf.event.BUNDLED_ASSET_PREFIX
 import org.jetbrains.kotlinconf.event.bundledMapSvg
-import org.jetbrains.kotlinconf.flags.FakeGoldenKodeeData
 import org.jetbrains.kotlinconf.export.ExportSnapshot
 import org.jetbrains.kotlinconf.flags.FlagsManager
 import org.jetbrains.kotlinconf.personal.PersonalNotes
@@ -54,7 +52,6 @@ import org.jetbrains.kotlinconf.generated.resources.notification_session_finishe
 import org.jetbrains.kotlinconf.generated.resources.notification_session_how_was_it
 import org.jetbrains.kotlinconf.generated.resources.notification_session_starting_soon
 import org.jetbrains.kotlinconf.generated.resources.notification_session_starts_in_5_min
-import org.jetbrains.kotlinconf.network.ApplicationApi
 import org.jetbrains.kotlinconf.storage.ApplicationStorage
 import org.jetbrains.kotlinconf.storage.YearlyStorage
 import org.jetbrains.kotlinconf.utils.Logger
@@ -65,7 +62,6 @@ import kotlin.time.Duration.Companion.minutes
 @Inject
 @SingleIn(AppScope::class)
 class ConferenceService(
-    private val appClient: ApplicationApi,
     private val applicationStorage: ApplicationStorage,
     private val timeProvider: TimeProvider,
     private val yearGraphFactory: YearGraph.Factory,
@@ -95,38 +91,8 @@ class ConferenceService(
     init {
         applicationStorage.initialize()
 
-        scope.launch {
-            val newConfig = appClient.getConfig()
-            if (newConfig != null) {
-                taggedLogger.log { "New config received from server: $newConfig" }
-                applicationStorage.setConfig(newConfig)
-                taggedLogger.log { "Stored new config locally" }
-            }
-        }
-
-        scope.launch {
-            applicationStorage.getConfig()
-                .filterNotNull()
-                .collect { config ->
-                    taggedLogger.log { "Loaded local config: $config, loading data for ${config.currentYear}" }
-
-                    taggedLogger.log { "Recreating year graph" }
-                    currentYearGraph.update {
-                        yearGraphFactory.create(config.currentYear)
-                    }
-
-                    taggedLogger.log { "Loading conference data" }
-                    loadConferenceData()
-
-                    taggedLogger.log { "Preloading assets" }
-                    downloadAllAssets()
-
-                    verifyPolicyStatus()
-                    syncVotes()
-
-                    taggedLogger.log { "ConferenceService init successful" }
-                }
-        }
+        currentYearGraph.update { yearGraphFactory.create(ActiveEvent.year) }
+        scope.launch { loadConferenceData() }
 
         scope.launch {
             timeProvider.run()
@@ -140,38 +106,16 @@ class ConferenceService(
                 delay(SYNC_INTERVAL)
             }
         }
-
-        if (ActiveEvent.hasBackend) scope.launch {
-            currentYearlyStorage.flatMapLatest { it.getNotificationSettings() }
-                .filterNotNull()
-                .collect { settings ->
-                    taggedLogger.log { "Synchronizing settings to Firebase topics: $settings" }
-                    val notifier = NotifierManager.getPushNotifier()
-                    listOf(
-                        settings.scheduleUpdates to PushNotificationConstants.TOPIC_SCHEDULE_UPDATES,
-                    ).forEach { (enabled, topic) ->
-                        if (enabled) notifier.subscribeToTopic(topic)
-                        else notifier.unSubscribeFromTopic(topic)
-                    }
-                }
-        }
     }
-
-    private val userId = applicationStorage.userId
 
     val agenda: StateFlow<List<Day>> =
         combine(
             currentYearlyStorage.flatMapLatest { it.getConferenceCache() },
             currentYearlyStorage.flatMapLatest { it.getFavorites() },
             timeProvider.time,
-            currentYearlyStorage.flatMapLatest { it.getVotes() },
-        ) { conference, favorites, time, votes ->
-            conference?.buildAgenda(favorites, votes, time) ?: emptyList()
+        ) { conference, favorites, time ->
+            conference?.buildAgenda(favorites, time) ?: emptyList()
         }.stateIn(scope, SharingStarted.Eagerly, emptyList())
-
-    val votes: StateFlow<List<VoteInfo>> =
-        currentYearlyStorage.flatMapLatest { it.getVotes() }
-            .stateIn(scope, SharingStarted.Eagerly, emptyList())
 
     private val sessionCards: StateFlow<List<SessionCardView>> =
         agenda.map {
@@ -236,19 +180,6 @@ class ConferenceService(
         .map { it?.mapData }
         .stateIn(scope, SharingStarted.Eagerly, null)
 
-    val goldenKodeeData: StateFlow<GoldenKodeeData?> =
-        combine(
-            currentYearlyStorage.flatMapLatest { it.getGoldenKodeeCache() },
-            flagsManager.flags,
-        ) { data, flags ->
-            if (flags.useFakeGoldenKodeeData) FakeGoldenKodeeData else data
-        }.stateIn(scope, SharingStarted.Eagerly, null)
-
-    val currentYear: StateFlow<Int?> =
-        applicationStorage.getConfig()
-            .map { it?.currentYear }
-            .stateIn(scope, SharingStarted.Eagerly, null)
-
     fun getTheme(): Flow<Theme> = applicationStorage.getTheme()
 
     fun setTheme(theme: Theme) {
@@ -260,11 +191,8 @@ class ConferenceService(
         val storage = currentYearGraph.storage
         val client = currentYearGraph.api
 
-        // Load conference info (partners, days, about blocks, tags, map data)
+        // Load conference info (tags, map data)
         client.downloadConferenceInfo()?.let { storage.setConferenceInfoCache(it) }
-
-        // Load Golden Kodee award data
-        client.downloadGoldenKodeeData()?.let { storage.setGoldenKodeeCache(it) }
 
         // Load conference schedule data
         val newData = client.downloadConferenceData() ?: return
@@ -320,34 +248,6 @@ class ConferenceService(
     }
 
     /**
-     * Sign the privacy policy for the current year.
-     *
-     * @return true if the policy is signed.
-     */
-    suspend fun acceptPrivacyNotice(): Boolean {
-        val currentYearGraph = currentYearGraph.value ?: return false
-        val storage = currentYearGraph.storage
-        val client = currentYearGraph.api
-
-        if (storage.isPolicySigned().first()) return true
-
-        val success = client.sign(userId.value)
-        if (success) {
-            storage.setPolicySigned(true)
-            taggedLogger.log { "Policy signed successfully for user ${userId.value}" }
-        } else {
-            taggedLogger.log { "Policy signing failed for user ${userId.value}" }
-        }
-        return success
-    }
-
-    fun acceptPrivacyNoticeAsync() {
-        scope.launch {
-            acceptPrivacyNotice()
-        }
-    }
-
-    /**
      * Request permissions to send notifications.
      * @return true if permission was granted, false otherwise
      */
@@ -358,11 +258,8 @@ class ConferenceService(
     fun getNotificationSettings(): Flow<NotificationSettings> =
         currentYearlyStorage.flatMapLatest { it.getNotificationSettings() }
             .map {
-                // No stored value yet, create settings with everything enabled by default
-                it ?: NotificationSettings(
-                    sessionReminders = true,
-                    scheduleUpdates = true,
-                )
+                // No stored value yet: reminders are on by default
+                it ?: NotificationSettings(sessionReminders = true)
             }
 
     suspend fun setNotificationSettings(settings: NotificationSettings) {
@@ -395,36 +292,6 @@ class ConferenceService(
                 }
             }
         }
-    }
-
-    suspend fun isPolicySigned(): Boolean {
-        val storage = currentYearGraph.value?.storage ?: return false
-        return storage.isPolicySigned().first()
-    }
-
-    suspend fun vote(sessionId: SessionId, rating: Score?): Boolean {
-        if (!isPolicySigned()) return false
-
-        val currentYearGraph = currentYearGraph.value ?: return false
-        val storage = currentYearGraph.storage
-        val client = currentYearGraph.api
-
-        val localVotes = storage.getVotes().first().toMutableList()
-        val existingIndex = localVotes.indexOfFirst { it.sessionId == sessionId }
-        if (existingIndex != -1) {
-            localVotes[existingIndex] = VoteInfo(sessionId, rating)
-        } else {
-            localVotes += VoteInfo(sessionId, rating)
-        }
-        storage.setVotes(localVotes)
-
-        return client.vote(sessionId, rating)
-    }
-
-    suspend fun sendFeedback(sessionId: SessionId, feedbackValue: String): Boolean {
-        if (!isPolicySigned()) return false
-        val client = currentYearGraph.value?.api ?: return false
-        return client.sendFeedback(sessionId, feedbackValue)
     }
 
     /** The schedule, speakers and the attendee's own data as they are now, for exporting. */
@@ -521,16 +388,6 @@ class ConferenceService(
                 message = getString(Res.string.notification_session_already_started, room),
             )
         }
-
-        // Notifications for session end, asking for feedback
-        if (ActiveEvent.hasBackend && end > now) {
-            localNotificationService.post(
-                time = end,
-                localNotificationId = LocalNotificationId(Type.SessionEnd, sessionId.id),
-                title = getString(Res.string.notification_session_finished, title),
-                message = getString(Res.string.notification_session_how_was_it),
-            )
-        }
     }
 
     private fun cancelNotifications(sessionId: SessionId) {
@@ -539,133 +396,12 @@ class ConferenceService(
     }
 
 
-    private suspend fun syncVotes() {
-        if (!isPolicySigned()) {
-            taggedLogger.log { "Can't sync votes, policy not signed" }
-            return
-        }
-
-        val currentYearGraph = currentYearGraph.value ?: return
-        val storage = currentYearGraph.storage
-        val client = currentYearGraph.api
-
-        taggedLogger.log { "Synchronizing votes for user ${userId.value}" }
-
-        val apiVotes = client.myVotes().associateBy { it.sessionId }
-        val localVotes = storage.getVotes().first().associateBy { it.sessionId }
-        val mergedVotes = (apiVotes.keys union localVotes.keys)
-            .mapNotNull { sessionId ->
-                val localVote = localVotes[sessionId]
-                val apiVote = apiVotes[sessionId]
-
-                if (localVote?.score != apiVote?.score) {
-                    client.vote(sessionId, localVote?.score)
-                }
-
-                localVote ?: apiVote
-            }
-        storage.setVotes(mergedVotes)
-
-        taggedLogger.log { "Synchronized votes successfully" }
-    }
-
-    private suspend fun verifyPolicyStatus() {
-        val currentYearGraph = currentYearGraph.value ?: return
-        val storage = currentYearGraph.storage
-        val client = currentYearGraph.api
-
-        if (!storage.isPolicySigned().first()) return
-
-        taggedLogger.log { "We're supposed to have a signed policy, verifying with backend" }
-        val policySigned = client.getPolicySigned()
-        when (policySigned) {
-            null, true -> {
-                taggedLogger.log { "Policy status verified" }
-            }
-            else -> {
-                taggedLogger.log { "Policy status can't be verified, resetting value" }
-                storage.setPolicySigned(false)
-            }
-        }
-    }
-
-    suspend fun downloadAllAssets() {
-        val currentYearGraph = currentYearGraph.value ?: return
-        val storage = currentYearGraph.storage
-        val client = currentYearGraph.api
-
-        val docPaths = if (!ActiveEvent.hasBackend) emptyList() else listOf(
-            "documents/app-privacy-notice.md",
-            "documents/app-terms.md",
-            "documents/code-of-conduct.md",
-            "documents/visitors-privacy-notice.md",
-            "documents/visitors-terms.md",
-        )
-        val mapData = storage.getConferenceInfoCache().first()?.mapData
-        val mapPaths =
-            mapData?.floors?.flatMap { listOf(it.svgPathLight, it.svgPathDark) }
-                ?.filterNot { it.startsWith(BUNDLED_ASSET_PREFIX) } ?: emptyList()
-
-        val allFiles = (docPaths + mapPaths)
-        val missing = allFiles.filter { storage.getAsset(it) == null }
-
-        if (missing.isEmpty()) {
-            taggedLogger.log { "All assets cached locally" }
-            return
-        }
-
-        taggedLogger.log { "${missing.size} asset(s) missing, downloading" }
-
-        for (path in missing) {
-            val content = client.downloadAsset(path)
-            if (content != null) {
-                storage.setAsset(path, content)
-                taggedLogger.log { "Cached asset: $path" }
-            } else {
-                taggedLogger.log { "Failed to download asset: $path" }
-            }
-        }
-    }
-
-    /**
-     * Reads the asset contents from cache if available,
-     * or attempts to download it (once) if missing.
-     */
+    /** The contents of a bundled map image, wrapped as SVG; null for anything else. */
     suspend fun getAsset(path: String): String? {
-        taggedLogger.log { "Reading asset: $path" }
-
-        if (path.startsWith(BUNDLED_ASSET_PREFIX)) {
-            return runCatching { bundledMapSvg(path) }
-                .onFailure { taggedLogger.log { "Failed to read bundled asset: $path" } }
-                .getOrNull()
-        }
-
-        val storage = currentYearGraph.filterNotNull().first().storage
-        val cached = storage.getAsset(path)
-
-        if (cached != null) {
-            taggedLogger.log { "Found in cache: $path" }
-            return cached
-        }
-
-        downloadAsset(path)
-
-        return storage.getAsset(path)
-    }
-
-    suspend fun downloadAsset(path: String) {
-        val currentYearGraph = currentYearGraph.value ?: return
-        val storage = currentYearGraph.storage
-        val client = currentYearGraph.api
-
-        taggedLogger.log { "Downloading asset: $path" }
-        val content = client.downloadAsset(path)
-        if (content != null) {
-            taggedLogger.log { "Cached asset: $path" }
-            storage.setAsset(path, content)
-        } else {
-            taggedLogger.log { "Failed to download asset: $path" }
-        }
+        if (!path.startsWith(BUNDLED_ASSET_PREFIX)) return null
+        return runCatching { bundledMapSvg(path) }
+            .onFailure { taggedLogger.log { "Failed to read bundled asset: $path" } }
+            .getOrNull()
     }
 
     // Bookmark sync with the event's Sessionize web app, see SessionizeSync.kt
@@ -822,15 +558,5 @@ class ConferenceService(
                 )
             }
         }
-    }
-
-    fun getPartner(partnerId: PartnerId): Flow<PartnerInfo?> {
-        return conferenceInfo
-            .filterNotNull()
-            .map { info ->
-                info.partners
-                    .flatMap { it.partners }
-                    .firstOrNull { it.id == partnerId }
-            }
     }
 }

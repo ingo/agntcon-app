@@ -5,78 +5,54 @@ import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.only
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.map
 import org.jetbrains.kotlinconf.ConferenceService
+import org.jetbrains.kotlinconf.flags.LocalFlags
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.jetbrains.kotlinconf.LocalAppGraph
 import org.jetbrains.kotlinconf.LocalMapHandler
 import org.jetbrains.kotlinconf.LocalNotificationId
 import org.jetbrains.kotlinconf.SessionId
 import org.jetbrains.kotlinconf.ThemeChangeAnimation
 import org.jetbrains.kotlinconf.URLs
-import org.jetbrains.kotlinconf.flags.LocalFlags
 import org.jetbrains.kotlinconf.screens.AboutAppScreen
 import org.jetbrains.kotlinconf.screens.AboutConference
-import org.jetbrains.kotlinconf.screens.AppPrivacyNotice
-import org.jetbrains.kotlinconf.screens.AppPrivacyNoticePrompt
-import org.jetbrains.kotlinconf.screens.AppTermsOfUse
 import org.jetbrains.kotlinconf.screens.MyScheduleScreen
 import org.jetbrains.kotlinconf.screens.NowScreen
 import org.jetbrains.kotlinconf.screens.SessionizeSyncScreen
-import org.jetbrains.kotlinconf.screens.CodeOfConduct
 import org.jetbrains.kotlinconf.screens.CompanyDetailScreen
-import org.jetbrains.kotlinconf.screens.GoldenKodeeFinalistScreen
-import org.jetbrains.kotlinconf.screens.GoldenKodeeScreen
 import org.jetbrains.kotlinconf.screens.InfoScreen
 import org.jetbrains.kotlinconf.screens.MapScreen
 import org.jetbrains.kotlinconf.screens.NestedMapScreen
-import org.jetbrains.kotlinconf.screens.PartnerDetailScreen
-import org.jetbrains.kotlinconf.screens.PartnersScreen
 import org.jetbrains.kotlinconf.screens.ScheduleScreen
 import org.jetbrains.kotlinconf.screens.SessionScreen
 import org.jetbrains.kotlinconf.screens.SettingsScreen
 import org.jetbrains.kotlinconf.screens.SpeakerDetailScreen
 import org.jetbrains.kotlinconf.screens.SpeakersScreen
 import org.jetbrains.kotlinconf.screens.StartNotificationsScreen
-import org.jetbrains.kotlinconf.screens.VisitorPrivacyNotice
-import org.jetbrains.kotlinconf.screens.VisitorTermsOfUse
 import org.jetbrains.kotlinconf.screens.licenses.LicensesScreen
 import org.jetbrains.kotlinconf.screens.licenses.SingleLicenseScreen
-import org.jetbrains.kotlinconf.ui.components.Text
-import org.jetbrains.kotlinconf.ui.theme.GoldenKodeeColors
 import org.jetbrains.kotlinconf.ui.theme.KotlinConfDarkColors
 import org.jetbrains.kotlinconf.ui.theme.KotlinConfLightColors
 import org.jetbrains.kotlinconf.ui.theme.KotlinConfTheme
-import org.jetbrains.kotlinconf.utils.DateTimeFormatting
 import org.jetbrains.kotlinconf.utils.getStoreUrl
-import org.jetbrains.kotlinconf.utils.topInsetPadding
-import org.jetbrains.kotlinconf.screens.DeveloperMenuScreen as DeveloperMenuScreenContent
 
 fun navigateByLocalNotificationId(notificationId: String) {
     LocalNotificationId.parse(notificationId)?.let {
@@ -115,10 +91,7 @@ internal fun NavHost(
     val skipNotificationsOnboarding = LocalFlags.current.supportsNotifications.not()
     val startRoute = remember {
         when {
-            isOnboardingComplete -> NowScreen
-            // The app privacy notice covers the backend; without one there is nothing to accept
-            ActiveEvent.hasBackend -> StartPrivacyNoticeScreen
-            skipNotificationsOnboarding -> NowScreen
+            isOnboardingComplete || skipNotificationsOnboarding -> NowScreen
             else -> StartNotificationsScreen
         }
     }
@@ -130,7 +103,6 @@ internal fun NavHost(
             MyScheduleScreen,
             ScheduleScreen,
             SpeakersScreen,
-            GoldenKodeeScreen,
             MapScreen,
             InfoScreen,
         ),
@@ -154,19 +126,14 @@ internal fun NavHost(
     }
 
     val conferenceService = LocalAppGraph.current.conferenceService
-    val showGoldenKodee by remember { conferenceService.goldenKodeeData.map { it != null } }
-        .collectAsStateWithLifecycle(false)
     val showMap by remember { conferenceService.mapData.map { it == null || it.floors.isNotEmpty() } }
-        .collectAsStateWithLifecycle(ActiveEvent.hasBackend)
-
-    val isGoldenKodee = navState.topLevelRoute is GoldenKodeeScreen
+        .collectAsStateWithLifecycle(false)
 
     ThemeChangeAnimation(
         isDarkTheme = isDarkTheme,
         enabled = navState.currentBackstack.lastOrNull() is SettingsScreen,
     ) { appliedIsDarkTheme ->
         val colors = when {
-            isGoldenKodee -> GoldenKodeeColors
             appliedIsDarkTheme -> ActiveEvent.theme?.dark ?: KotlinConfDarkColors
             else -> ActiveEvent.theme?.light ?: KotlinConfLightColors
         }
@@ -190,7 +157,6 @@ internal fun NavHost(
                 NavScaffold(
                     navState = navState,
                     navigator = navigator,
-                    showGoldenKodee = showGoldenKodee,
                     showMap = showMap,
                 ) {
                     NavDisplay(
@@ -198,52 +164,7 @@ internal fun NavHost(
                         onBack = navigator::goBack,
                     )
                 }
-
-                val baseUrl = LocalAppGraph.current.baseUrl
-                val flagsManager = LocalAppGraph.current.flagsManager
-                val currentFlags = LocalFlags.current
-                val platformFlags = flagsManager.platformFlags
-                if (baseUrl != URLs.PRODUCTION_URL || currentFlags != platformFlags) {
-                    DebugMarker(
-                        Modifier
-                            .align(Alignment.TopCenter)
-                            .padding(topInsetPadding())
-                            .clip(KotlinConfTheme.shapes.roundedCornerMd)
-                            .clickable { navigator.add(AboutAppScreen) }
-                            .padding(8.dp)
-                    )
-                }
             }
-        }
-    }
-}
-
-@Composable
-private fun DebugMarker(modifier: Modifier = Modifier) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        modifier = modifier,
-    ) {
-        Box(
-            Modifier.size(10.dp)
-                .clip(CircleShape)
-                .background(KotlinConfTheme.colors.orangeText)
-        )
-        Text(
-            text = "Testing",
-            color = KotlinConfTheme.colors.orangeText,
-            style = KotlinConfTheme.typography.text2,
-            maxLines = 1,
-        )
-        if (LocalFlags.current.useFakeTime) {
-            val dateTime by LocalAppGraph.current.timeProvider.time.collectAsStateWithLifecycle()
-            Text(
-                text = "Fake time: ${DateTimeFormatting.dateAndTime(dateTime)}",
-                color = KotlinConfTheme.colors.orangeText,
-                style = KotlinConfTheme.typography.text2,
-                maxLines = 1,
-            )
         }
     }
 }
@@ -259,27 +180,6 @@ private fun EntryProviderScope<AppRoute>.screens(
     navigator: Navigator,
     onBack: () -> Unit,
 ) {
-    entry<StartPrivacyNoticeScreen> {
-        val skipNotifications = LocalFlags.current.supportsNotifications.not()
-        AppPrivacyNoticePrompt(
-            onRejectNotice = {
-                if (skipNotifications) {
-                    navigator.set(NowScreen)
-                } else {
-                    navigator.set(StartNotificationsScreen)
-                }
-            },
-            onAcceptNotice = {
-                if (skipNotifications) {
-                    navigator.set(NowScreen)
-                } else {
-                    navigator.set(StartNotificationsScreen)
-                }
-            },
-            onAppTermsOfUse = { navigator.add(AppTermsOfUseScreen) },
-            confirmationRequired = false,
-        )
-    }
     entry<StartNotificationsScreen> {
         StartNotificationsScreen(
             onDone = {
@@ -295,7 +195,6 @@ private fun EntryProviderScope<AppRoute>.screens(
         }
         ScheduleScreen(
             onSession = { navigator.add(SessionScreen(it)) },
-            onPrivacyNoticeNeeded = { navigator.add(AppPrivacyNoticePrompt) },
             onNavigateToMap = { roomName -> navigator.add(NestedMapScreen(roomName)) },
             tabReselections = navigator.tabReselections(forRoute = ScheduleScreen),
         )
@@ -327,22 +226,6 @@ private fun EntryProviderScope<AppRoute>.screens(
         )
     }
 
-    entry<GoldenKodeeScreen>(metadata = noAnimationMetadata) {
-        GoldenKodeeScreen(
-            onNomineeClick = { categoryId, nomineeId ->
-                navigator.add(GoldenKodeeFinalistScreen(categoryId, nomineeId))
-            },
-        )
-    }
-
-    entry<GoldenKodeeFinalistScreen> {
-        GoldenKodeeFinalistScreen(
-            categoryId = it.categoryId,
-            nomineeId = it.nomineeId,
-            onBack = onBack,
-        )
-    }
-
     entry<MapScreen>(metadata = noAnimationMetadata) {
         val mapHandler = LocalMapHandler.current
         MapScreen(
@@ -353,19 +236,12 @@ private fun EntryProviderScope<AppRoute>.screens(
     entry<InfoScreen>(metadata = noAnimationMetadata) {
         val uriHandler = LocalUriHandler.current
         val conferenceService = LocalAppGraph.current.conferenceService
-        val hasPartners by remember { conferenceService.conferenceInfo.map { it?.partners?.isNotEmpty() ?: false } }
-            .collectAsStateWithLifecycle(false)
         val mapHandler = LocalMapHandler.current
         InfoScreen(
             onAboutConf = { navigator.add(AboutConferenceScreen) },
             onHowToFindVenue = { address -> mapHandler.openNavigation(address) },
             onAboutApp = { navigator.add(AboutAppScreen) },
-            onOurPartners = if (hasPartners) { { navigator.add(PartnersScreen) } } else null,
-            onCodeOfConduct = when {
-                ActiveEvent.hasBackend -> { { navigator.add(CodeOfConductScreen) } }
-                else -> ActiveEvent.codeOfConductUrl?.let { url -> { uriHandler.openUri(url) } }
-            },
-            codeOfConductIsExternal = !ActiveEvent.hasBackend,
+            onCodeOfConduct = ActiveEvent.codeOfConductUrl?.let { url -> { uriHandler.openUri(url) } },
             onTwitter = URLs.TWITTER?.let { url -> { uriHandler.openUri(url) } },
             onSlack = URLs.SLACK?.let { url -> { uriHandler.openUri(url) } },
             onBluesky = URLs.BLUESKY?.let { url -> { uriHandler.openUri(url) } },
@@ -395,7 +271,6 @@ private fun EntryProviderScope<AppRoute>.screens(
         SessionScreen(
             sessionId = it.sessionId,
             onBack = onBack,
-            onPrivacyNoticeNeeded = { navigator.add(AppPrivacyNoticePrompt) },
             onSpeaker = { speakerId -> navigator.add(SpeakerDetailScreen(speakerId)) },
             onWatchVideo = { videoUrl -> urlHandler.openUri(videoUrl) },
             onNavigateToMap = { roomName ->
@@ -410,11 +285,7 @@ private fun EntryProviderScope<AppRoute>.screens(
             onBack = onBack,
             onGitHubRepo = { uriHandler.openUri(URLs.GITHUB_REPO) },
             onRateApp = { getStoreUrl()?.let { uriHandler.openUri(it) } },
-            onPrivacyNotice = if (ActiveEvent.hasBackend) { { navigator.add(AppPrivacyNoticeScreen) } } else null,
-            onTermsOfUse = if (ActiveEvent.hasBackend) { { navigator.add(AppTermsOfUseScreen) } } else null,
             onLicenses = { navigator.add(LicensesScreen) },
-            onJunie = { uriHandler.openUri(URLs.JUNIE_LANDING_PAGE) },
-            onDeveloperMenu = { skipDelay -> navigator.add(DeveloperMenuScreen(skipWarningDelay = skipDelay)) },
         )
     }
     entry<LicensesScreen> {
@@ -435,74 +306,13 @@ private fun EntryProviderScope<AppRoute>.screens(
     entry<AboutConferenceScreen> {
         val urlHandler = LocalUriHandler.current
         AboutConference(
-            onPrivacyNotice = if (ActiveEvent.hasBackend) { { navigator.add(VisitorPrivacyNoticeScreen) } } else null,
-            onGeneralTerms = if (ActiveEvent.hasBackend) { { navigator.add(TermsOfUseScreen) } } else null,
             onWebsiteLink = URLs.CONFERENCE_HOMEPAGE?.let { url -> { urlHandler.openUri(url) } },
             onBack = onBack,
-            onSpeaker = { speakerId -> navigator.add(SpeakerDetailScreen(speakerId)) },
         )
-    }
-    entry<CodeOfConductScreen> {
-        CodeOfConduct(onBack = onBack)
     }
     entry<SettingsScreen> {
         SettingsScreen(onBack = onBack)
     }
-    entry<VisitorPrivacyNoticeScreen> {
-        VisitorPrivacyNotice(onBack = onBack)
-    }
-    entry<AppPrivacyNoticeScreen> {
-        AppPrivacyNotice(
-            onBack = onBack,
-            onAppTermsOfUse = { navigator.add(AppTermsOfUseScreen) },
-        )
-    }
-    entry<TermsOfUseScreen> {
-        VisitorTermsOfUse(
-            onBack = onBack,
-            onCodeOfConduct = { navigator.add(CodeOfConductScreen) },
-            onVisitorPrivacyNotice = { navigator.add(VisitorPrivacyNoticeScreen) },
-        )
-    }
-    entry<AppTermsOfUseScreen> {
-        AppTermsOfUse(
-            onBack = onBack,
-            onAppPrivacyNotice = {
-                navigator.add(AppPrivacyNoticeScreen)
-            },
-        )
-    }
-    entry<PartnersScreen> {
-        PartnersScreen(
-            onBack = onBack,
-            onPartnerDetail = { partnerId ->
-                navigator.add(PartnerDetailScreen(partnerId))
-            }
-        )
-    }
-    entry<PartnerDetailScreen> {
-        PartnerDetailScreen(
-            partnerId = it.partnerId,
-            onBack = onBack,
-        )
-    }
-
-    entry<AppPrivacyNoticePrompt> {
-        AppPrivacyNoticePrompt(
-            onRejectNotice = onBack,
-            onAcceptNotice = onBack,
-            onAppTermsOfUse = { navigator.add(AppTermsOfUseScreen) },
-            confirmationRequired = true,
-        )
-    }
-
-    entry<DeveloperMenuScreen> {
-        DeveloperMenuScreenContent(
-            onBack = onBack,
-            skipWarningDelay = it.skipWarningDelay,
-        )
-    }
-
     entry<NestedMapScreen> {
         NestedMapScreen(
             roomName = it.roomName,

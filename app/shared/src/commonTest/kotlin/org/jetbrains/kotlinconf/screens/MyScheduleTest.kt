@@ -36,7 +36,7 @@ class MyScheduleTest {
 
     private fun day(vararg favorites: String): MyScheduleDay =
         buildMySchedule(
-            Conference(sessions).buildAgenda(favorites.map(::SessionId).toSet(), emptyList(), now)
+            Conference(sessions).buildAgenda(favorites.map(::SessionId).toSet(), now)
         ).single()
 
     @Test
@@ -98,7 +98,7 @@ class MyScheduleTest {
             session("after", "14:20", "14:45"), session("after2", "14:20", "14:45"), session("after3", "14:20", "14:45"),
         )
         val day = buildMySchedule(
-            Conference(sessions).buildAgenda(setOf(SessionId("before"), SessionId("after")), emptyList(), now)
+            Conference(sessions).buildAgenda(setOf(SessionId("before"), SessionId("after")), now)
         ).single()
 
         assertEquals(
@@ -136,7 +136,7 @@ class MyScheduleTest {
     fun bookedSessionsKnowIfTheyAreOverLiveOrUpcoming() {
         val at = LocalDateTime.parse("2026-10-22T10:15")
         val booked = setOf("keynote", "a", "e").map(::SessionId).toSet()
-        val day = buildMySchedule(Conference(sessions).buildAgenda(booked, emptyList(), at)).single()
+        val day = buildMySchedule(Conference(sessions).buildAgenda(booked, at)).single()
 
         val states = day.booked.associate { it.session.id.id to it.session.state }
         assertEquals(SessionState.Past, states.getValue("keynote"))

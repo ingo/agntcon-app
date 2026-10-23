@@ -3,7 +3,6 @@ package org.jetbrains.kotlinconf.storage
 import org.jetbrains.kotlinconf.sync.SessionizeSyncState
 import com.russhwolf.settings.ExperimentalSettingsApi
 import com.russhwolf.settings.ObservableSettings
-import com.russhwolf.settings.coroutines.getBooleanFlow
 import com.russhwolf.settings.coroutines.getStringOrNullFlow
 import com.russhwolf.settings.set
 import dev.zacsweers.metro.ContributesBinding
@@ -14,13 +13,11 @@ import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import org.jetbrains.kotlinconf.Conference
 import org.jetbrains.kotlinconf.ConferenceInfo
-import org.jetbrains.kotlinconf.GoldenKodeeData
 import org.jetbrains.kotlinconf.NotificationSettings
 import org.jetbrains.kotlinconf.SessionId
 import org.jetbrains.kotlinconf.SpeakerId
 import org.jetbrains.kotlinconf.personal.PersonalNotes
 import org.jetbrains.kotlinconf.personal.SessionRating
-import org.jetbrains.kotlinconf.VoteInfo
 import org.jetbrains.kotlinconf.di.Year
 import org.jetbrains.kotlinconf.di.YearScope
 
@@ -31,7 +28,6 @@ import org.jetbrains.kotlinconf.di.YearScope
 class YearlyStorageImpl(
     @Year private val year: Int,
     private val settings: ObservableSettings,
-    private val assetStorage: AssetStorage,
 ) : YearlyStorage {
     private val json = Json {
         ignoreUnknownKeys = true
@@ -48,29 +44,20 @@ class YearlyStorageImpl(
 
     private fun key(name: String): String = "${year}_$name"
 
-    val POLICY_SIGNED = key("policySigned")
     val CONFERENCE_CACHE = key("conferenceCache")
     val CONFERENCE_INFO_CACHE = key("conferenceInfoCache")
-    val GOLDEN_KODEE_CACHE = key("goldenKodeeCache")
     val FAVORITES = key("favorites")
     val NOTIFICATION_SETTINGS = key("notificationSettings")
-    val VOTES = key("votes")
     val SESSIONIZE_SYNC = key("sessionizeSync")
     val NOTES = key("notes")
     val MET_SPEAKERS = key("metSpeakers")
     val RATINGS = key("ratings")
-
-    override fun isPolicySigned(): Flow<Boolean> = settings.getBooleanFlow(POLICY_SIGNED, false)
-    override suspend fun setPolicySigned(value: Boolean) = settings.set(POLICY_SIGNED, value)
 
     override fun getConferenceCache(): Flow<Conference?> = settings.getStringOrNullFlow(CONFERENCE_CACHE).map { it.decodeOrNull<Conference>() }
     override suspend fun setConferenceCache(value: Conference) = settings.set(CONFERENCE_CACHE, json.encodeToString(value))
 
     override fun getConferenceInfoCache(): Flow<ConferenceInfo?> = settings.getStringOrNullFlow(CONFERENCE_INFO_CACHE).map { it.decodeOrNull<ConferenceInfo>() }
     override suspend fun setConferenceInfoCache(value: ConferenceInfo) = settings.set(CONFERENCE_INFO_CACHE, json.encodeToString(value))
-
-    override fun getGoldenKodeeCache(): Flow<GoldenKodeeData?> = settings.getStringOrNullFlow(GOLDEN_KODEE_CACHE).map { it.decodeOrNull<GoldenKodeeData>() }
-    override suspend fun setGoldenKodeeCache(value: GoldenKodeeData) = settings.set(GOLDEN_KODEE_CACHE, json.encodeToString(value))
 
     override fun getFavorites(): Flow<Set<SessionId>> = settings.getStringOrNullFlow(FAVORITES).map { it.decodeOrNull<Set<SessionId>>() ?: emptySet() }
     override suspend fun setFavorites(value: Set<SessionId>) = settings.set(FAVORITES, json.encodeToString(value))
@@ -92,9 +79,4 @@ class YearlyStorageImpl(
         if (value == null) settings.remove(SESSIONIZE_SYNC) else settings.set(SESSIONIZE_SYNC, json.encodeToString(value))
     }
 
-    override fun getVotes(): Flow<List<VoteInfo>> = settings.getStringOrNullFlow(VOTES).map { it.decodeOrNull<List<VoteInfo>>() ?: emptyList() }
-    override suspend fun setVotes(value: List<VoteInfo>) = settings.set(VOTES, json.encodeToString(value))
-
-    override suspend fun getAsset(name: String): String? = assetStorage.read(name)
-    override suspend fun setAsset(name: String, content: String) = assetStorage.write(name, content)
 }
