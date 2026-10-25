@@ -294,4 +294,116 @@ Bitte versuchen Sie es erneut.</string>
     </plurals>
     <string name="my_schedule_state_live">Läuft gerade</string>
     <string name="my_schedule_state_past">Beendet</string>
+    <!-- Fotos und Videos zu einer Session und der Reisebericht zum Herunterladen -->
+    <string name="session_media_title">Meine Fotos und Videos</string>
+    <string name="session_media_hint">Folien, die nicht geteilt wurden, ein Whiteboard, der Teil des Vortrags, den Sie behalten möchten. Nur auf diesem Gerät, bis Sie den Reisebericht herunterladen.</string>
+    <string name="session_media_take_photo">Foto aufnehmen</string>
+    <string name="session_media_record_video">Video aufnehmen</string>
+    <string name="session_media_from_library">Aus Fotos hinzufügen</string>
+    <string name="session_media_adding">Wird hinzugefügt …</string>
+    <string name="session_media_remove">Entfernen</string>
+    <string name="session_media_cancel">Abbrechen</string>
+    <string name="session_media_photo">Foto %1$d</string>
+    <string name="session_media_video">Video %1$d</string>
+    <string name="session_media_actions">Gedrückt halten zum Entfernen</string>
+    <string name="trip_report_intro">Die Sessions, die Sie besucht haben, mit Ihren Notizen, Bewertungen, den Folien und Ihren Fotos und Videos.</string>
+    <string name="trip_report_download">Bericht herunterladen (.zip)</string>
+    <string name="trip_report_download_hint">Der Bericht als Markdown und als Webseite, die Folien aus Sessionize und Ihre Fotos und Videos in einer ZIP-Datei zum Mailen oder Speichern.</string>
+    <string name="trip_report_download_size">Ihre Fotos und Videos: %1$s, dazu die Folien.</string>
+    <string name="trip_report_share_text">Als Text teilen</string>
+    <string name="trip_report_share_text_hint">Der Bericht in Markdown, mit Links zu den Folien und ohne Fotos oder Videos.</string>
+    <string name="trip_report_downloading_slides">Folien werden geladen: %1$d von %2$d …</string>
+    <string name="trip_report_packing">Bericht wird gepackt …</string>
+    <string name="trip_report_ready">Bericht fertig (%1$s)</string>
+    <string name="trip_report_share_again">Bericht erneut teilen</string>
+    <string name="trip_report_too_large">Der Bericht wäre größer als 4 GB. Entfernen Sie einige lange Videos und versuchen Sie es erneut.</string>
+    <string name="trip_report_failed">Der Bericht konnte nicht erstellt werden. Prüfen Sie den freien Speicher auf dem Gerät und versuchen Sie es erneut.</string>
+    <string name="trip_report_empty">Merken Sie sich die Sessions, die Sie besuchen, oder fügen Sie eine Notiz, eine Bewertung, ein Foto oder ein Video hinzu, dann erscheinen sie hier.</string>
+    <string name="trip_report_in_report">Im Bericht</string>
+    <string name="trip_report_note">Notiz</string>
+    <string name="trip_report_rating">Bewertung</string>
+    <plurals name="trip_report_sessions">
+        <item quantity="one">%1$d Session</item>
+        <item quantity="other">%1$d Sessions</item>
+    </plurals>
+    <plurals name="trip_report_photos">
+        <item quantity="one">%1$d Foto</item>
+        <item quantity="other">%1$d Fotos</item>
+    </plurals>
+    <plurals name="trip_report_videos">
+        <item quantity="one">%1$d Video</item>
+        <item quantity="other">%1$d Videos</item>
+    </plurals>
+    <plurals name="trip_report_with_slides">
+        <item quantity="one">%1$d mit Folien</item>
+        <item quantity="other">%1$d mit Folien</item>
+    </plurals>
+    <plurals name="trip_report_slides_linked">
+        <item quantity="one">%1$d Foliensatz konnte nicht geladen werden und ist stattdessen verlinkt.</item>
+        <item quantity="other">%1$d Foliensätze konnten nicht geladen werden und sind stattdessen verlinkt.</item>
+    </plurals>
+    <string name="export_my_media">Meine Fotos und Videos</string>
+    <string name="export_photo">Foto</string>
+    <string name="export_video">Video</string>
+    <string name="now_trip_report_title">Ihr Reisebericht</string>
+    <string name="now_trip_report_text">Ihre Sessions, Notizen, Folien, Fotos und Videos in einer ZIP-Datei, die Sie sich selbst schicken können.</string>
+    <string name="trip_report_add_photos">Fotos von der Konferenz hinzufügen</string>
+    <string name="trip_report_add_photos_hint">Wählen Sie Fotos und Videos von der Konferenz. Jedes kommt zu der Session, in der es aufgenommen wurde; Sie bestätigen, bevor etwas hinzugefügt wird.</string>
+    <string name="trip_report_reading_photos">Fotos werden gelesen …</string>
+    <string name="import_title">Fotos hinzufügen</string>
+    <string name="import_intro">Nach der Aufnahmezeit den Sessions zugeordnet. Prüfen Sie die Zuordnung, antworten Sie, wo sie nicht eindeutig ist, und fügen Sie dann hinzu.</string>
+    <string name="import_question_ask">In welcher Session waren Sie?</string>
+    <string name="import_question_between">Zwischen zwei Sessions aufgenommen. Hinzufügen zu:</string>
+    <string name="import_question_no_time">Diese haben kein Datum. Hinzufügen zu:</string>
+    <string name="import_no_options">Keine Session zum Vorschlagen.</string>
+    <string name="import_dont_add">Diese nicht hinzufügen</string>
+    <string name="import_not_added">Nicht hinzugefügt</string>
+    <string name="import_change">Ändern</string>
+    <string name="import_bookmarked">Gemerkt</string>
+    <string name="import_nothing_to_add">Nichts hinzuzufügen</string>
+    <plurals name="import_items">
+        <item quantity="one">%1$d Foto oder Video</item>
+        <item quantity="other">%1$d Fotos und Videos</item>
+    </plurals>
+    <plurals name="import_add">
+        <item quantity="one">%1$d Foto oder Video hinzufügen</item>
+        <item quantity="other">%1$d Fotos und Videos hinzufügen</item>
+    </plurals>
+    <plurals name="import_answer_first">
+        <item quantity="one">Beantworten Sie zuerst die Frage oben</item>
+        <item quantity="other">Beantworten Sie zuerst die %1$d Fragen oben</item>
+    </plurals>
+    <string name="import_tap_to_view">Tippen Sie auf ein Foto, um es groß zu sehen, auf ×, um nur dieses herauszunehmen und anders zuzuordnen.</string>
+    <string name="import_slide_matches">Folientext passt</string>
+    <string name="session_media_cleaned">Fotos von Bildschirmen und Whiteboards werden begradigt und aufbereitet. Im Viewer nach links wischen für das Original.</string>
+    <string name="export_original">Original</string>
+    <plurals name="import_duplicates">
+        <item quantity="one">%1$d war schon hinzugefügt und wird weggelassen.</item>
+        <item quantity="other">%1$d waren schon hinzugefügt und werden weggelassen.</item>
+    </plurals>
+    <string name="import_leave_out">Dieses Foto aus der Gruppe nehmen</string>
+    <string name="import_question_moved">Aus einer Gruppe genommen. Zu einer anderen Session hinzufügen?</string>
+    <string name="import_dont_add_it">Nicht hinzufügen</string>
+    <string name="media_reading_progress">Fotos werden gelesen: %1$d von %2$d …</string>
+    <string name="trip_report_scan">Fotos aus den Sessions finden</string>
+    <string name="trip_report_scan_hint">Sucht in Ihrer Fotomediathek alles, was Sie während der Sessions aufgenommen haben, kopiert es Foto für Foto und lässt Sie es prüfen, bevor es hinzugefügt wird. Braucht Zugriff auf Ihre Fotos.</string>
+    <string name="trip_report_scan_progress">Fotos werden kopiert: %1$d von %2$d …</string>
+    <string name="trip_report_scan_denied">Die App darf Ihre Fotos nicht sehen. Erlauben Sie es unter Einstellungen, Datenschutz &amp; Sicherheit, Fotos, oder wählen Sie sie unten selbst aus.</string>
+    <string name="trip_report_scan_none">Keine neuen Fotos oder Videos aus den Sessions in Ihrer Mediathek.</string>
+    <plurals name="media_unreadable">
+        <item quantity="one">%1$d Foto konnte nicht aus Ihrer Mediathek gelesen werden. Fügen Sie es erneut hinzu.</item>
+        <item quantity="other">%1$d Fotos konnten nicht aus Ihrer Mediathek gelesen werden. Fügen Sie sie erneut hinzu.</item>
+    </plurals>
+    <plurals name="import_add_matched">
+        <item quantity="one">Das %1$d zugeordnete hinzufügen, Rest weglassen</item>
+        <item quantity="other">Die %1$d zugeordneten hinzufügen, Rest weglassen</item>
+    </plurals>
+    <string name="import_likely">Wahrscheinlich: überzogen oder früher begonnen</string>
+    <string name="trip_report_preview">Bericht ansehen</string>
+    <plurals name="import_outlier">
+        <item quantity="one">Dieses Foto gehört wahrscheinlich zu denen kurz davor und danach: %2$s.</item>
+        <item quantity="other">Diese %1$d Fotos gehören wahrscheinlich zu denen kurz davor und danach: %2$s.</item>
+    </plurals>
+    <string name="import_outlier_move">In diese Session verschieben</string>
+    <string name="trip_report_preview_hint">So wird der Bericht aussehen. Tippen Sie auf ein Foto, um es groß zu sehen, und wischen Sie durch die Fotos der Session.</string>
 </resources>

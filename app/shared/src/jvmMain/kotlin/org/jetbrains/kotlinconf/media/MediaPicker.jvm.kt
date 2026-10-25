@@ -1,0 +1,56 @@
+package org.jetbrains.kotlinconf.media
+
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import org.jetbrains.kotlinconf.personal.MediaKind
+import java.awt.Desktop
+import java.awt.FileDialog
+import java.awt.Frame
+import java.io.File
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
+import kotlin.time.Instant
+
+@Composable
+actual fun rememberMediaPicker(): MediaPicker? = remember { DesktopMediaPicker }
+
+private val VIDEO_EXTENSIONS = setOf("mov", "mp4", "m4v", "webm", "avi")
+private val IMAGE_EXTENSIONS = setOf("jpg", "jpeg", "png", "gif", "webp", "heic")
+
+/** Desktop: files from disk, no camera. The originals stay where they are; the app keeps copies. */
+private object DesktopMediaPicker : MediaPicker {
+    override val hasCamera: Boolean = false
+
+    override fun takePhoto(onPicked: (List<PickedMedia>) -> Unit) = onPicked(emptyList())
+
+    override fun recordVideo(onPicked: (List<PickedMedia>) -> Unit) = onPicked(emptyList())
+
+    override fun pickFromLibrary(onProgress: (done: Int, total: Int) -> Unit, onPicked: (List<PickedMedia>, failed: Int) -> Unit) {
+        val dialog = FileDialog(null as Frame?, "", FileDialog.LOAD).apply {
+            isMultipleMode = true
+            setFilenameFilter { _, name -> name.substringAfterLast('.').lowercase() in VIDEO_EXTENSIONS + IMAGE_EXTENSIONS }
+            isVisible = true
+        }
+        val files = dialog.files.orEmpty().toList()
+        if (files.isNotEmpty()) onProgress(0, files.size)
+        val copied = files.mapNotNull { file ->
+            val extension = file.extension.lowercase()
+            val kind = when (extension) {
+                in VIDEO_EXTENSIONS -> MediaKind.VIDEO
+                in IMAGE_EXTENSIONS -> MediaKind.PHOTO
+                else -> return@mapNotNull null
+            }
+            val copy = Files.createTempFile("media", ".$extension")
+            Files.copy(file.toPath(), copy, StandardCopyOption.REPLACE_EXISTING)
+            // The desktop reads no EXIF; the file's date is the best guess of when it was taken
+            val takenAt = file.lastModified().takeIf { it > 0 }?.let { MediaTime.of(Instant.fromEpochMilliseconds(it)) }
+            PickedMedia(copy.toString(), kind, extension, takenAt = takenAt)
+        }
+        onPicked(copied, files.size - copied.size)
+    }
+
+    override fun open(paths: List<String>, kind: MediaKind) {
+        val path = paths.firstOrNull() ?: return
+        if (Desktop.isDesktopSupported()) Desktop.getDesktop().open(File(path))
+    }
+}

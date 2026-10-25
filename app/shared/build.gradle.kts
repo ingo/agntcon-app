@@ -114,6 +114,7 @@ kotlin {
         }
 
         androidMain.dependencies {
+            implementation(libs.androidx.activity.compose)
             implementation(libs.android.svg)
             implementation(libs.androidx.preference)
             implementation(libs.ktor.client.okhttp)

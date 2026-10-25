@@ -10,6 +10,9 @@ interface ShareHandler {
 
     /** Shares a small text file, e.g. a calendar file; the receiving app decides what to do with it. */
     fun shareFile(fileName: String, mimeType: String, content: String)
+
+    /** Shares a file that is already on disk, e.g. the report bundle. Not offered on the web. */
+    fun shareFileAt(path: String, mimeType: String) {}
 }
 
 val LocalShareHandler = staticCompositionLocalOf<ShareHandler> {

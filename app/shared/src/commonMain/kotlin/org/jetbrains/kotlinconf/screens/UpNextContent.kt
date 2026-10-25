@@ -82,6 +82,7 @@ internal fun UpNextContent(
     onFree: (FreeBlock) -> Unit,
     onBookmark: (SessionId, Boolean) -> Unit,
     modifier: Modifier = Modifier,
+    onTripReport: (() -> Unit)? = null,
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -93,7 +94,11 @@ internal fun UpNextContent(
             .padding(bottom = 24.dp),
     ) {
         GreetingCard(upNext, now)
-        if (upNext == null) return@Column
+        if (upNext == null) {
+            // The event is over: the report is what's left to do
+            onTripReport?.let { TripReportCard(onClick = it) }
+            return@Column
+        }
 
         if (upNext.nothingBookmarked) {
             // Nothing planned yet: what's going on across the conference, to pick from
@@ -165,6 +170,10 @@ internal fun UpNextContent(
                 modifier = Modifier.clickable { showEarlier = !showEarlier }.padding(vertical = 8.dp),
             )
             if (showEarlier) upNext.earlier.forEach { CompactRow(it, clash = it.id in clashing, onClick = { onSession(it.id) }) }
+        }
+
+        if (upNext.moment != ConferenceMoment.BeforeConference) {
+            onTripReport?.let { TripReportCard(onClick = it, modifier = Modifier.padding(top = 12.dp)) }
         }
     }
 }

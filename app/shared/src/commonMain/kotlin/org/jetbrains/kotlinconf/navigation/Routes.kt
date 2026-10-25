@@ -63,6 +63,18 @@ data class SingleLicenseScreen(
 data object MyScheduleScreen : AppRoute, TopLevelRoute
 
 @Serializable
+@SerialName("TripReport")
+data object TripReportScreen : AppRoute
+
+@Serializable
+@SerialName("MediaImport")
+data object MediaImportScreen : AppRoute
+
+@Serializable
+@SerialName("ReportPreview")
+data object ReportPreviewScreen : AppRoute
+
+@Serializable
 @SerialName("SessionizeSync")
 data object SessionizeSyncScreen : AppRoute
 

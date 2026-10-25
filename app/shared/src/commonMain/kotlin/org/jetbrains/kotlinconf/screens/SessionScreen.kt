@@ -38,6 +38,7 @@ import org.jetbrains.kotlinconf.Speaker
 import org.jetbrains.kotlinconf.SpeakerId
 import org.jetbrains.kotlinconf.export.Exporter
 import org.jetbrains.kotlinconf.export.rememberExporter
+import org.jetbrains.kotlinconf.media.rememberMediaPicker
 import org.jetbrains.kotlinconf.generated.resources.Res
 import org.jetbrains.kotlinconf.generated.resources.calendar_add_24
 import org.jetbrains.kotlinconf.generated.resources.session_add_to_calendar
@@ -226,14 +227,38 @@ private fun SessionActions(session: SessionCardView, exporter: Exporter) {
     )
 }
 
-/** The attendee's private rating (where the event has no voting of its own) and notes, kept on the device. */
+/**
+ * The attendee's private rating (where the event has no voting of its own), notes, photos and videos,
+ * kept on the device.
+ */
 @Composable
 private fun PersonalSection(viewModel: SessionViewModel) {
     val note by viewModel.note.collectAsStateWithLifecycle()
     val rating by viewModel.rating.collectAsStateWithLifecycle()
+    val attachments by viewModel.attachments.collectAsStateWithLifecycle()
+    val addingMedia by viewModel.addingMedia.collectAsStateWithLifecycle()
+    val skippedDuplicates by viewModel.skippedDuplicates.collectAsStateWithLifecycle()
+    val mediaProgress by viewModel.mediaProgress.collectAsStateWithLifecycle()
+    val unreadable by viewModel.unreadable.collectAsStateWithLifecycle()
+    val picker = rememberMediaPicker()
     Column(Modifier.padding(top = 24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
         RatingBlock(rating = rating, onThumb = viewModel::setThumb, onTakeaway = viewModel::setTakeaway)
         NoteBlock(stored = note, onSave = viewModel::setNote)
+        if (picker != null) {
+            MediaBlock(
+                picker = picker,
+                attachments = attachments,
+                adding = addingMedia,
+                skippedDuplicates = skippedDuplicates,
+                progress = mediaProgress,
+                unreadable = unreadable,
+                pathOf = viewModel::mediaPath,
+                onProgress = viewModel::onMediaProgress,
+                onPicked = viewModel::addMedia,
+                onRemove = viewModel::removeMedia,
+                modifier = Modifier.padding(bottom = 24.dp),
+            )
+        }
     }
 }
 

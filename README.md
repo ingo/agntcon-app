@@ -67,6 +67,19 @@ the changes made in this fork are listed below and in the git history.
 - **Add to calendar** for one session or all your bookmarks (an `.ics` file), **share** a session or your schedule as
   text, and a **trip report** in Markdown: your sessions in time order with speakers, rating, takeaway, notes, slides and
   recordings, plus the people you met. It goes through the platform's share sheet.
+- **Photos and videos** on a session: take a photo or record a video, or add photos, screenshots and videos from the
+  library. They stay on the device. The **trip report** page (a big card on the Now tab) downloads everything as one
+  zip: the report in Markdown and as a web page, each session's slides from Sessionize and your photos and videos, to
+  mail, AirDrop or save. The web app shares the text report only.
+- **Add photos from the event**: pick a batch from the library on the trip report page and each one is matched to the
+  session it was taken in, by its date. Where it is not clear (two bookmarked sessions at once, parallel talks you did not
+  mark, a break, no date) the app asks, once per group of photos; nothing is added before you confirm.
+- **Find photos from the sessions** (iPhone): with your permission, the app looks through your photo library for
+  everything taken during the event's talks and copies it one photo at a time, then you check the matches as above.
+  On the review screen, × takes a single photo out of its group so you can give it another session.
+- **Duplicates and clean-up**: a photo or video that is already attached (picked again, or the same file) is left out.
+  On iPhone, photos of screens and whiteboards are straightened, cropped and cleaned up on the device; the original is
+  kept, one swipe away in the viewer, and both go into the trip report.
 - **Companies**: speakers' companies from the feed, searchable, with a **Solutions Showcase** filter to browse exhibitor
   talks by company; a company filter in the schedule's search; speaker links (LinkedIn, blog, company site).
 - **Better search**: the schedule search also matches session descriptions and speakers' companies, and **Find on map**

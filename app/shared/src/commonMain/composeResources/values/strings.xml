@@ -294,4 +294,116 @@ Please try again.</string>
     </plurals>
     <string name="my_schedule_state_live">Happening now</string>
     <string name="my_schedule_state_past">Ended</string>
+    <!-- Photos and videos on a session, and the downloadable trip report -->
+    <string name="session_media_title">My photos and videos</string>
+    <string name="session_media_hint">Slides that were not shared, a whiteboard, the part of the talk you want to keep. Only on this device until you download the trip report.</string>
+    <string name="session_media_take_photo">Take a photo</string>
+    <string name="session_media_record_video">Record a video</string>
+    <string name="session_media_from_library">Add from photos</string>
+    <string name="session_media_adding">Adding…</string>
+    <string name="session_media_remove">Remove</string>
+    <string name="session_media_cancel">Cancel</string>
+    <string name="session_media_photo">Photo %1$d</string>
+    <string name="session_media_video">Video %1$d</string>
+    <string name="session_media_actions">Touch and hold to remove</string>
+    <string name="trip_report_intro">The sessions you went to with your notes, ratings, the slides and your photos and videos.</string>
+    <string name="trip_report_download">Download report (.zip)</string>
+    <string name="trip_report_download_hint">The report as Markdown and as a web page, the slides from Sessionize and your photos and videos, in one zip file to mail or save.</string>
+    <string name="trip_report_download_size">Your photos and videos: %1$s, plus the slides.</string>
+    <string name="trip_report_share_text">Share as text</string>
+    <string name="trip_report_share_text_hint">The report in Markdown, with links to the slides and without photos or videos.</string>
+    <string name="trip_report_downloading_slides">Downloading slides %1$d of %2$d…</string>
+    <string name="trip_report_packing">Packing the report…</string>
+    <string name="trip_report_ready">Report ready (%1$s)</string>
+    <string name="trip_report_share_again">Share the report again</string>
+    <string name="trip_report_too_large">The report would be larger than 4 GB. Remove some long videos and try again.</string>
+    <string name="trip_report_failed">The report could not be made. Check the free space on the device and try again.</string>
+    <string name="trip_report_empty">Bookmark the sessions you go to, or add a note, a rating, a photo or a video, and they appear here.</string>
+    <string name="trip_report_in_report">In the report</string>
+    <string name="trip_report_note">Note</string>
+    <string name="trip_report_rating">Rating</string>
+    <plurals name="trip_report_sessions">
+        <item quantity="one">%1$d session</item>
+        <item quantity="other">%1$d sessions</item>
+    </plurals>
+    <plurals name="trip_report_photos">
+        <item quantity="one">%1$d photo</item>
+        <item quantity="other">%1$d photos</item>
+    </plurals>
+    <plurals name="trip_report_videos">
+        <item quantity="one">%1$d video</item>
+        <item quantity="other">%1$d videos</item>
+    </plurals>
+    <plurals name="trip_report_with_slides">
+        <item quantity="one">%1$d with slides</item>
+        <item quantity="other">%1$d with slides</item>
+    </plurals>
+    <plurals name="trip_report_slides_linked">
+        <item quantity="one">%1$d slide deck could not be downloaded and is linked instead.</item>
+        <item quantity="other">%1$d slide decks could not be downloaded and are linked instead.</item>
+    </plurals>
+    <string name="export_my_media">My photos and videos</string>
+    <string name="export_photo">Photo</string>
+    <string name="export_video">Video</string>
+    <string name="now_trip_report_title">Your trip report</string>
+    <string name="now_trip_report_text">The sessions you went to, your notes, the slides and your photos and videos, in one zip to send to yourself.</string>
+    <string name="trip_report_add_photos">Add photos from the event</string>
+    <string name="trip_report_add_photos_hint">Pick photos and videos from the conference. Each one goes to the session it was taken in; you confirm before anything is added.</string>
+    <string name="trip_report_reading_photos">Reading photos…</string>
+    <string name="import_title">Add photos</string>
+    <string name="import_intro">Matched to sessions by the time they were taken. Check them, answer where it is not clear, then add.</string>
+    <string name="import_question_ask">Which session were you in?</string>
+    <string name="import_question_between">Taken between sessions. Add them to:</string>
+    <string name="import_question_no_time">These have no date. Add them to:</string>
+    <string name="import_no_options">There is no session to suggest.</string>
+    <string name="import_dont_add">Don't add these</string>
+    <string name="import_not_added">Not added</string>
+    <string name="import_change">Change</string>
+    <string name="import_bookmarked">Bookmarked</string>
+    <string name="import_nothing_to_add">Nothing to add</string>
+    <plurals name="import_items">
+        <item quantity="one">%1$d photo or video</item>
+        <item quantity="other">%1$d photos and videos</item>
+    </plurals>
+    <plurals name="import_add">
+        <item quantity="one">Add %1$d photo or video</item>
+        <item quantity="other">Add %1$d photos and videos</item>
+    </plurals>
+    <plurals name="import_answer_first">
+        <item quantity="one">Answer the question above first</item>
+        <item quantity="other">Answer the %1$d questions above first</item>
+    </plurals>
+    <string name="import_tap_to_view">Tap a photo to see it full size, × to take just that one out and put it somewhere else.</string>
+    <string name="import_slide_matches">Slide text matches</string>
+    <string name="session_media_cleaned">Photos of screens and whiteboards are straightened and cleaned up. In the viewer, swipe left for the original.</string>
+    <string name="export_original">original</string>
+    <plurals name="import_duplicates">
+        <item quantity="one">%1$d was already added and is left out.</item>
+        <item quantity="other">%1$d were already added and are left out.</item>
+    </plurals>
+    <string name="import_leave_out">Take this photo out of the group</string>
+    <string name="import_question_moved">Taken out of a group. Add it to another session?</string>
+    <string name="import_dont_add_it">Don't add it</string>
+    <string name="media_reading_progress">Reading photos: %1$d of %2$d…</string>
+    <string name="trip_report_scan">Find photos from the sessions</string>
+    <string name="trip_report_scan_hint">Looks in your photo library for everything you took during the sessions, copies it one photo at a time and lets you check it before it is added. Needs access to your photos.</string>
+    <string name="trip_report_scan_progress">Copying photos: %1$d of %2$d…</string>
+    <string name="trip_report_scan_denied">The app may not look at your photos. Allow it in Settings, Privacy &amp; Security, Photos, or pick them yourself below.</string>
+    <string name="trip_report_scan_none">No new photos or videos from the sessions in your library.</string>
+    <plurals name="media_unreadable">
+        <item quantity="one">%1$d photo could not be read from your library. Try adding it again.</item>
+        <item quantity="other">%1$d photos could not be read from your library. Try adding them again.</item>
+    </plurals>
+    <plurals name="import_add_matched">
+        <item quantity="one">Add the %1$d matched one, skip the rest</item>
+        <item quantity="other">Add the %1$d matched ones, skip the rest</item>
+    </plurals>
+    <string name="import_likely">Likely: ran long or started early</string>
+    <string name="trip_report_preview">Preview the report</string>
+    <plurals name="import_outlier">
+        <item quantity="one">This photo probably belongs with the ones taken just before and after it: %2$s.</item>
+        <item quantity="other">These %1$d photos probably belong with the ones taken just before and after them: %2$s.</item>
+    </plurals>
+    <string name="import_outlier_move">Move to that session</string>
+    <string name="trip_report_preview_hint">How the report will read. Tap a photo to see it full size and swipe through the session’s photos.</string>
 </resources>

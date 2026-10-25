@@ -8,7 +8,10 @@ import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.ContributesTo
 import dev.zacsweers.metro.Provides
 import dev.zacsweers.metro.SingleIn
+import platform.Foundation.NSApplicationSupportDirectory
+import platform.Foundation.NSSearchPathForDirectoriesInDomains
 import platform.Foundation.NSUserDefaults
+import platform.Foundation.NSUserDomainMask
 
 @BindingContainer
 @ContributesTo(AppScope::class)
@@ -20,5 +23,16 @@ interface IosBindings {
         @OptIn(ExperimentalSettingsApi::class)
         fun provideSettings(): ObservableSettings =
             NSUserDefaultsSettings(NSUserDefaults.standardUserDefaults)
+
+        /** Application Support, which the system neither purges nor shows in the Files app. */
+        @Provides
+        @SingleIn(AppScope::class)
+        @FileStorageDir
+        fun provideFileStorageDir(): String {
+            val storageDir = NSSearchPathForDirectoriesInDomains(
+                NSApplicationSupportDirectory, NSUserDomainMask, true
+            ).first() as String
+            return "$storageDir/files"
+        }
     }
 }

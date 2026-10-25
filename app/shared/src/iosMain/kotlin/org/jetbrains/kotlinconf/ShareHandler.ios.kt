@@ -33,6 +33,8 @@ private object IosShareHandler : ShareHandler {
         if (written) present(listOf(NSURL.fileURLWithPath(path)))
     }
 
+    override fun shareFileAt(path: String, mimeType: String) = present(listOf(NSURL.fileURLWithPath(path)))
+
     private fun present(items: List<Any>) {
         val root = UIApplication.sharedApplication.keyWindow?.rootViewController ?: return
         var top: UIViewController = root

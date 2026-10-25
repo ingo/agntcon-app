@@ -29,6 +29,7 @@ import org.jetbrains.kotlinconf.utils.topInsetPadding
 @Composable
 fun NowScreen(
     onSession: (SessionId) -> Unit,
+    onTripReport: (() -> Unit)? = null,
     viewModel: MyScheduleViewModel = metroViewModel(),
 ) {
     val upNext by viewModel.upNext.collectAsStateWithLifecycle()
@@ -51,6 +52,7 @@ fun NowScreen(
                 onSession = onSession,
                 onFree = { freeWindow = it.startsAt to it.endsAt },
                 onBookmark = viewModel::setBookmark,
+                onTripReport = onTripReport,
             )
             val window = freeWindow
             val day = upNext?.day

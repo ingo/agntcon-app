@@ -10,6 +10,11 @@ Multiplatform for iOS, Android, JVM desktop and web. It reads the event's public
 no backend, and everything the attendee adds (bookmarks, notes, ratings, people met) stays on the device. TestFlight
 builds and the GitHub Pages web app are published from this repository.
 
+## Hand-off
+
+Read `docs/handoff.md` first: where the photo, trip report and screen clean-up work stands, what is blocked, and how
+to test, upload to TestFlight and read tester feedback.
+
 ## Commands
 
 ```bash
