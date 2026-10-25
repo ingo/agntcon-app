@@ -321,7 +321,7 @@ private fun Thumbnails(items: List<PickedMedia>, canTakeOut: Boolean, onView: (P
 }
 
 @Composable
-private fun OptionRow(title: String, bold: Boolean, detail: String?, selected: Boolean, onClick: () -> Unit) {
+internal fun OptionRow(title: String, bold: Boolean, detail: String?, selected: Boolean, onClick: () -> Unit) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -353,7 +353,7 @@ private fun OptionRow(title: String, bold: Boolean, detail: String?, selected: B
 }
 
 @Composable
-private fun sessionDetail(session: SessionCardView, attended: Boolean): String = listOfNotNull(
+internal fun sessionDetail(session: SessionCardView, attended: Boolean): String = listOfNotNull(
     DateTimeFormatting.timeToTime(session.startsAt, session.endsAt),
     session.locationLine.takeIf { it.isNotBlank() },
     if (attended && session.isFavorite) stringResource(Res.string.import_bookmarked) else null,

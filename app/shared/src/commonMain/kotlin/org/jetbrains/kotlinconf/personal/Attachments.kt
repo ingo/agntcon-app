@@ -59,3 +59,13 @@ fun Map<String, List<Attachment>>.withRemoved(id: SessionId, attachmentId: Strin
     val list = this[id.id].orEmpty().filterNot { it.id == attachmentId }
     return if (list.isEmpty()) this - id.id else this + (id.id to list)
 }
+
+/**
+ * Moves one attachment to another session, e.g. a photo that landed on the wrong talk. Its files stay as they are;
+ * a session left with none is removed. Unchanged if [from] does not have it or [to] is [from].
+ */
+fun Map<String, List<Attachment>>.withMoved(from: SessionId, to: SessionId, attachmentId: String): Map<String, List<Attachment>> {
+    if (from == to) return this
+    val attachment = this[from.id]?.find { it.id == attachmentId } ?: return this
+    return withRemoved(from, attachmentId).withAdded(to, listOf(attachment))
+}

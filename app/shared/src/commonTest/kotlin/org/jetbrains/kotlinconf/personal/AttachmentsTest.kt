@@ -50,6 +50,41 @@ class AttachmentsTest {
     }
 
     @Test
+    fun aPhotoOnTheWrongTalkMovesToTheRightOneInTheOrderItWasAdded() {
+        val s1 = SessionId("s1")
+        val s2 = SessionId("s2")
+        val all = emptyMap<String, List<Attachment>>()
+            .withAdded(s1, listOf(photo("a", 10), photo("b", 20)))
+            .withAdded(s2, listOf(photo("c", 5), photo("d", 30)))
+
+        val moved = all.withMoved(s1, s2, "b")
+
+        assertEquals(listOf("a"), moved.getValue("s1").map { it.id })
+        assertEquals(listOf("c", "b", "d"), moved.getValue("s2").map { it.id })
+        // Its files go with it unchanged
+        assertEquals(photo("b", 20), moved.getValue("s2")[1])
+    }
+
+    @Test
+    fun movingTheLastPhotoAwayRemovesTheSessionAndAMoveToAnEmptySessionAddsIt() {
+        val s1 = SessionId("s1")
+        val s2 = SessionId("s2")
+        val all = emptyMap<String, List<Attachment>>().withAdded(s1, listOf(photo("a", 10)))
+
+        assertEquals(mapOf("s2" to listOf(photo("a", 10))), all.withMoved(s1, s2, "a"))
+    }
+
+    @Test
+    fun movingToTheSameSessionOrAnUnknownPhotoChangesNothing() {
+        val s1 = SessionId("s1")
+        val all = emptyMap<String, List<Attachment>>().withAdded(s1, listOf(photo("a", 10)))
+
+        assertEquals(all, all.withMoved(s1, s1, "a"))
+        assertEquals(all, all.withMoved(s1, SessionId("s2"), "x"))
+        assertEquals(all, all.withMoved(SessionId("s3"), s1, "a"))
+    }
+
+    @Test
     fun aVideoIsShownByItsStillAndAPhotoByItself() {
         assertEquals("v-still.jpg", video("v", 0).preview)
         assertEquals("p.jpg", photo("p", 0).preview)
