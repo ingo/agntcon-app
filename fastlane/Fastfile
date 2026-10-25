@@ -1,0 +1,22 @@
+default_platform(:ios)
+
+BUNDLE_ID = "com.muschenetz.agntcon"
+EVENT = ENV.fetch("EVENT", "agntcon-mcpcon-na-2026")
+
+platform :ios do
+  desc "Archive and upload a new TestFlight build (wraps scripts/ios-testflight.sh)"
+  lane :beta do
+    ensure_env_vars(env_vars: ["ASC_KEY_ID", "ASC_ISSUER_ID"])
+    sh("../scripts/ios-testflight.sh", EVENT, BUNDLE_ID, "AGNTCon", CredentialsManager::AppfileConfig.try_fetch_value(:team_id), "--upload")
+  end
+
+  desc "Archive only, no upload"
+  lane :archive do
+    sh("../scripts/ios-testflight.sh", EVENT, BUNDLE_ID, "AGNTCon", CredentialsManager::AppfileConfig.try_fetch_value(:team_id))
+  end
+
+  desc "Write new TestFlight tester feedback (screenshots and crashes) to build/feedback.json"
+  lane :feedback do
+    sh("../scripts/fetch-testflight-feedback.rb", BUNDLE_ID, "../build/feedback.json")
+  end
+end

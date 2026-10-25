@@ -44,3 +44,11 @@ app/desktopApp/files
 .junie
 live-feed/
 live-feed-local/
+
+# fastlane
+fastlane/report.xml
+fastlane/test_output
+fastlane/README.md
+*.p8
+vendor/bundle
+.bundle/
