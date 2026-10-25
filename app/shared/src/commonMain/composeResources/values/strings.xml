@@ -294,4 +294,57 @@ Please try again.</string>
     </plurals>
     <string name="my_schedule_state_live">Happening now</string>
     <string name="my_schedule_state_past">Ended</string>
+    <!-- Photos and videos on a session, and the downloadable trip report -->
+    <string name="session_media_title">My photos and videos</string>
+    <string name="session_media_hint">Slides that were not shared, a whiteboard, the part of the talk you want to keep. Only on this device until you download the trip report.</string>
+    <string name="session_media_take_photo">Take a photo</string>
+    <string name="session_media_record_video">Record a video</string>
+    <string name="session_media_from_library">Add from photos</string>
+    <string name="session_media_adding">Adding…</string>
+    <string name="session_media_remove">Remove</string>
+    <string name="session_media_cancel">Cancel</string>
+    <string name="session_media_photo">Photo %1$d</string>
+    <string name="session_media_video">Video %1$d</string>
+    <string name="session_media_actions">Touch and hold to remove</string>
+    <string name="trip_report_intro">The sessions you went to with your notes, ratings, the slides and your photos and videos.</string>
+    <string name="trip_report_download">Download report (.zip)</string>
+    <string name="trip_report_download_hint">The report as Markdown and as a web page, the slides from Sessionize and your photos and videos, in one zip file to mail or save.</string>
+    <string name="trip_report_download_size">Your photos and videos: %1$s, plus the slides.</string>
+    <string name="trip_report_share_text">Share as text</string>
+    <string name="trip_report_share_text_hint">The report in Markdown, with links to the slides and without photos or videos.</string>
+    <string name="trip_report_downloading_slides">Downloading slides %1$d of %2$d…</string>
+    <string name="trip_report_packing">Packing the report…</string>
+    <string name="trip_report_ready">Report ready (%1$s)</string>
+    <string name="trip_report_share_again">Share the report again</string>
+    <string name="trip_report_too_large">The report would be larger than 4 GB. Remove some long videos and try again.</string>
+    <string name="trip_report_failed">The report could not be made. Check the free space on the device and try again.</string>
+    <string name="trip_report_empty">Bookmark the sessions you go to, or add a note, a rating, a photo or a video, and they appear here.</string>
+    <string name="trip_report_in_report">In the report</string>
+    <string name="trip_report_note">Note</string>
+    <string name="trip_report_rating">Rating</string>
+    <plurals name="trip_report_sessions">
+        <item quantity="one">%1$d session</item>
+        <item quantity="other">%1$d sessions</item>
+    </plurals>
+    <plurals name="trip_report_photos">
+        <item quantity="one">%1$d photo</item>
+        <item quantity="other">%1$d photos</item>
+    </plurals>
+    <plurals name="trip_report_videos">
+        <item quantity="one">%1$d video</item>
+        <item quantity="other">%1$d videos</item>
+    </plurals>
+    <plurals name="trip_report_with_slides">
+        <item quantity="one">%1$d with slides</item>
+        <item quantity="other">%1$d with slides</item>
+    </plurals>
+    <plurals name="trip_report_slides_linked">
+        <item quantity="one">%1$d slide deck could not be downloaded and is linked instead.</item>
+        <item quantity="other">%1$d slide decks could not be downloaded and are linked instead.</item>
+    </plurals>
+    <string name="export_my_media">My photos and videos</string>
+    <string name="export_photo">Photo</string>
+    <string name="export_video">Video</string>
+    <string name="now_trip_report_title">Your trip report</string>
+    <string name="now_trip_report_text">The sessions you went to, your notes, the slides and your photos and videos, in one zip to send to yourself.</string>
 </resources>

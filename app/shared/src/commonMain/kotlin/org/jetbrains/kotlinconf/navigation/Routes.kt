@@ -63,6 +63,10 @@ data class SingleLicenseScreen(
 data object MyScheduleScreen : AppRoute, TopLevelRoute
 
 @Serializable
+@SerialName("TripReport")
+data object TripReportScreen : AppRoute
+
+@Serializable
 @SerialName("SessionizeSync")
 data object SessionizeSyncScreen : AppRoute
 

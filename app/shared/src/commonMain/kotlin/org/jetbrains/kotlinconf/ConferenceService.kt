@@ -42,9 +42,14 @@ import org.jetbrains.kotlinconf.event.BUNDLED_ASSET_PREFIX
 import org.jetbrains.kotlinconf.event.bundledMapSvg
 import org.jetbrains.kotlinconf.export.ExportSnapshot
 import org.jetbrains.kotlinconf.flags.FlagsManager
+import org.jetbrains.kotlinconf.media.MediaFiles
+import org.jetbrains.kotlinconf.media.PickedMedia
+import org.jetbrains.kotlinconf.personal.Attachment
 import org.jetbrains.kotlinconf.personal.PersonalNotes
 import org.jetbrains.kotlinconf.personal.SessionRating
+import org.jetbrains.kotlinconf.personal.withAdded
 import org.jetbrains.kotlinconf.personal.withMet
+import org.jetbrains.kotlinconf.personal.withRemoved
 import org.jetbrains.kotlinconf.personal.withRating
 import org.jetbrains.kotlinconf.generated.resources.Res
 import org.jetbrains.kotlinconf.generated.resources.notification_session_already_started
@@ -147,6 +152,13 @@ class ConferenceService(
         currentYearlyStorage.flatMapLatest { it.getRatings() }
             .stateIn(scope, SharingStarted.Eagerly, emptyMap())
 
+    val attachments: StateFlow<Map<String, List<Attachment>>> =
+        currentYearlyStorage.flatMapLatest { it.getAttachments() }
+            .stateIn(scope, SharingStarted.Eagerly, emptyMap())
+
+    /** The current event's folder of photos and videos; null until the event has loaded. */
+    val mediaFiles: MediaFiles? get() = currentYearGraph.value?.media
+
     private val personalMutex = Mutex()
 
     /** Saves even when the screen that asked has gone, so a note typed just before leaving is not lost. */
@@ -171,6 +183,35 @@ class ConferenceService(
             val ratings = storage.getRatings().first()
             storage.setRatings(ratings.withRating(sessionId, transform(ratings[sessionId.id] ?: SessionRating())))
         }
+
+    /**
+     * Moves picked photos and videos into the event's folder and attaches them to a session. Finishes even
+     * when the screen that asked has gone, so nothing picked is lost halfway.
+     */
+    suspend fun addAttachments(sessionId: SessionId, picked: List<PickedMedia>) = withContext(NonCancellable) {
+        val media = mediaFiles ?: return@withContext
+        val now = nowMillis()
+        val added = picked.mapIndexedNotNull { index, item ->
+            val file = media.adopt(item.path, item.extension) ?: return@mapIndexedNotNull null
+            Attachment(
+                id = file.substringBefore('.'),
+                kind = item.kind,
+                file = file,
+                thumbnail = item.thumbnailPath?.let { media.adopt(it, "jpg") },
+                addedAt = now + index,
+            )
+        }
+        savePersonal { it.setAttachments(it.getAttachments().first().withAdded(sessionId, added)) }
+    }
+
+    /** Removes a photo or video from a session and deletes its files from the device. */
+    suspend fun removeAttachment(sessionId: SessionId, attachment: Attachment) {
+        savePersonal { it.setAttachments(it.getAttachments().first().withRemoved(sessionId, attachment.id)) }
+        mediaFiles?.let { media ->
+            media.delete(attachment.file)
+            attachment.thumbnail?.let { media.delete(it) }
+        }
+    }
 
     val conferenceInfo: StateFlow<ConferenceInfo?> =
         currentYearlyStorage.flatMapLatest { it.getConferenceInfoCache() }
@@ -301,7 +342,13 @@ class ConferenceService(
         notes = notes.value,
         ratings = ratings.value,
         met = metSpeakers.value,
+        attachments = attachments.value,
     )
+
+    /** [exportSnapshot] as it changes, for the trip report page. */
+    val exportSnapshots: Flow<ExportSnapshot> =
+        combine(sessionCards, speakersById, notes, ratings, metSpeakers) { _, _, _, _, _ -> }
+            .combine(attachments) { _, _ -> exportSnapshot() }
 
     fun speakerById(speakerId: SpeakerId): Speaker? = speakersById.value[speakerId]
 

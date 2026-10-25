@@ -294,4 +294,57 @@ Bitte versuchen Sie es erneut.</string>
     </plurals>
     <string name="my_schedule_state_live">Läuft gerade</string>
     <string name="my_schedule_state_past">Beendet</string>
+    <!-- Fotos und Videos zu einer Session und der Reisebericht zum Herunterladen -->
+    <string name="session_media_title">Meine Fotos und Videos</string>
+    <string name="session_media_hint">Folien, die nicht geteilt wurden, ein Whiteboard, der Teil des Vortrags, den Sie behalten möchten. Nur auf diesem Gerät, bis Sie den Reisebericht herunterladen.</string>
+    <string name="session_media_take_photo">Foto aufnehmen</string>
+    <string name="session_media_record_video">Video aufnehmen</string>
+    <string name="session_media_from_library">Aus Fotos hinzufügen</string>
+    <string name="session_media_adding">Wird hinzugefügt …</string>
+    <string name="session_media_remove">Entfernen</string>
+    <string name="session_media_cancel">Abbrechen</string>
+    <string name="session_media_photo">Foto %1$d</string>
+    <string name="session_media_video">Video %1$d</string>
+    <string name="session_media_actions">Gedrückt halten zum Entfernen</string>
+    <string name="trip_report_intro">Die Sessions, die Sie besucht haben, mit Ihren Notizen, Bewertungen, den Folien und Ihren Fotos und Videos.</string>
+    <string name="trip_report_download">Bericht herunterladen (.zip)</string>
+    <string name="trip_report_download_hint">Der Bericht als Markdown und als Webseite, die Folien aus Sessionize und Ihre Fotos und Videos in einer ZIP-Datei zum Mailen oder Speichern.</string>
+    <string name="trip_report_download_size">Ihre Fotos und Videos: %1$s, dazu die Folien.</string>
+    <string name="trip_report_share_text">Als Text teilen</string>
+    <string name="trip_report_share_text_hint">Der Bericht in Markdown, mit Links zu den Folien und ohne Fotos oder Videos.</string>
+    <string name="trip_report_downloading_slides">Folien werden geladen: %1$d von %2$d …</string>
+    <string name="trip_report_packing">Bericht wird gepackt …</string>
+    <string name="trip_report_ready">Bericht fertig (%1$s)</string>
+    <string name="trip_report_share_again">Bericht erneut teilen</string>
+    <string name="trip_report_too_large">Der Bericht wäre größer als 4 GB. Entfernen Sie einige lange Videos und versuchen Sie es erneut.</string>
+    <string name="trip_report_failed">Der Bericht konnte nicht erstellt werden. Prüfen Sie den freien Speicher auf dem Gerät und versuchen Sie es erneut.</string>
+    <string name="trip_report_empty">Merken Sie sich die Sessions, die Sie besuchen, oder fügen Sie eine Notiz, eine Bewertung, ein Foto oder ein Video hinzu, dann erscheinen sie hier.</string>
+    <string name="trip_report_in_report">Im Bericht</string>
+    <string name="trip_report_note">Notiz</string>
+    <string name="trip_report_rating">Bewertung</string>
+    <plurals name="trip_report_sessions">
+        <item quantity="one">%1$d Session</item>
+        <item quantity="other">%1$d Sessions</item>
+    </plurals>
+    <plurals name="trip_report_photos">
+        <item quantity="one">%1$d Foto</item>
+        <item quantity="other">%1$d Fotos</item>
+    </plurals>
+    <plurals name="trip_report_videos">
+        <item quantity="one">%1$d Video</item>
+        <item quantity="other">%1$d Videos</item>
+    </plurals>
+    <plurals name="trip_report_with_slides">
+        <item quantity="one">%1$d mit Folien</item>
+        <item quantity="other">%1$d mit Folien</item>
+    </plurals>
+    <plurals name="trip_report_slides_linked">
+        <item quantity="one">%1$d Foliensatz konnte nicht geladen werden und ist stattdessen verlinkt.</item>
+        <item quantity="other">%1$d Foliensätze konnten nicht geladen werden und sind stattdessen verlinkt.</item>
+    </plurals>
+    <string name="export_my_media">Meine Fotos und Videos</string>
+    <string name="export_photo">Foto</string>
+    <string name="export_video">Video</string>
+    <string name="now_trip_report_title">Ihr Reisebericht</string>
+    <string name="now_trip_report_text">Ihre Sessions, Notizen, Folien, Fotos und Videos in einer ZIP-Datei, die Sie sich selbst schicken können.</string>
 </resources>

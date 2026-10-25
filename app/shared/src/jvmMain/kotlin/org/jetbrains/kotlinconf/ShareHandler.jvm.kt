@@ -24,4 +24,15 @@ private object JvmShareHandler : ShareHandler {
             Desktop.getDesktop().open(file)
         }
     }
+
+    /** Shows the file in its folder, from where it can be mailed or moved. */
+    override fun shareFileAt(path: String, mimeType: String) {
+        if (!Desktop.isDesktopSupported()) return
+        val desktop = Desktop.getDesktop()
+        val file = File(path)
+        when {
+            desktop.isSupported(Desktop.Action.BROWSE_FILE_DIR) -> desktop.browseFileDirectory(file)
+            desktop.isSupported(Desktop.Action.OPEN) -> desktop.open(file.parentFile)
+        }
+    }
 }

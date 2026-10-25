@@ -7,6 +7,7 @@ import org.jetbrains.kotlinconf.ConferenceInfo
 import org.jetbrains.kotlinconf.NotificationSettings
 import org.jetbrains.kotlinconf.SessionId
 import org.jetbrains.kotlinconf.SpeakerId
+import org.jetbrains.kotlinconf.personal.Attachment
 import org.jetbrains.kotlinconf.personal.PersonalNotes
 import org.jetbrains.kotlinconf.personal.SessionRating
 
@@ -31,6 +32,10 @@ interface YearlyStorage {
     /** The attendee's private session ratings, by session id. These never leave the device. */
     fun getRatings(): Flow<Map<String, SessionRating>>
     suspend fun setRatings(value: Map<String, SessionRating>)
+
+    /** The photos and videos the attendee attached, by session id. The files themselves are in [org.jetbrains.kotlinconf.media.MediaFiles]. */
+    fun getAttachments(): Flow<Map<String, List<Attachment>>>
+    suspend fun setAttachments(value: Map<String, List<Attachment>>)
 
     fun getNotificationSettings(): Flow<NotificationSettings?>
     suspend fun setNotificationSettings(value: NotificationSettings)

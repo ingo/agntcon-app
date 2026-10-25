@@ -10,6 +10,8 @@ import org.jetbrains.kotlinconf.SessionCardView
 import org.jetbrains.kotlinconf.Speaker
 import org.jetbrains.kotlinconf.SpeakerId
 import org.jetbrains.kotlinconf.contactLink
+import org.jetbrains.kotlinconf.personal.Attachment
+import org.jetbrains.kotlinconf.personal.MediaKind
 import org.jetbrains.kotlinconf.personal.PersonalNotes
 import org.jetbrains.kotlinconf.personal.SessionRating
 import org.jetbrains.kotlinconf.personal.Thumb
@@ -30,7 +32,13 @@ data class ExportLabels(
     val tripReportHeading: String = "Trip report",
     val peopleMet: String = "People I met",
     val noSessions: String = "No sessions",
+    val myMedia: String = "My photos and videos",
+    val photo: String = "Photo",
+    val video: String = "Video",
 )
+
+/** A photo or video in the report bundle, by its path inside the bundle. */
+data class ReportMedia(val kind: MediaKind, val path: String)
 
 /** The event a file or text is about. */
 data class ExportEvent(
@@ -185,18 +193,26 @@ fun scheduleShareText(
 
 // ---- Trip report (Markdown) ------------------------------------------------------------------
 
-/** Bookmarked sessions, plus any the attendee wrote a note on or rated (they may not have bookmarked what they dropped in on). */
+/**
+ * Bookmarked sessions, plus any the attendee wrote a note on, rated or attached photos or videos to (they may not
+ * have bookmarked what they dropped in on).
+ */
 fun sessionsForTripReport(
     all: List<SessionCardView>,
     notes: PersonalNotes,
     ratings: Map<String, SessionRating>,
+    attachments: Map<String, List<Attachment>> = emptyMap(),
 ): List<SessionCardView> = all.filter {
-    it.isFavorite || notes.sessionNote(it.id).isNotBlank() || ratings[it.id.id]?.isEmpty == false
+    it.isFavorite || notes.sessionNote(it.id).isNotBlank() || ratings[it.id.id]?.isEmpty == false ||
+        !attachments[it.id.id].isNullOrEmpty()
 }.distinctBy { it.id }
 
 /**
  * The attendee's report on the event, in Markdown: bookmarked sessions in time order with their notes,
  * rating, takeaway and slides, then the people they met with notes and links.
+ *
+ * In the downloaded report bundle [slideLink] points at the slides inside the bundle and [media] lists the
+ * attendee's photos and videos; the shared text keeps the Sessionize links and has no media.
  */
 fun tripReportMarkdown(
     bookmarked: List<SessionCardView>,
@@ -206,6 +222,8 @@ fun tripReportMarkdown(
     met: Set<SpeakerId>,
     event: ExportEvent,
     labels: ExportLabels = ExportLabels(),
+    slideLink: (SessionCardView) -> String? = { it.slidesUrl },
+    media: (SessionCardView) -> List<ReportMedia> = { emptyList() },
 ): String = buildString {
     appendLine("# ${labels.tripReportHeading}: ${event.name}")
     byDay(bookmarked).forEach { (date, sessions) ->
@@ -227,13 +245,23 @@ fun tripReportMarkdown(
             if (thumb != null || takeaway != null) {
                 appendLine("- **${labels.rating}:** ${listOfNotNull(thumb, takeaway).joinToString(" ")}")
             }
-            s.slidesUrl?.let { appendLine("- [${labels.slides}]($it)") }
+            slideLink(s)?.let { appendLine("- [${labels.slides}]($it)") }
             s.videoUrl?.let { appendLine("- [${labels.recording}]($it)") }
             notes.sessionNote(s.id).takeIf { it.isNotBlank() }?.let {
                 appendLine()
                 appendLine("**${labels.myNotes}:**")
                 appendLine()
                 appendLine(it.mdBlock())
+            }
+            val items = media(s)
+            if (items.isNotEmpty()) {
+                appendLine()
+                appendLine("**${labels.myMedia}:**")
+                items.withNumbers().forEach { (item, number) ->
+                    appendLine()
+                    val label = "${labels.mediaLabel(item.kind)} $number"
+                    appendLine(if (item.kind == MediaKind.PHOTO) "![$label](${item.path})" else "[$label](${item.path})")
+                }
             }
         }
     }
@@ -251,12 +279,20 @@ fun tripReportMarkdown(
     }
 }.trimEnd() + "\n"
 
-private fun byDay(sessions: List<SessionCardView>): List<Pair<LocalDate, List<SessionCardView>>> =
+/** Photos and videos are numbered separately, as on the session page: Photo 1, Photo 2, Video 1. */
+internal fun List<ReportMedia>.withNumbers(): List<Pair<ReportMedia, Int>> {
+    val counts = mutableMapOf<MediaKind, Int>()
+    return map { item -> item to counts.getOrElse(item.kind) { 0 }.plus(1).also { counts[item.kind] = it } }
+}
+
+internal fun ExportLabels.mediaLabel(kind: MediaKind): String = if (kind == MediaKind.PHOTO) photo else video
+
+internal fun byDay(sessions: List<SessionCardView>): List<Pair<LocalDate, List<SessionCardView>>> =
     sessions.sortedWith(compareBy({ it.startsAt }, { it.endsAt }, { it.title }))
         .groupBy { it.startsAt.date }
         .toList()
 
-private fun Speaker.nameWithCompany(): String =
+internal fun Speaker.nameWithCompany(): String =
     if (company.isBlank()) name else "$name ($company)"
 
 /** Keeps a title or name on one line and stops Markdown from reading its characters as formatting. */

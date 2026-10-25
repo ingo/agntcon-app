@@ -67,6 +67,10 @@ the changes made in this fork are listed below and in the git history.
 - **Add to calendar** for one session or all your bookmarks (an `.ics` file), **share** a session or your schedule as
   text, and a **trip report** in Markdown: your sessions in time order with speakers, rating, takeaway, notes, slides and
   recordings, plus the people you met. It goes through the platform's share sheet.
+- **Photos and videos** on a session: take a photo or record a video, or add photos, screenshots and videos from the
+  library. They stay on the device. The **trip report** page (a big card on the Now tab after the event, or Trip report
+  on the Calendar tab) downloads everything as one zip: the report in Markdown and as a web page, each session's slides
+  from Sessionize and your photos and videos, to mail, AirDrop or save. The web app shares the text report only.
 - **Companies**: speakers' companies from the feed, searchable, with a **Solutions Showcase** filter to browse exhibitor
   talks by company; a company filter in the schedule's search; speaker links (LinkedIn, blog, company site).
 - **Better search**: the schedule search also matches session descriptions and speakers' companies, and **Find on map**

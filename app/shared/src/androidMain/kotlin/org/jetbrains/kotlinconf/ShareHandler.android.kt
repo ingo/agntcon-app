@@ -41,6 +41,17 @@ private class AndroidShareHandler(private val context: Context) : ShareHandler {
         start(send)
     }
 
+    // The report bundle is written to <cache>/report/, which the provider's paths include
+    override fun shareFileAt(path: String, mimeType: String) {
+        val uri = FileProvider.getUriForFile(context, context.packageName + ".shareprovider", File(path))
+        val send = Intent(Intent.ACTION_SEND).apply {
+            type = mimeType
+            putExtra(Intent.EXTRA_STREAM, uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        start(send)
+    }
+
     private fun start(send: Intent) {
         context.startActivity(Intent.createChooser(send, null).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     }

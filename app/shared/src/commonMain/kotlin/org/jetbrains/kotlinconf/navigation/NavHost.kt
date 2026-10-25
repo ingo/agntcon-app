@@ -40,6 +40,7 @@ import org.jetbrains.kotlinconf.screens.AboutConference
 import org.jetbrains.kotlinconf.screens.MyScheduleScreen
 import org.jetbrains.kotlinconf.screens.NowScreen
 import org.jetbrains.kotlinconf.screens.SessionizeSyncScreen
+import org.jetbrains.kotlinconf.screens.TripReportScreen
 import org.jetbrains.kotlinconf.screens.CompanyDetailScreen
 import org.jetbrains.kotlinconf.screens.InfoScreen
 import org.jetbrains.kotlinconf.screens.MapScreen
@@ -208,16 +209,27 @@ private fun EntryProviderScope<AppRoute>.screens(
         LaunchedEffect(Unit) {
             service.completeOnboarding()
         }
-        NowScreen(onSession = { navigator.add(SessionScreen(it)) })
+        NowScreen(
+            onSession = { navigator.add(SessionScreen(it)) },
+            onTripReport = { navigator.add(TripReportScreen) },
+        )
     }
 
     entry<SessionizeSyncScreen> {
         SessionizeSyncScreen(onBack = onBack)
     }
 
+    entry<TripReportScreen> {
+        TripReportScreen(
+            onBack = onBack,
+            onSession = { navigator.add(SessionScreen(it)) },
+        )
+    }
+
     entry<MyScheduleScreen>(metadata = noAnimationMetadata) {
         MyScheduleScreen(
             onSession = { navigator.add(SessionScreen(it)) },
+            onTripReport = { navigator.add(TripReportScreen) },
             onSync = if (ActiveEvent.sessionizeAppUrl != null) { { navigator.add(SessionizeSyncScreen) } } else null,
         )
     }

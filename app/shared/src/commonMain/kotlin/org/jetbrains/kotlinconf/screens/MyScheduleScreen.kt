@@ -109,6 +109,7 @@ private val BlockVerticalPadding = 2.dp
 fun MyScheduleScreen(
     onSession: (SessionId) -> Unit,
     onSync: (() -> Unit)? = null,
+    onTripReport: (() -> Unit)? = null,
     viewModel: MyScheduleViewModel = metroViewModel(),
 ) {
     val days by viewModel.days.collectAsStateWithLifecycle()
@@ -181,7 +182,7 @@ fun MyScheduleScreen(
             listOf(
                 Res.string.my_schedule_add_to_calendar to exporter::addScheduleToCalendar,
                 Res.string.my_schedule_share to exporter::shareSchedule,
-                Res.string.my_schedule_trip_report to exporter::shareTripReport,
+                Res.string.my_schedule_trip_report to (onTripReport ?: exporter::shareTripReport),
             ).forEach { (label, action) ->
                 Text(
                     stringResource(label),

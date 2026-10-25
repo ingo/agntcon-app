@@ -35,6 +35,7 @@ private fun AppRoute.toBrowserHistoryFragment() = when (val key = this) {
     NowScreen -> buildBrowserHistoryFragment("now")
     MyScheduleScreen -> buildBrowserHistoryFragment("my_schedule")
     SessionizeSyncScreen -> buildBrowserHistoryFragment("sessionize_sync")
+    TripReportScreen -> buildBrowserHistoryFragment("trip_report")
     SpeakersScreen -> buildBrowserHistoryFragment("speakers")
     MapScreen -> buildBrowserHistoryFragment("map")
     InfoScreen -> buildBrowserHistoryFragment("info")
@@ -89,6 +90,7 @@ actual fun BrowserIntegration(navState: NavState) {
                     "now" -> NowScreen
                     "my_schedule" -> MyScheduleScreen
                     "sessionize_sync" -> SessionizeSyncScreen
+                    "trip_report" -> TripReportScreen
                     "speakers" -> SpeakersScreen
                     "map" -> MapScreen
                     "info" -> InfoScreen
