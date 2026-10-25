@@ -294,7 +294,7 @@ internal fun byDay(sessions: List<SessionCardView>): List<Pair<LocalDate, List<S
         .groupBy { it.startsAt.date }
         .toList()
 
-internal fun Speaker.nameWithCompany(): String =
+fun Speaker.nameWithCompany(): String =
     if (company.isBlank()) name else "$name ($company)"
 
 /** Keeps a title or name on one line and stops Markdown from reading its characters as formatting. */

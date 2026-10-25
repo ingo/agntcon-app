@@ -41,6 +41,7 @@ import org.jetbrains.kotlinconf.screens.MyScheduleScreen
 import org.jetbrains.kotlinconf.screens.NowScreen
 import org.jetbrains.kotlinconf.screens.SessionizeSyncScreen
 import org.jetbrains.kotlinconf.screens.MediaImportScreen
+import org.jetbrains.kotlinconf.screens.ReportPreviewScreen
 import org.jetbrains.kotlinconf.screens.TripReportScreen
 import org.jetbrains.kotlinconf.screens.CompanyDetailScreen
 import org.jetbrains.kotlinconf.screens.InfoScreen
@@ -225,7 +226,12 @@ private fun EntryProviderScope<AppRoute>.screens(
             onBack = onBack,
             onSession = { navigator.add(SessionScreen(it)) },
             onImport = { navigator.add(MediaImportScreen) },
+            onPreview = { navigator.add(ReportPreviewScreen) },
         )
+    }
+
+    entry<ReportPreviewScreen> {
+        ReportPreviewScreen(onBack = onBack)
     }
 
     entry<MediaImportScreen> {

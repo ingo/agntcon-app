@@ -71,6 +71,10 @@ data object TripReportScreen : AppRoute
 data object MediaImportScreen : AppRoute
 
 @Serializable
+@SerialName("ReportPreview")
+data object ReportPreviewScreen : AppRoute
+
+@Serializable
 @SerialName("SessionizeSync")
 data object SessionizeSyncScreen : AppRoute
 

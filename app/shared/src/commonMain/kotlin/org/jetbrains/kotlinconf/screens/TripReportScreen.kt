@@ -7,9 +7,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
-import kotlinx.coroutines.launch
-import org.jetbrains.kotlinconf.personal.MediaKind
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -85,6 +82,7 @@ fun TripReportScreen(
     onBack: () -> Unit,
     onSession: (SessionId) -> Unit,
     onImport: () -> Unit,
+    onPreview: () -> Unit,
     viewModel: TripReportViewModel = metroViewModel(),
 ) {
     val summary by viewModel.summary.collectAsStateWithLifecycle()
@@ -120,17 +118,11 @@ fun TripReportScreen(
                 style = KotlinConfTheme.typography.h3,
             )
 
-            val picker = rememberMediaPicker()
-            if (picker != null && viewModel.canDownload) {
-                val scope = rememberCoroutineScope()
-                Button(
-                    stringResource(Res.string.trip_report_preview),
-                    onClick = {
-                        scope.launch { viewModel.previewPath(event, labels)?.let { picker.open(listOf(it), MediaKind.PHOTO) } }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
+            Button(
+                stringResource(Res.string.trip_report_preview),
+                onClick = onPreview,
+                modifier = Modifier.fillMaxWidth(),
+            )
             if (viewModel.canDownload) {
                 val working = state is TripReportState.Working
                 Button(

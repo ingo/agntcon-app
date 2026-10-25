@@ -405,4 +405,5 @@ Bitte versuchen Sie es erneut.</string>
         <item quantity="other">Diese %1$d Fotos gehören wahrscheinlich zu denen kurz davor und danach: %2$s.</item>
     </plurals>
     <string name="import_outlier_move">In diese Session verschieben</string>
+    <string name="trip_report_preview_hint">So wird der Bericht aussehen. Tippen Sie auf ein Foto, um es groß zu sehen, und wischen Sie durch die Fotos der Session.</string>
 </resources>
