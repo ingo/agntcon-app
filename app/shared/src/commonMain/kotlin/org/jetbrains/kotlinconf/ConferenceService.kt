@@ -48,6 +48,7 @@ import org.jetbrains.kotlinconf.media.MediaDuplicates
 import org.jetbrains.kotlinconf.media.MediaFiles
 import org.jetbrains.kotlinconf.media.cleanUpScreenPhoto
 import org.jetbrains.kotlinconf.media.makeThumbnail
+import org.jetbrains.kotlinconf.media.removeStoredDuplicates
 import org.jetbrains.kotlinconf.media.screenCleanUpAvailable
 import org.jetbrains.kotlinconf.media.SCREEN_CLEAN_UP_VERSION
 import org.jetbrains.kotlinconf.personal.MediaKind
@@ -204,7 +205,7 @@ class ConferenceService(
         var duplicates = 0
         savePersonal { storage ->
             val all = storage.getAttachments().first()
-            val seen = MediaDuplicates(all.values.flatten())
+            val seen = MediaDuplicates(withContentHashes(media, all.values.flatten()))
             val added = picked.mapIndexedNotNull { index, item ->
                 val hash = media.hashOf(item.path)
                 if (seen.isDuplicate(Fingerprint(item.sourceId, hash))) {
@@ -235,15 +236,42 @@ class ConferenceService(
      */
     suspend fun findDuplicates(picked: List<PickedMedia>): Set<Int> {
         val media = mediaFiles ?: return emptySet()
-        val existing = attachments.value.values.flatten().map { attachment ->
-            // Files added before fingerprints were kept: hash them now, once, for the comparison
-            if (attachment.contentHash != null || attachment.sourceId != null) attachment
-            else attachment.copy(contentHash = media.hashOf(media.path(attachment.file)))
-        }
-        val seen = MediaDuplicates(existing)
+        val seen = MediaDuplicates(withContentHashes(media, attachments.value.values.flatten()))
         return picked.indices.filterTo(mutableSetOf()) { i ->
             seen.isDuplicate(Fingerprint(picked[i].sourceId, media.hashOf(picked[i].path)))
         }
+    }
+
+    /** Files added before fingerprints were kept: hashed now, for the comparison, so a copy of one is recognised. */
+    private suspend fun withContentHashes(media: MediaFiles, list: List<Attachment>): List<Attachment> = list.map {
+        if (it.contentHash != null) it else it.copy(contentHash = media.hashOf(media.path(it.file)))
+    }
+
+    // The media folder whose stored duplicates were already removed in this run of the app
+    private var duplicatesRemovedFor: MediaFiles? = null
+
+    /**
+     * Removes photos and videos that older versions of the app stored more than once, and their files (the cleaned-up
+     * copy and preview too; the originals stay in the photo library). Gives every attachment without a content hash one
+     * on the way, so the next check is quick. Once per run of the app and event.
+     */
+    private suspend fun removeStoredDuplicatesOnce() {
+        val media = mediaFiles?.takeIf { it.isSupported } ?: return
+        if (duplicatesRemovedFor === media) return
+        val hashes = attachments.value.values.flatten()
+            .filter { it.contentHash == null }
+            .mapNotNull { attachment -> media.hashOf(media.path(attachment.file))?.let { attachment.id to it } }
+            .toMap()
+        var unused = emptyList<String>()
+        savePersonal { storage ->
+            val all = storage.getAttachments().first()
+            val result = removeStoredDuplicates(all, hashes)
+            if (result.kept != all) storage.setAttachments(result.kept)
+            val stillUsed = result.kept.values.flatten().flatMapTo(mutableSetOf()) { it.files }
+            unused = result.removed.flatMap { it.files }.filterNot { it in stillUsed }
+        }
+        unused.forEach { media.delete(it) }
+        duplicatesRemovedFor = media
     }
 
     private suspend fun discardNow(media: MediaFiles, item: PickedMedia) {
@@ -255,14 +283,15 @@ class ConferenceService(
 
     /**
      * Straightens and cleans up photos of screens and whiteboards that have not been looked at yet, or were looked at by
-     * an older clean-up, one at a time in the background; the originals are kept. Does nothing where the platform has
-     * no clean-up.
+     * an older clean-up, one at a time in the background; the originals are kept. Removes copies stored twice first.
+     * Only that is done where the platform has no clean-up.
      */
     fun cleanUpScreenPhotos() {
-        if (!screenCleanUpAvailable) return
         scope.launch(Dispatchers.Default) {
             if (!cleaning.tryLock()) return@launch
             try {
+                removeStoredDuplicatesOnce()
+                if (!screenCleanUpAvailable) return@launch
                 while (true) {
                     val media = mediaFiles ?: return@launch
                     val next = attachments.value.values.flatten().firstOrNull { it.needsCleanUp() } ?: return@launch
