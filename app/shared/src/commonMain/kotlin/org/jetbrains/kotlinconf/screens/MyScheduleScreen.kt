@@ -67,9 +67,12 @@ import org.jetbrains.kotlinconf.SessionCardView
 import org.jetbrains.kotlinconf.SessionId
 import org.jetbrains.kotlinconf.export.rememberExporter
 import org.jetbrains.kotlinconf.generated.resources.Res
+import org.jetbrains.kotlinconf.generated.resources.sync_done_24
+import org.jetbrains.kotlinconf.generated.resources.sync_24
+import org.jetbrains.kotlinconf.generated.resources.share_24
+import org.jetbrains.kotlinconf.generated.resources.calendar_add_24
 import org.jetbrains.kotlinconf.generated.resources.my_schedule_add_to_calendar
 import org.jetbrains.kotlinconf.generated.resources.my_schedule_share
-import org.jetbrains.kotlinconf.generated.resources.my_schedule_trip_report
 import org.jetbrains.kotlinconf.generated.resources.my_schedule_all_day
 import org.jetbrains.kotlinconf.generated.resources.my_schedule_bookmark
 import org.jetbrains.kotlinconf.generated.resources.my_schedule_clash
@@ -109,7 +112,6 @@ private val BlockVerticalPadding = 2.dp
 fun MyScheduleScreen(
     onSession: (SessionId) -> Unit,
     onSync: (() -> Unit)? = null,
-    onTripReport: (() -> Unit)? = null,
     viewModel: MyScheduleViewModel = metroViewModel(),
 ) {
     val days by viewModel.days.collectAsStateWithLifecycle()
@@ -148,7 +150,7 @@ fun MyScheduleScreen(
         )
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp).padding(bottom = 8.dp),
+            modifier = Modifier.fillMaxWidth().padding(start = 12.dp, end = 6.dp),
         ) {
             Text(
                 stringResource(Res.string.my_schedule_bookmarked, day.booked.size + day.allDay.size),
@@ -163,33 +165,24 @@ fun MyScheduleScreen(
                 )
             }
             Spacer(Modifier.weight(1f))
+            // One line of icons; each keeps its words as its label and tooltip (48dp tap targets)
+            val exporter = rememberExporter()
+            TopMenuButton(
+                icon = Res.drawable.calendar_add_24,
+                contentDescription = stringResource(Res.string.my_schedule_add_to_calendar),
+                onClick = exporter::addScheduleToCalendar,
+            )
+            TopMenuButton(
+                icon = Res.drawable.share_24,
+                contentDescription = stringResource(Res.string.my_schedule_share),
+                onClick = exporter::shareSchedule,
+            )
             if (onSync != null) {
                 val linked = viewModel.syncLinked.collectAsStateWithLifecycle().value
-                Text(
-                    stringResource(if (linked) Res.string.sync_my_schedule_linked else Res.string.sync_my_schedule_link),
-                    style = KotlinConfTheme.typography.text2,
-                    color = KotlinConfTheme.colors.accentText,
-                    modifier = Modifier.clickable(onClick = onSync),
-                )
-            }
-        }
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
-        ) {
-            val exporter = rememberExporter()
-            listOf(
-                Res.string.my_schedule_add_to_calendar to exporter::addScheduleToCalendar,
-                Res.string.my_schedule_share to exporter::shareSchedule,
-                Res.string.my_schedule_trip_report to (onTripReport ?: exporter::shareTripReport),
-            ).forEach { (label, action) ->
-                Text(
-                    stringResource(label),
-                    style = KotlinConfTheme.typography.text2,
-                    color = KotlinConfTheme.colors.accentText,
-                    // 12dp above and below the text makes each link a 44dp tap target
-                    modifier = Modifier.clickable(role = Role.Button, onClick = action).padding(vertical = 12.dp),
+                TopMenuButton(
+                    icon = if (linked) Res.drawable.sync_done_24 else Res.drawable.sync_24,
+                    contentDescription = stringResource(if (linked) Res.string.sync_my_schedule_linked else Res.string.sync_my_schedule_link),
+                    onClick = onSync,
                 )
             }
         }
