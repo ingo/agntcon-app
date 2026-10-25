@@ -240,6 +240,7 @@ private fun PersonalSection(viewModel: SessionViewModel) {
     val skippedDuplicates by viewModel.skippedDuplicates.collectAsStateWithLifecycle()
     val mediaProgress by viewModel.mediaProgress.collectAsStateWithLifecycle()
     val unreadable by viewModel.unreadable.collectAsStateWithLifecycle()
+    val moveTargets by viewModel.moveTargets.collectAsStateWithLifecycle()
     val picker = rememberMediaPicker()
     Column(Modifier.padding(top = 24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
         RatingBlock(rating = rating, onThumb = viewModel::setThumb, onTakeaway = viewModel::setTakeaway)
@@ -256,6 +257,8 @@ private fun PersonalSection(viewModel: SessionViewModel) {
                 onProgress = viewModel::onMediaProgress,
                 onPicked = viewModel::addMedia,
                 onRemove = viewModel::removeMedia,
+                moveTargets = moveTargets,
+                onMove = viewModel::moveMedia,
                 modifier = Modifier.padding(bottom = 24.dp),
             )
         }

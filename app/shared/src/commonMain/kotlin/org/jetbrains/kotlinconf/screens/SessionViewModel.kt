@@ -21,6 +21,7 @@ import org.jetbrains.kotlinconf.ConferenceService
 import org.jetbrains.kotlinconf.SessionCardView
 import org.jetbrains.kotlinconf.SessionId
 import org.jetbrains.kotlinconf.Speaker
+import org.jetbrains.kotlinconf.media.MoveTargets
 import org.jetbrains.kotlinconf.media.PickedMedia
 import org.jetbrains.kotlinconf.personal.Attachment
 import org.jetbrains.kotlinconf.personal.SessionRating
@@ -111,6 +112,14 @@ class SessionViewModel(
 
     fun removeMedia(attachment: Attachment) {
         viewModelScope.launch { service.removeAttachment(sessionId, attachment) }
+    }
+
+    /** The sessions a photo or video on this session can be moved to. */
+    val moveTargets: StateFlow<MoveTargets> = service.moveTargetsFlow(sessionId)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), MoveTargets(emptyList(), emptyList()))
+
+    fun moveMedia(attachment: Attachment, to: SessionId) {
+        viewModelScope.launch { service.moveAttachment(sessionId, to, attachment) }
     }
 
     /** The rooms with a pin on the venue map, to offer "Find on map". */

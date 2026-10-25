@@ -4,6 +4,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -38,6 +39,7 @@ import org.jetbrains.kotlinconf.generated.resources.photo_library_24
 import org.jetbrains.kotlinconf.generated.resources.play_video
 import org.jetbrains.kotlinconf.generated.resources.session_media_actions
 import org.jetbrains.kotlinconf.generated.resources.import_duplicates
+import org.jetbrains.kotlinconf.generated.resources.import_no_options
 import org.jetbrains.kotlinconf.generated.resources.media_reading_progress
 import org.jetbrains.kotlinconf.generated.resources.media_unreadable
 import org.jetbrains.kotlinconf.generated.resources.session_media_adding
@@ -45,6 +47,10 @@ import org.jetbrains.kotlinconf.generated.resources.session_media_cleaned
 import org.jetbrains.kotlinconf.generated.resources.session_media_cancel
 import org.jetbrains.kotlinconf.generated.resources.session_media_from_library
 import org.jetbrains.kotlinconf.generated.resources.session_media_hint
+import org.jetbrains.kotlinconf.generated.resources.session_media_move
+import org.jetbrains.kotlinconf.generated.resources.session_media_move_or_remove
+import org.jetbrains.kotlinconf.generated.resources.session_media_move_other_days
+import org.jetbrains.kotlinconf.generated.resources.session_media_move_title
 import org.jetbrains.kotlinconf.generated.resources.session_media_photo
 import org.jetbrains.kotlinconf.generated.resources.session_media_record_video
 import org.jetbrains.kotlinconf.generated.resources.session_media_remove
@@ -52,7 +58,9 @@ import org.jetbrains.kotlinconf.generated.resources.session_media_take_photo
 import org.jetbrains.kotlinconf.generated.resources.session_media_title
 import org.jetbrains.kotlinconf.generated.resources.session_media_video
 import org.jetbrains.kotlinconf.generated.resources.videocam_24
+import org.jetbrains.kotlinconf.SessionId
 import org.jetbrains.kotlinconf.media.MediaPicker
+import org.jetbrains.kotlinconf.media.MoveTargets
 import org.jetbrains.kotlinconf.media.PickedMedia
 import org.jetbrains.kotlinconf.personal.Attachment
 import org.jetbrains.kotlinconf.personal.MediaKind
@@ -60,10 +68,12 @@ import org.jetbrains.kotlinconf.ui.components.Button
 import org.jetbrains.kotlinconf.ui.components.PageMenuItem
 import org.jetbrains.kotlinconf.ui.components.Text
 import org.jetbrains.kotlinconf.ui.theme.KotlinConfTheme
+import org.jetbrains.kotlinconf.utils.DateTimeFormatting
 
 /**
  * The attendee's photos, screenshots and videos on a session: a grid of thumbnails (tap to view, touch
- * and hold to remove) and the camera and library buttons. Not shown where the app keeps no files.
+ * and hold to move to another session or remove) and the camera and library buttons. Not shown where the app
+ * keeps no files.
  */
 @OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
@@ -78,10 +88,15 @@ fun MediaBlock(
     onProgress: (done: Int, total: Int) -> Unit,
     onPicked: (List<PickedMedia>, failed: Int) -> Unit,
     onRemove: (Attachment) -> Unit,
+    moveTargets: MoveTargets,
+    onMove: (Attachment, SessionId) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
     val selected = attachments.find { it.id == selectedId }
+    // Choosing the session to move the selected one to, and whether the other days' talks are shown too
+    var moving by rememberSaveable { mutableStateOf(false) }
+    var allDays by rememberSaveable { mutableStateOf(false) }
 
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(stringResource(Res.string.session_media_title), style = KotlinConfTheme.typography.h3)
@@ -111,22 +126,66 @@ fun MediaBlock(
                         previewPath = attachment.preview?.let(pathOf),
                         selected = attachment.id == selectedId,
                         onClick = {
-                            if (selectedId != null) selectedId = null
-                            else attachment.viewFiles.mapNotNull(pathOf).takeIf { it.isNotEmpty() }?.let { picker.open(it, attachment.kind) }
+                            if (selectedId != null) {
+                                selectedId = null
+                                moving = false
+                            } else {
+                                attachment.viewFiles.mapNotNull(pathOf).takeIf { it.isNotEmpty() }?.let { picker.open(it, attachment.kind) }
+                            }
                         },
-                        onLongClick = { selectedId = attachment.id },
+                        onLongClick = {
+                            selectedId = attachment.id
+                            moving = false
+                        },
                     )
                 }
             }
-            if (selected != null) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (selected != null && moving) {
+                // A photo on the wrong talk: pick the right one, the talks of the same day first
+                Text(stringResource(Res.string.session_media_move_title), style = KotlinConfTheme.typography.h4)
+                val shown = if (allDays) moveTargets.sameDay + moveTargets.otherDays else moveTargets.sameDay
+                if (shown.isEmpty()) {
+                    Text(stringResource(Res.string.import_no_options), style = KotlinConfTheme.typography.text2, color = KotlinConfTheme.colors.noteText)
+                }
+                shown.forEach { session ->
+                    val day = if (session in moveTargets.otherDays) DateTimeFormatting.weekdayDate(session.startsAt.date) else null
+                    OptionRow(
+                        title = session.title,
+                        bold = session.isFavorite,
+                        detail = listOfNotNull(day, sessionDetail(session, session.isFavorite)).joinToString(" · "),
+                        selected = false,
+                        onClick = {
+                            selectedId = null
+                            moving = false
+                            onMove(selected, session.id)
+                        },
+                    )
+                }
+                if (!allDays && moveTargets.otherDays.isNotEmpty()) {
+                    Text(
+                        stringResource(Res.string.session_media_move_other_days),
+                        style = KotlinConfTheme.typography.text2,
+                        color = KotlinConfTheme.colors.accentText,
+                        modifier = Modifier.clickable(role = Role.Button, onClick = { allDays = true }).padding(vertical = 12.dp),
+                    )
+                }
+                Button(label = stringResource(Res.string.session_media_cancel), onClick = { moving = false })
+            } else if (selected != null) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(
+                        label = stringResource(Res.string.session_media_move),
+                        onClick = {
+                            moving = true
+                            allDays = false
+                        },
+                        primary = true,
+                    )
                     Button(
                         label = stringResource(Res.string.session_media_remove),
                         onClick = {
                             selectedId = null
                             onRemove(selected)
                         },
-                        primary = true,
                     )
                     Button(label = stringResource(Res.string.session_media_cancel), onClick = { selectedId = null })
                 }
@@ -211,7 +270,7 @@ private fun MediaTile(
             .combinedClickable(
                 role = Role.Image,
                 onClickLabel = label,
-                onLongClickLabel = stringResource(Res.string.session_media_remove),
+                onLongClickLabel = stringResource(Res.string.session_media_move_or_remove),
                 onClick = onClick,
                 onLongClick = onLongClick,
             ),

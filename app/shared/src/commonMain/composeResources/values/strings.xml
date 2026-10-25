@@ -305,7 +305,11 @@ Please try again.</string>
     <string name="session_media_cancel">Cancel</string>
     <string name="session_media_photo">Photo %1$d</string>
     <string name="session_media_video">Video %1$d</string>
-    <string name="session_media_actions">Touch and hold to remove</string>
+    <string name="session_media_actions">Touch and hold to move to another session or remove</string>
+    <string name="session_media_move">Move to another session</string>
+    <string name="session_media_move_or_remove">Move or remove</string>
+    <string name="session_media_move_title">Move to which session?</string>
+    <string name="session_media_move_other_days">Show other days</string>
     <string name="trip_report_intro">The sessions you went to with your notes, ratings, the slides and your photos and videos.</string>
     <string name="trip_report_download">Download report (.zip)</string>
     <string name="trip_report_download_hint">The report as Markdown and as a web page, the slides from Sessionize and your photos and videos, in one zip file to mail or save.</string>

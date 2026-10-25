@@ -46,6 +46,7 @@ import org.jetbrains.kotlinconf.flags.FlagsManager
 import org.jetbrains.kotlinconf.media.Fingerprint
 import org.jetbrains.kotlinconf.media.MediaDuplicates
 import org.jetbrains.kotlinconf.media.MediaFiles
+import org.jetbrains.kotlinconf.media.MoveTargets
 import org.jetbrains.kotlinconf.media.cleanUpScreenPhoto
 import org.jetbrains.kotlinconf.media.makeThumbnail
 import org.jetbrains.kotlinconf.media.removeStoredDuplicates
@@ -58,6 +59,7 @@ import org.jetbrains.kotlinconf.personal.PersonalNotes
 import org.jetbrains.kotlinconf.personal.SessionRating
 import org.jetbrains.kotlinconf.personal.withAdded
 import org.jetbrains.kotlinconf.personal.withMet
+import org.jetbrains.kotlinconf.personal.withMoved
 import org.jetbrains.kotlinconf.personal.withRemoved
 import org.jetbrains.kotlinconf.personal.withUpdated
 import org.jetbrains.kotlinconf.personal.withRating
@@ -379,6 +381,15 @@ class ConferenceService(
             attachment.cleaned?.let { media.delete(it) }
         }
     }
+
+    /** Moves a photo or video to another session, e.g. one that landed on the wrong talk; its files stay as they are. */
+    suspend fun moveAttachment(from: SessionId, to: SessionId, attachment: Attachment) {
+        savePersonal { it.setAttachments(it.getAttachments().first().withMoved(from, to, attachment.id)) }
+    }
+
+    /** The sessions a photo or video on [sessionId] can be moved to. */
+    fun moveTargetsFlow(sessionId: SessionId): Flow<MoveTargets> =
+        sessionCards.map { MoveTargets.of(sessionId, it) }
 
     val conferenceInfo: StateFlow<ConferenceInfo?> =
         currentYearlyStorage.flatMapLatest { it.getConferenceInfoCache() }
