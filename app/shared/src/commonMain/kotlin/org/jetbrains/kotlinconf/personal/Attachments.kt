@@ -28,6 +28,8 @@ data class Attachment(
     val cleaned: String? = null,
     /** True once the clean-up has looked at this photo, whether or not it found a screen to straighten. */
     val cleanChecked: Boolean = false,
+    /** Which version of the clean-up looked at it (see [org.jetbrains.kotlinconf.media.SCREEN_CLEAN_UP_VERSION]). */
+    val cleanVersion: Int = 0,
     /** True once a small preview was made (or tried) for this photo. */
     val previewChecked: Boolean = false,
 ) {

@@ -49,6 +49,7 @@ import org.jetbrains.kotlinconf.media.MediaFiles
 import org.jetbrains.kotlinconf.media.cleanUpScreenPhoto
 import org.jetbrains.kotlinconf.media.makeThumbnail
 import org.jetbrains.kotlinconf.media.screenCleanUpAvailable
+import org.jetbrains.kotlinconf.media.SCREEN_CLEAN_UP_VERSION
 import org.jetbrains.kotlinconf.personal.MediaKind
 import org.jetbrains.kotlinconf.media.PickedMedia
 import org.jetbrains.kotlinconf.personal.Attachment
@@ -253,8 +254,9 @@ class ConferenceService(
     private val cleaning = Mutex()
 
     /**
-     * Straightens and cleans up photos of screens and whiteboards that have not been looked at yet, one at a time in
-     * the background; the originals are kept. Does nothing where the platform has no clean-up.
+     * Straightens and cleans up photos of screens and whiteboards that have not been looked at yet, or were looked at by
+     * an older clean-up, one at a time in the background; the originals are kept. Does nothing where the platform has
+     * no clean-up.
      */
     fun cleanUpScreenPhotos() {
         if (!screenCleanUpAvailable) return
@@ -263,34 +265,34 @@ class ConferenceService(
             try {
                 while (true) {
                     val media = mediaFiles ?: return@launch
-                    val next = attachments.value.values.flatten()
-                        .firstOrNull { it.kind == MediaKind.PHOTO && (!it.cleanChecked || !it.previewChecked) } ?: return@launch
-                    // Photos looked at before previews existed only need the preview
+                    val next = attachments.value.values.flatten().firstOrNull { it.needsCleanUp() } ?: return@launch
+                    // Photos looked at by the current clean-up before previews existed only need the preview
+                    val redo = next.needsNewCleanUp()
                     val name = media.newName("jpg")
-                    val cleaned = when {
-                        next.cleanChecked -> null
-                        cleanUpScreenPhoto(media.path(next.file), media.path(name)) -> name
-                        else -> null
-                    }
+                    val cleaned = name.takeIf { redo && cleanUpScreenPhoto(media.path(next.file), media.path(name)) }
                     // A preview of what lists should show: the cleaned-up photo if there is one, else the original
                     val previewName = media.newName("jpg")
-                    val preview = if (cleaned != null || next.thumbnail == null) {
-                        previewName.takeIf { makeThumbnail(media.path(cleaned ?: next.cleaned ?: next.file), media.path(previewName)) }
+                    val preview = if (redo || next.thumbnail == null) {
+                        val shown = cleaned ?: next.cleaned.takeUnless { redo } ?: next.file
+                        previewName.takeIf { makeThumbnail(media.path(shown), media.path(previewName)) }
                     } else {
                         null
                     }
                     savePersonal { storage ->
                         val all = storage.getAttachments().first()
-                        val stillThere = all.values.flatten().any { it.id == next.id }
-                        if (!stillThere) {
+                        val current = all.values.flatten().firstOrNull { it.id == next.id }
+                        if (current == null) {
                             cleaned?.let { media.delete(it) }
                             preview?.let { media.delete(it) }
                         } else {
-                            if (preview != null) next.thumbnail?.let { media.delete(it) }
+                            if (preview != null) current.thumbnail?.let { media.delete(it) }
+                            // A newer clean-up replaces the older copy, also when it finds no screen in the photo
+                            if (redo) current.cleaned?.let { media.delete(it) }
                             storage.setAttachments(all.withUpdated(next.id) {
                                 it.copy(
-                                    cleaned = if (it.cleanChecked) it.cleaned else cleaned,
+                                    cleaned = if (redo) cleaned else it.cleaned,
                                     cleanChecked = true,
+                                    cleanVersion = if (redo) SCREEN_CLEAN_UP_VERSION else it.cleanVersion,
                                     previewChecked = true,
                                     thumbnail = preview ?: it.thumbnail,
                                 )
@@ -298,13 +300,17 @@ class ConferenceService(
                         }
                     }
                     // Wait for the stored list to show the change before looking for the next one
-                    attachments.first { list -> list.values.flatten().none { it.id == next.id && (!it.cleanChecked || !it.previewChecked) } }
+                    attachments.first { list -> list.values.flatten().none { it.id == next.id && it.needsCleanUp() } }
                 }
             } finally {
                 cleaning.unlock()
             }
         }
     }
+
+    private fun Attachment.needsNewCleanUp() = !cleanChecked || cleanVersion < SCREEN_CLEAN_UP_VERSION
+
+    private fun Attachment.needsCleanUp() = kind == MediaKind.PHOTO && (needsNewCleanUp() || !previewChecked)
 
     // Photos and videos picked on the trip report page, waiting to be matched to sessions on the review screen
     private val pendingImport = MutableStateFlow<List<PickedMedia>>(emptyList())
