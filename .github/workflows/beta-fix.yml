@@ -40,6 +40,8 @@ jobs:
             run `./gradlew :core:jvmTest :app:shared:jvmTest`, and open a pull request that references the issue.
             Do not change .github/, fastlane/ or scripts/. If the report is unclear or not a bug, comment on
             the issue with what you need instead of guessing.
+          # TEMPORARY: shows which tool calls were denied; remove once the fix loop works
+          show_full_output: true
           claude_args: |
             --max-turns 40
             --allowedTools "Read,Edit,Write,Glob,Grep,Bash(./gradlew:*),Bash(git:*),Bash(gh pr:*),Bash(gh issue comment:*)"
