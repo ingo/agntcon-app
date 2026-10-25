@@ -43,6 +43,13 @@ class SlideTextMatcherTest {
     }
 
     @Test
+    fun hyphenatedNamesCountAsOneWord() {
+        // The content slide from the simulator check: "ID-JAG" twice, nothing else from the titles
+        assertEquals(setOf("id-jag", "token", "exchange"), SlideTextMatcher.words("ID-JAG token exchange"))
+        assertEquals(SessionId("j"), SlideTextMatcher.best("Present the ID-JAG to the resource AS · Solving sprawl", all))
+    }
+
+    @Test
     fun noTextNoSuggestion() {
         assertNull(SlideTextMatcher.best("", all))
         assertNull(SlideTextMatcher.best("Solving OAuth sprawl", listOf(idJag)))

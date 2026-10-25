@@ -48,7 +48,8 @@ private object DesktopMediaPicker : MediaPicker {
         })
     }
 
-    override fun open(path: String, kind: MediaKind) {
+    override fun open(paths: List<String>, kind: MediaKind) {
+        val path = paths.firstOrNull() ?: return
         if (Desktop.isDesktopSupported()) Desktop.getDesktop().open(File(path))
     }
 }

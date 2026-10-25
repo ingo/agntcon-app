@@ -149,6 +149,28 @@ class TripReportBundleTest {
     }
 
     @Test
+    fun aCleanedUpPhotoIsTheImageAndItsOriginalSitsNextToIt() {
+        val cleaned = Attachment("p", MediaKind.PHOTO, "p.heic", cleaned = "p-clean.jpg", cleanChecked = true, addedAt = 1)
+        val layout = ReportLayout(listOf(keynote), mapOf("1" to listOf(cleaned)))
+        val (attachment, path) = layout.media(keynote).single()
+
+        assertEquals("media/2026-10-22-0900-opening-keynote-agents-mcp/01.jpg", path)
+        assertEquals("media/2026-10-22-0900-opening-keynote-agents-mcp/01-original.heic", layout.originalPath(attachment, path))
+        assertEquals(null, layout.originalPath(Attachment("q", MediaKind.PHOTO, "q.jpg"), "media/x/02.jpg"))
+
+        val report = tripReportMarkdown(
+            listOf(keynote), emptyMap(), PersonalNotes(), emptyMap(), emptySet(), event,
+            media = { listOf(ReportMedia(MediaKind.PHOTO, path, layout.originalPath(attachment, path))) },
+        )
+        assertTrue("![Photo 1]($path) ([original](media/2026-10-22-0900-opening-keynote-agents-mcp/01-original.heic))" in report, report)
+        val html = tripReportHtml(
+            listOf(keynote), emptyMap(), PersonalNotes(), emptyMap(), emptySet(), event,
+            media = { listOf(ReportMedia(MediaKind.PHOTO, path, layout.originalPath(attachment, path))) },
+        )
+        assertTrue("<a href=\"media/2026-10-22-0900-opening-keynote-agents-mcp/01-original.heic\"><img src=\"$path\"" in html, html)
+    }
+
+    @Test
     fun theZipIsNamedAfterTheEvent() {
         assertEquals("agntcon-mcpcon-na-2026-trip-report.zip", reportFileName(event))
     }

@@ -30,13 +30,16 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.kotlinconf.generated.resources.Res
 import org.jetbrains.kotlinconf.generated.resources.camera_24
 import org.jetbrains.kotlinconf.generated.resources.photo_library_24
 import org.jetbrains.kotlinconf.generated.resources.play_video
 import org.jetbrains.kotlinconf.generated.resources.session_media_actions
+import org.jetbrains.kotlinconf.generated.resources.import_duplicates
 import org.jetbrains.kotlinconf.generated.resources.session_media_adding
+import org.jetbrains.kotlinconf.generated.resources.session_media_cleaned
 import org.jetbrains.kotlinconf.generated.resources.session_media_cancel
 import org.jetbrains.kotlinconf.generated.resources.session_media_from_library
 import org.jetbrains.kotlinconf.generated.resources.session_media_hint
@@ -66,6 +69,7 @@ fun MediaBlock(
     picker: MediaPicker,
     attachments: List<Attachment>,
     adding: Boolean,
+    skippedDuplicates: Int,
     pathOf: (String) -> String?,
     onLoading: () -> Unit,
     onPicked: (List<PickedMedia>) -> Unit,
@@ -104,7 +108,7 @@ fun MediaBlock(
                         selected = attachment.id == selectedId,
                         onClick = {
                             if (selectedId != null) selectedId = null
-                            else pathOf(attachment.file)?.let { picker.open(it, attachment.kind) }
+                            else attachment.viewFiles.mapNotNull(pathOf).takeIf { it.isNotEmpty() }?.let { picker.open(it, attachment.kind) }
                         },
                         onLongClick = { selectedId = attachment.id },
                     )
@@ -131,6 +135,20 @@ fun MediaBlock(
             }
         }
 
+        if (attachments.any { it.cleaned != null }) {
+            Text(
+                stringResource(Res.string.session_media_cleaned),
+                style = KotlinConfTheme.typography.text2,
+                color = KotlinConfTheme.colors.secondaryText,
+            )
+        }
+        if (skippedDuplicates > 0 && !adding) {
+            Text(
+                pluralStringResource(Res.plurals.import_duplicates, skippedDuplicates, skippedDuplicates),
+                style = KotlinConfTheme.typography.text2,
+                color = KotlinConfTheme.colors.secondaryText,
+            )
+        }
         if (adding) {
             Text(
                 stringResource(Res.string.session_media_adding),

@@ -67,7 +67,9 @@ fun tripReportHtml(
                     val label = "${labels.mediaLabel(item.kind)} $number".html()
                     val src = item.path.attr()
                     if (item.kind == MediaKind.PHOTO) {
-                        appendLine("<a href=\"$src\"><img src=\"$src\" alt=\"$label\" loading=\"lazy\"></a>")
+                        // A cleaned-up photo links to its original
+                        val href = (item.original ?: item.path).attr()
+                        appendLine("<a href=\"$href\"><img src=\"$src\" alt=\"$label\" loading=\"lazy\"></a>")
                     } else {
                         appendLine("<video src=\"$src\" controls preload=\"metadata\" title=\"$label\"></video>")
                     }

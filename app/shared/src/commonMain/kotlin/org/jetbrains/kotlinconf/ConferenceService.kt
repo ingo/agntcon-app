@@ -43,7 +43,12 @@ import org.jetbrains.kotlinconf.event.BUNDLED_ASSET_PREFIX
 import org.jetbrains.kotlinconf.event.bundledMapSvg
 import org.jetbrains.kotlinconf.export.ExportSnapshot
 import org.jetbrains.kotlinconf.flags.FlagsManager
+import org.jetbrains.kotlinconf.media.Fingerprint
+import org.jetbrains.kotlinconf.media.MediaDuplicates
 import org.jetbrains.kotlinconf.media.MediaFiles
+import org.jetbrains.kotlinconf.media.cleanUpScreenPhoto
+import org.jetbrains.kotlinconf.media.screenCleanUpAvailable
+import org.jetbrains.kotlinconf.personal.MediaKind
 import org.jetbrains.kotlinconf.media.PickedMedia
 import org.jetbrains.kotlinconf.personal.Attachment
 import org.jetbrains.kotlinconf.personal.PersonalNotes
@@ -51,6 +56,7 @@ import org.jetbrains.kotlinconf.personal.SessionRating
 import org.jetbrains.kotlinconf.personal.withAdded
 import org.jetbrains.kotlinconf.personal.withMet
 import org.jetbrains.kotlinconf.personal.withRemoved
+import org.jetbrains.kotlinconf.personal.withUpdated
 import org.jetbrains.kotlinconf.personal.withRating
 import org.jetbrains.kotlinconf.generated.resources.Res
 import org.jetbrains.kotlinconf.generated.resources.notification_session_already_started
@@ -186,23 +192,96 @@ class ConferenceService(
         }
 
     /**
-     * Moves picked photos and videos into the event's folder and attaches them to a session. Finishes even
-     * when the screen that asked has gone, so nothing picked is lost halfway.
+     * Moves picked photos and videos into the event's folder and attaches them to a session. Ones already attached
+     * (to any session) or picked twice are left out and their copies deleted. Finishes even when the screen that
+     * asked has gone, so nothing picked is lost halfway. Returns how many were left out as duplicates.
      */
-    suspend fun addAttachments(sessionId: SessionId, picked: List<PickedMedia>) = withContext(NonCancellable) {
-        val media = mediaFiles ?: return@withContext
+    suspend fun addAttachments(sessionId: SessionId, picked: List<PickedMedia>): Int = withContext(NonCancellable) {
+        val media = mediaFiles ?: return@withContext 0
         val now = nowMillis()
-        val added = picked.mapIndexedNotNull { index, item ->
-            val file = media.adopt(item.path, item.extension) ?: return@mapIndexedNotNull null
-            Attachment(
-                id = file.substringBefore('.'),
-                kind = item.kind,
-                file = file,
-                thumbnail = item.thumbnailPath?.let { media.adopt(it, "jpg") },
-                addedAt = now + index,
-            )
+        var duplicates = 0
+        savePersonal { storage ->
+            val all = storage.getAttachments().first()
+            val seen = MediaDuplicates(all.values.flatten())
+            val added = picked.mapIndexedNotNull { index, item ->
+                val hash = media.hashOf(item.path)
+                if (seen.isDuplicate(Fingerprint(item.sourceId, hash))) {
+                    duplicates++
+                    discardNow(media, item)
+                    return@mapIndexedNotNull null
+                }
+                val file = media.adopt(item.path, item.extension) ?: return@mapIndexedNotNull null
+                Attachment(
+                    id = file.substringBefore('.'),
+                    kind = item.kind,
+                    file = file,
+                    thumbnail = item.thumbnailPath?.let { media.adopt(it, "jpg") },
+                    addedAt = now + index,
+                    sourceId = item.sourceId,
+                    contentHash = hash,
+                )
+            }
+            storage.setAttachments(all.withAdded(sessionId, added))
         }
-        savePersonal { it.setAttachments(it.getAttachments().first().withAdded(sessionId, added)) }
+        cleanUpScreenPhotos()
+        duplicates
+    }
+
+    /**
+     * Which of [picked] are already attached (or appear twice in the list), so the review screen can leave them out
+     * before asking anything. Returns their positions in [picked].
+     */
+    suspend fun findDuplicates(picked: List<PickedMedia>): Set<Int> {
+        val media = mediaFiles ?: return emptySet()
+        val existing = attachments.value.values.flatten().map { attachment ->
+            // Files added before fingerprints were kept: hash them now, once, for the comparison
+            if (attachment.contentHash != null || attachment.sourceId != null) attachment
+            else attachment.copy(contentHash = media.hashOf(media.path(attachment.file)))
+        }
+        val seen = MediaDuplicates(existing)
+        return picked.indices.filterTo(mutableSetOf()) { i ->
+            seen.isDuplicate(Fingerprint(picked[i].sourceId, media.hashOf(picked[i].path)))
+        }
+    }
+
+    private suspend fun discardNow(media: MediaFiles, item: PickedMedia) {
+        media.discard(item.path)
+        item.thumbnailPath?.let { media.discard(it) }
+    }
+
+    private val cleaning = Mutex()
+
+    /**
+     * Straightens and cleans up photos of screens and whiteboards that have not been looked at yet, one at a time in
+     * the background; the originals are kept. Does nothing where the platform has no clean-up.
+     */
+    fun cleanUpScreenPhotos() {
+        if (!screenCleanUpAvailable) return
+        scope.launch(Dispatchers.Default) {
+            if (!cleaning.tryLock()) return@launch
+            try {
+                while (true) {
+                    val media = mediaFiles ?: return@launch
+                    val next = attachments.value.values.flatten()
+                        .firstOrNull { it.kind == MediaKind.PHOTO && !it.cleanChecked } ?: return@launch
+                    val name = media.newName("jpg")
+                    val cleaned = if (cleanUpScreenPhoto(media.path(next.file), media.path(name))) name else null
+                    savePersonal { storage ->
+                        val all = storage.getAttachments().first()
+                        val stillThere = all.values.flatten().any { it.id == next.id }
+                        if (!stillThere) {
+                            cleaned?.let { media.delete(it) }
+                        } else {
+                            storage.setAttachments(all.withUpdated(next.id) { it.copy(cleaned = cleaned, cleanChecked = true) })
+                        }
+                    }
+                    // Wait for the stored list to show the change before looking for the next one
+                    attachments.first { list -> list.values.flatten().none { it.id == next.id && !it.cleanChecked } }
+                }
+            } finally {
+                cleaning.unlock()
+            }
+        }
     }
 
     // Photos and videos picked on the trip report page, waiting to be matched to sessions on the review screen
@@ -234,6 +313,7 @@ class ConferenceService(
         mediaFiles?.let { media ->
             media.delete(attachment.file)
             attachment.thumbnail?.let { media.delete(it) }
+            attachment.cleaned?.let { media.delete(it) }
         }
     }
 

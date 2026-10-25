@@ -6,6 +6,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
 import okio.FileSystem
+import okio.HashingSource
+import okio.blackholeSink
+import okio.buffer
+import okio.use
 import okio.IOException
 import okio.Path
 import okio.Path.Companion.toPath
@@ -29,9 +33,24 @@ class OkioMediaFiles(
 
     override fun path(file: String): String = resolve(file).toString()
 
-    override suspend fun adopt(tempPath: String, extension: String): String? = withContext(Dispatchers.IO) {
+    override fun newName(extension: String): String {
         val ext = extension.lowercase().filter { it.isLetterOrDigit() }.take(5).ifEmpty { "bin" }
-        val name = "${Random.nextLong().toULong().toString(16)}.$ext"
+        return "${Random.nextLong().toULong().toString(16)}.$ext"
+    }
+
+    override suspend fun hashOf(path: String): String? = withContext(Dispatchers.IO) {
+        try {
+            HashingSource.sha256(fileSystem.source(path.toPath())).use { hashing ->
+                hashing.buffer().readAll(blackholeSink())
+                hashing.hash.hex()
+            }
+        } catch (_: IOException) {
+            null
+        }
+    }
+
+    override suspend fun adopt(tempPath: String, extension: String): String? = withContext(Dispatchers.IO) {
+        val name = newName(extension)
         val source = tempPath.toPath()
         val target = resolve(name)
         try {

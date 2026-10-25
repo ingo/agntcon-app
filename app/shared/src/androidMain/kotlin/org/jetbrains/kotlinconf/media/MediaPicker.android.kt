@@ -87,8 +87,8 @@ actual fun rememberMediaPicker(): MediaPicker? {
                 library.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo))
             }
 
-            override fun open(path: String, kind: MediaKind) {
-                val file = File(path)
+            override fun open(paths: List<String>, kind: MediaKind) {
+                val file = File(paths.firstOrNull() ?: return)
                 val mime = MimeTypeMap.getSingleton().getMimeTypeFromExtension(file.extension.lowercase())
                     ?: if (kind == MediaKind.VIDEO) "video/*" else "image/*"
                 val view = Intent(Intent.ACTION_VIEW)
@@ -121,7 +121,7 @@ private fun copyFromUri(context: Context, uri: Uri): PickedMedia? {
     } ?: false
     if (!copied) return null
     val still = if (kind == MediaKind.VIDEO) videoStill(context, file.path) else null
-    return PickedMedia(file.path, kind, extension, still, takenAt = takenAt(context, uri, file, kind))
+    return PickedMedia(file.path, kind, extension, still, takenAt = takenAt(context, uri, file, kind), sourceId = uri.toString())
 }
 
 /** When it was taken: the media store's date if the picker gives one, else the file's own EXIF or video date. */

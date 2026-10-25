@@ -14,6 +14,8 @@ class PickedMedia(
     val thumbnailPath: String? = null,
     /** When it was taken, if the file says so; used to match photos from the library to sessions. */
     val takenAt: MediaTime? = null,
+    /** The photo library's id for the item, where the platform gives one; the same photo always has the same id. */
+    val sourceId: String? = null,
 )
 
 /**
@@ -34,8 +36,8 @@ interface MediaPicker {
      */
     fun pickFromLibrary(onLoading: () -> Unit, onPicked: (List<PickedMedia>) -> Unit)
 
-    /** Shows a stored photo or plays a stored video. */
-    fun open(path: String, kind: MediaKind)
+    /** Shows stored photos (swipe between [paths], e.g. a cleaned-up photo and its original) or plays a video. */
+    fun open(paths: List<String>, kind: MediaKind)
 }
 
 /** The picker for this platform, or null where the app keeps no photos or videos (the web build). */

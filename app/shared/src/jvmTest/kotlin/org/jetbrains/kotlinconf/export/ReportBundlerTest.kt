@@ -145,6 +145,30 @@ class ReportBundlerTest {
     }
 
     @Test
+    fun aCleanedUpPhotoGoesInWithItsOriginal() = runTest {
+        val original = Random(3).nextBytes(50_000)
+        val clean = Random(4).nextBytes(40_000)
+        mediaFile("o.jpg", original)
+        mediaFile("o-clean.jpg", clean)
+        val keynote = card("1", "Opening Keynote", 9)
+        val snapshot = ExportSnapshot(
+            listOf(keynote), emptyMap(), PersonalNotes(), emptyMap(), emptySet(),
+            attachments = mapOf("1" to listOf(Attachment("o", MediaKind.PHOTO, "o.jpg", cleaned = "o-clean.jpg", cleanChecked = true))),
+        )
+        val bundler = OkioReportBundler(outputDir = File(root, "out").toOkioPath(), download = { _, _ -> false })
+
+        val result = bundler.build(ReportInput(snapshot, event, ExportLabels()) { File(mediaDir, it).path }) {}
+
+        assertIs<ReportResult.Done>(result)
+        assertEquals(1, result.photos)
+        val contents = ZipInputStream(File(result.path).inputStream()).use { stream ->
+            generateSequence { stream.nextEntry }.associate { it.name to stream.readBytes() }
+        }
+        assertContentEquals(clean, contents.getValue("media/2026-10-22-0900-opening-keynote/01.jpg"))
+        assertContentEquals(original, contents.getValue("media/2026-10-22-0900-opening-keynote/01-original.jpg"))
+    }
+
+    @Test
     fun aReportWithNothingInItIsStillAZipWithTheReport() = runTest {
         val bundler = OkioReportBundler(outputDir = File(root, "out").toOkioPath(), download = { _, _ -> false })
         val empty = ExportSnapshot(emptyList(), emptyMap(), PersonalNotes(), emptyMap(), emptySet())

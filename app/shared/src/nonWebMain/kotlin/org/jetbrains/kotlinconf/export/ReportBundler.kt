@@ -74,18 +74,23 @@ class OkioReportBundler(
         }
         onProgress(ReportProgress.Packing)
 
-        // Only media whose file is still on the device
+        // Only media whose file is still on the device; a cleaned-up photo brings its original along
         val media = sessions.associate { session ->
             session.id.id to layout.media(session).mapNotNull { (attachment, inBundle) ->
-                val path = input.mediaPath(attachment.file).toPath()
-                if (fileSystem.exists(path)) Triple(attachment, inBundle, path) else null
+                val cleaned = attachment.cleaned?.let { input.mediaPath(it).toPath() }?.takeIf { fileSystem.exists(it) }
+                val original = input.mediaPath(attachment.file).toPath().takeIf { fileSystem.exists(it) }
+                when {
+                    cleaned != null -> BundledMedia(attachment, inBundle, cleaned, original?.let { layout.originalPath(attachment, inBundle)!! to it })
+                    original != null -> BundledMedia(attachment.copy(cleaned = null), inBundle.substringBeforeLast('.') + "." + ReportLayout.extensionOf(attachment.file, "bin"), original, null)
+                    else -> null
+                }
             }
         }
         val slideLink: (SessionCardView) -> String? = { s ->
             layout.slidesPath(s)?.takeIf { it in downloaded } ?: s.slidesUrl
         }
         val reportMedia: (SessionCardView) -> List<ReportMedia> = { s ->
-            media[s.id.id].orEmpty().map { (attachment, inBundle, _) -> ReportMedia(attachment.kind, inBundle) }
+            media[s.id.id].orEmpty().map { ReportMedia(it.attachment.kind, it.inBundle, it.original?.first) }
         }
         val markdown = tripReportMarkdown(
             sessions, snap.speakers, snap.notes, snap.ratings, snap.met, input.event, input.labels, slideLink, reportMedia,
@@ -95,7 +100,7 @@ class OkioReportBundler(
         )
 
         val files = downloaded.entries.map { it.key to it.value } +
-            media.values.flatten().map { (_, inBundle, path) -> inBundle to path }
+            media.values.flatten().flatMap { listOfNotNull(it.inBundle to it.path, it.original) }
         val total = files.sumOf { (_, path) -> fileSystem.metadataOrNull(path)?.size ?: 0L } +
             markdown.length * 4L + html.length * 4L
         if (total >= ZipWriter.LIMIT) return ReportResult.TooLarge
@@ -120,12 +125,20 @@ class OkioReportBundler(
             sessions = sessions.size,
             slidesIncluded = downloaded.size,
             slidesLinked = withSlides.size - downloaded.size,
-            photos = all.count { it.first.kind == MediaKind.PHOTO },
-            videos = all.count { it.first.kind == MediaKind.VIDEO },
+            photos = all.count { it.attachment.kind == MediaKind.PHOTO },
+            videos = all.count { it.attachment.kind == MediaKind.VIDEO },
             bytes = fileSystem.metadataOrNull(zip)?.size ?: 0L,
         )
     }
 }
+
+private class BundledMedia(
+    val attachment: org.jetbrains.kotlinconf.personal.Attachment,
+    val inBundle: String,
+    val path: Path,
+    /** The original of a cleaned-up photo: its path in the bundle and on the device. */
+    val original: Pair<String, Path>?,
+)
 
 /** Streams one file to disk; Sessionize redirects its download links to a CDN, which the client follows. */
 private suspend fun downloadWithKtor(url: String, target: Path): Boolean {

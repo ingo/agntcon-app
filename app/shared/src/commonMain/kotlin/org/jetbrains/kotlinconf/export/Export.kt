@@ -35,10 +35,11 @@ data class ExportLabels(
     val myMedia: String = "My photos and videos",
     val photo: String = "Photo",
     val video: String = "Video",
+    val original: String = "original",
 )
 
 /** A photo or video in the report bundle, by its path inside the bundle. */
-data class ReportMedia(val kind: MediaKind, val path: String)
+data class ReportMedia(val kind: MediaKind, val path: String, val original: String? = null)
 
 /** The event a file or text is about. */
 data class ExportEvent(
@@ -260,7 +261,8 @@ fun tripReportMarkdown(
                 items.withNumbers().forEach { (item, number) ->
                     appendLine()
                     val label = "${labels.mediaLabel(item.kind)} $number"
-                    appendLine(if (item.kind == MediaKind.PHOTO) "![$label](${item.path})" else "[$label](${item.path})")
+                    val original = item.original?.let { " ([${labels.original}]($it))" }.orEmpty()
+                    appendLine(if (item.kind == MediaKind.PHOTO) "![$label](${item.path})$original" else "[$label](${item.path})")
                 }
             }
         }

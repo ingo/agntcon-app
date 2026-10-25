@@ -9,6 +9,7 @@ import org.jetbrains.kotlinconf.event.ActiveEvent
 import org.jetbrains.kotlinconf.generated.resources.Res
 import org.jetbrains.kotlinconf.generated.resources.export_my_media
 import org.jetbrains.kotlinconf.generated.resources.export_my_notes
+import org.jetbrains.kotlinconf.generated.resources.export_original
 import org.jetbrains.kotlinconf.generated.resources.export_no_sessions
 import org.jetbrains.kotlinconf.generated.resources.export_people_met
 import org.jetbrains.kotlinconf.generated.resources.export_photo
@@ -37,6 +38,7 @@ fun rememberExportLabels(): ExportLabels = ExportLabels(
     myMedia = stringResource(Res.string.export_my_media),
     photo = stringResource(Res.string.export_photo),
     video = stringResource(Res.string.export_video),
+    original = stringResource(Res.string.export_original),
 )
 
 /** The share and calendar actions, worded in the app's language. */

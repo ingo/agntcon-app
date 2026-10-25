@@ -32,8 +32,16 @@ class ReportLayout(
     /** The session's photos and videos, in the order they were added, with their place in the bundle. */
     fun media(session: SessionCardView): List<Pair<Attachment, String>> =
         attachments[session.id.id].orEmpty().sortedBy { it.addedAt }.mapIndexed { index, attachment ->
-            attachment to "media/${folder(session)}/${(index + 1).pad()}.${extensionOf(attachment.file, default = "bin")}"
+            attachment to "media/${folder(session)}/${(index + 1).pad()}.${extensionOf(attachment.cleaned ?: attachment.file, default = "bin")}"
         }
+
+    /**
+     * Where the original of a cleaned-up photo goes, next to the cleaned-up copy: `01-original.jpg`. Null for a photo
+     * that was not cleaned up (its original is the one at [media]'s path).
+     */
+    fun originalPath(attachment: Attachment, mediaPath: String): String? = attachment.cleaned?.let {
+        mediaPath.substringBeforeLast('.') + "-original." + extensionOf(attachment.file, default = "jpg")
+    }
 
     companion object {
         /** Lower-case letters and digits joined by dashes, at most 48 characters. */

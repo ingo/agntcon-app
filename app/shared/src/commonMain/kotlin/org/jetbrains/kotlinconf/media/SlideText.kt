@@ -22,7 +22,8 @@ object SlideTextMatcher {
     )
 
     fun words(text: String): Set<String> =
-        Regex("[\\p{L}\\p{N}]+").findAll(text.lowercase()).map { it.value }
+        // Hyphenated names ("ID-JAG", "A2A-native") count as one word
+        Regex("[\\p{L}\\p{N}]+(?:-[\\p{L}\\p{N}]+)*").findAll(text.lowercase()).map { it.value }
             .filter { it.length >= 4 && it !in STOP }
             .toSet()
 

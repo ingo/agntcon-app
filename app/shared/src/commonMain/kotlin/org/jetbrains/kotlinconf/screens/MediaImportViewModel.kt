@@ -55,6 +55,10 @@ data class ImportState(
     val attended: Set<SessionId> = emptySet(),
     val saving: Boolean = false,
     val done: Boolean = false,
+    /** Picked photos and videos left out because they are already attached (or were picked twice). */
+    val duplicates: Int = 0,
+    /** True while the picked items are compared with the ones already attached. */
+    val checking: Boolean = true,
 ) {
     val unanswered: Int get() = groups.count { it.answer == null }
     val toAdd: Int get() = groups.filter { it.answer is ImportAnswer.To }.sumOf { it.items.size }
@@ -70,14 +74,21 @@ data class ImportState(
 class MediaImportViewModel(
     private val service: ConferenceService,
 ) : ViewModel() {
-    private val picked: List<PickedMedia> = service.takeImport()
+    private var picked: List<PickedMedia> = service.takeImport()
     private var finished = false
 
-    private val _state = MutableStateFlow(build())
+    private val _state = MutableStateFlow(ImportState())
     val state: StateFlow<ImportState> = _state
 
     init {
-        readSlides()
+        viewModelScope.launch {
+            // Already attached, or picked twice: left out (and their copies deleted) before anything is asked
+            val duplicates = service.findDuplicates(picked)
+            service.discardPicked(picked.filterIndexed { i, _ -> i in duplicates })
+            picked = picked.filterIndexed { i, _ -> i !in duplicates }
+            _state.value = build().copy(duplicates = duplicates.size, checking = false)
+            readSlides()
+        }
     }
 
     /**
@@ -159,7 +170,7 @@ class MediaImportViewModel(
     /** Keeps the photos for the sessions chosen and deletes the rest. */
     fun confirm() {
         val state = _state.value
-        if (state.unanswered > 0 || state.saving) return
+        if (state.unanswered > 0 || state.saving || state.checking) return
         finished = true
         _state.update { it.copy(saving = true) }
         viewModelScope.launch {

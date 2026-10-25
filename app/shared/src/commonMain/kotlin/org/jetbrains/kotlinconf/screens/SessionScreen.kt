@@ -237,6 +237,7 @@ private fun PersonalSection(viewModel: SessionViewModel) {
     val rating by viewModel.rating.collectAsStateWithLifecycle()
     val attachments by viewModel.attachments.collectAsStateWithLifecycle()
     val addingMedia by viewModel.addingMedia.collectAsStateWithLifecycle()
+    val skippedDuplicates by viewModel.skippedDuplicates.collectAsStateWithLifecycle()
     val picker = rememberMediaPicker()
     Column(Modifier.padding(top = 24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
         RatingBlock(rating = rating, onThumb = viewModel::setThumb, onTakeaway = viewModel::setTakeaway)
@@ -246,6 +247,7 @@ private fun PersonalSection(viewModel: SessionViewModel) {
                 picker = picker,
                 attachments = attachments,
                 adding = addingMedia,
+                skippedDuplicates = skippedDuplicates,
                 pathOf = viewModel::mediaPath,
                 onLoading = viewModel::onMediaLoading,
                 onPicked = viewModel::addMedia,

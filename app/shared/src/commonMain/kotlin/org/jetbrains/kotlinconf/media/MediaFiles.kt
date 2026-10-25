@@ -24,4 +24,10 @@ interface MediaFiles {
 
     /** The size of a stored file in bytes, 0 when it is missing. */
     suspend fun size(file: String): Long
+
+    /** SHA-256 of a file at an absolute path (read in chunks, so videos are fine), or null when it cannot be read. */
+    suspend fun hashOf(path: String): String?
+
+    /** A fresh name in the folder for a file the app makes itself, e.g. a cleaned-up photo. */
+    fun newName(extension: String): String
 }

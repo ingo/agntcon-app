@@ -40,6 +40,8 @@ data class TripReportSummary(
     val items: List<TripReportItem> = emptyList(),
     /** The size of the attendee's photos and videos in the report, in bytes. */
     val mediaBytes: Long = 0,
+    /** False until the first summary is computed, so the page does not flash "nothing here yet". */
+    val loaded: Boolean = false,
 ) {
     val withSlides: Int get() = items.count { it.session.slidesUrl != null }
     val photos: Int get() = items.sumOf { it.photos }
@@ -69,6 +71,10 @@ class TripReportViewModel(
     val state: StateFlow<TripReportState> = _state
 
     private var job: Job? = null
+
+    init {
+        service.cleanUpScreenPhotos()
+    }
 
     /** Hands photos and videos picked from the library to the review screen. */
     fun startImport(picked: List<PickedMedia>) = service.startImport(picked)
@@ -103,7 +109,7 @@ class TripReportViewModel(
                 hasRating = snapshot.ratings[session.id.id]?.isEmpty == false,
             )
         }
-        return TripReportSummary(items, bytes)
+        return TripReportSummary(items, bytes, loaded = true)
     }
 }
 

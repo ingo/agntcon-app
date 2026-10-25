@@ -44,6 +44,7 @@ import org.jetbrains.kotlinconf.generated.resources.import_add
 import org.jetbrains.kotlinconf.generated.resources.import_bookmarked
 import org.jetbrains.kotlinconf.generated.resources.import_change
 import org.jetbrains.kotlinconf.generated.resources.import_dont_add
+import org.jetbrains.kotlinconf.generated.resources.import_duplicates
 import org.jetbrains.kotlinconf.generated.resources.import_intro
 import org.jetbrains.kotlinconf.generated.resources.import_items
 import org.jetbrains.kotlinconf.generated.resources.import_no_options
@@ -84,11 +85,17 @@ fun MediaImportScreen(
             modifier = Modifier.padding(vertical = 24.dp),
         ) {
             Text(stringResource(Res.string.import_intro), color = KotlinConfTheme.colors.longText)
+            if (state.duplicates > 0) {
+                Text(
+                    pluralStringResource(Res.plurals.import_duplicates, state.duplicates, state.duplicates),
+                    color = KotlinConfTheme.colors.noteText,
+                )
+            }
             state.groups.forEachIndexed { index, group ->
                 GroupCard(
                     group = group,
                     attended = state.attended,
-                    onView = { item -> picker?.open(item.path, item.kind) },
+                    onView = { item -> picker?.open(listOf(item.path), item.kind) },
                     onAnswer = { viewModel.answer(index, it) },
                     onChange = { viewModel.change(index) },
                 )
@@ -107,7 +114,7 @@ fun MediaImportScreen(
                 },
                 onClick = viewModel::confirm,
                 primary = true,
-                enabled = state.unanswered == 0 && !state.saving,
+                enabled = state.unanswered == 0 && !state.saving && !state.checking,
                 modifier = Modifier.fillMaxWidth(),
             )
         }

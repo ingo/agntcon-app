@@ -20,10 +20,25 @@ data class Attachment(
     val thumbnail: String? = null,
     /** When it was added, in milliseconds since 1970; attachments are shown and exported in this order. */
     val addedAt: Long = 0,
+    /** Where it came from (the photo library's id for the item), to recognise the same photo picked again. */
+    val sourceId: String? = null,
+    /** SHA-256 of the file as stored, to recognise the same file added again from anywhere. */
+    val contentHash: String? = null,
+    /** A photo of a screen or whiteboard, straightened and cleaned up; the original stays in [file]. */
+    val cleaned: String? = null,
+    /** True once the clean-up has looked at this photo, whether or not it found a screen to straighten. */
+    val cleanChecked: Boolean = false,
 ) {
-    /** The picture to show in a list: the video's still or the photo. */
-    val preview: String? get() = if (kind == MediaKind.VIDEO) thumbnail else file
+    /** The picture to show in a list: the video's still, or the photo (cleaned up where there is one). */
+    val preview: String? get() = if (kind == MediaKind.VIDEO) thumbnail else cleaned ?: file
+
+    /** The files to show in the viewer, best first: the cleaned-up photo, then the original. */
+    val viewFiles: List<String> get() = listOfNotNull(cleaned, file)
 }
+
+/** Replaces one attachment wherever it is, e.g. when its cleaned-up copy is ready. */
+fun Map<String, List<Attachment>>.withUpdated(attachmentId: String, transform: (Attachment) -> Attachment): Map<String, List<Attachment>> =
+    mapValues { (_, list) -> list.map { if (it.id == attachmentId) transform(it) else it } }
 
 /** Adds [added] to a session's attachments, keeping them in the order they were added. */
 fun Map<String, List<Attachment>>.withAdded(id: SessionId, added: List<Attachment>): Map<String, List<Attachment>> {

@@ -59,7 +59,17 @@ class SessionViewModel(
         .map { it[sessionId.id].orEmpty() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), service.attachments.value[sessionId.id].orEmpty())
 
+    init {
+        // Photos added before the clean-up existed get straightened in the background too
+        service.cleanUpScreenPhotos()
+    }
+
     private val _addingMedia = MutableStateFlow(false)
+
+    private val _skippedDuplicates = MutableStateFlow(0)
+
+    /** How many of the last photos added were left out because they were already attached. */
+    val skippedDuplicates: StateFlow<Int> = _skippedDuplicates
 
     /** True while picked photos or videos are being copied in. */
     val addingMedia: StateFlow<Boolean> = _addingMedia
@@ -79,7 +89,7 @@ class SessionViewModel(
         _addingMedia.value = true
         viewModelScope.launch {
             try {
-                service.addAttachments(sessionId, picked)
+                _skippedDuplicates.value = service.addAttachments(sessionId, picked)
             } finally {
                 _addingMedia.value = false
             }

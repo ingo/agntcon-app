@@ -37,6 +37,7 @@ import platform.Foundation.NSTemporaryDirectory
 import platform.Foundation.NSURL
 import platform.Foundation.NSUUID
 import platform.Foundation.writeToFile
+import platform.Photos.PHPhotoLibrary
 import platform.PhotosUI.PHPickerConfiguration
 import platform.PhotosUI.PHPickerConfigurationAssetRepresentationModeCompatible
 import platform.PhotosUI.PHPickerFilter
@@ -110,7 +111,9 @@ private class IosMediaPicker : MediaPicker {
     }
 
     override fun pickFromLibrary(onLoading: () -> Unit, onPicked: (List<PickedMedia>) -> Unit) {
-        val config = PHPickerConfiguration()
+        // Made with the library, the picker hands back each item's library id (needs no access to the library),
+        // which recognises a photo picked a second time
+        val config = PHPickerConfiguration(photoLibrary = PHPhotoLibrary.sharedPhotoLibrary())
         config.selectionLimit = 0
         config.filter = PHPickerFilter.anyFilterMatchingSubfilters(
             listOf(PHPickerFilter.imagesFilter, PHPickerFilter.videosFilter)
@@ -127,9 +130,10 @@ private class IosMediaPicker : MediaPicker {
         present(picker)
     }
 
-    override fun open(path: String, kind: MediaKind) {
+    override fun open(paths: List<String>, kind: MediaKind) {
+        if (paths.isEmpty()) return
         val controller = QLPreviewController()
-        val source = PreviewSource(PreviewItem(NSURL.fileURLWithPath(path)))
+        val source = PreviewSource(paths.map { PreviewItem(NSURL.fileURLWithPath(it)) })
         previewSource = source
         controller.dataSource = source
         present(controller)
@@ -180,8 +184,9 @@ private class LibraryDelegate(
             }
             dispatch_group_enter(group)
             // The file is only there while the handler runs: copy it right away
+            val assetId = result.assetIdentifier
             provider.loadFileRepresentationForTypeIdentifier(type) { url, _ ->
-                picked[index] = url?.let { copyPicked(it, type) }
+                picked[index] = url?.let { copyPicked(it, type) }?.withSource(assetId)
                 dispatch_group_leave(group)
             }
         }
@@ -202,14 +207,19 @@ private class LibraryDelegate(
     }
 }
 
+private fun PickedMedia.withSource(id: String?): PickedMedia =
+    PickedMedia(path, kind, extension, thumbnailPath, takenAt, sourceId = id)
+
 private class PreviewItem(private val url: NSURL) : NSObject(), QLPreviewItemProtocol {
     override fun previewItemURL(): NSURL = url
     override fun previewItemTitle(): String = ""
 }
 
-private class PreviewSource(private val item: PreviewItem) : NSObject(), QLPreviewControllerDataSourceProtocol {
-    override fun numberOfPreviewItemsInPreviewController(controller: QLPreviewController): NSInteger = 1
-    override fun previewController(controller: QLPreviewController, previewItemAtIndex: NSInteger): QLPreviewItemProtocol = item
+/** Several items: Quick Look shows the first and swipes to the others (a cleaned-up photo, then its original). */
+private class PreviewSource(private val items: List<PreviewItem>) : NSObject(), QLPreviewControllerDataSourceProtocol {
+    override fun numberOfPreviewItemsInPreviewController(controller: QLPreviewController): NSInteger = items.size.toLong()
+    override fun previewController(controller: QLPreviewController, previewItemAtIndex: NSInteger): QLPreviewItemProtocol =
+        items[previewItemAtIndex.toInt().coerceIn(0, items.lastIndex)]
 }
 
 private fun tempPath(extension: String): String =

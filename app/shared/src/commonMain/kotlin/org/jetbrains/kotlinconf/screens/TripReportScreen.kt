@@ -97,6 +97,7 @@ fun TripReportScreen(
                     onImport()
                 }
             })
+            if (!summary.loaded) return@Column
             if (summary.items.isEmpty()) {
                 Text(stringResource(Res.string.trip_report_empty), color = KotlinConfTheme.colors.noteText)
                 return@Column
