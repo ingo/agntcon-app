@@ -49,6 +49,17 @@ class OkioMediaFiles(
         }
     }
 
+    override suspend fun writeText(name: String, text: String): String? = withContext(Dispatchers.IO) {
+        try {
+            fileSystem.createDirectories(baseDir)
+            val path = resolve(name)
+            fileSystem.write(path) { writeUtf8(text) }
+            path.toString()
+        } catch (_: IOException) {
+            null
+        }
+    }
+
     override suspend fun adopt(tempPath: String, extension: String): String? = withContext(Dispatchers.IO) {
         val name = newName(extension)
         val source = tempPath.toPath()

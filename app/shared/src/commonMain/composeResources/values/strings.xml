@@ -398,4 +398,6 @@ Please try again.</string>
         <item quantity="one">Add the %1$d matched one, skip the rest</item>
         <item quantity="other">Add the %1$d matched ones, skip the rest</item>
     </plurals>
+    <string name="import_likely">Likely: ran long or started early</string>
+    <string name="trip_report_preview">Preview the report</string>
 </resources>

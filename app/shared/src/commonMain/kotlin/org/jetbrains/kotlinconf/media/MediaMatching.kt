@@ -13,8 +13,11 @@ sealed interface MediaMatch {
     /** One session fits: the one the attendee was in, or the only one running then. */
     data class Matched(val session: SessionId) : MediaMatch
 
-    /** Several sessions could be it (a clash, or parallel talks none of which is marked): the attendee picks. */
-    data class Ask(val candidates: List<SessionId>) : MediaMatch
+    /**
+     * Several sessions could be it (a clash, parallel talks none of which is marked, or a bookmarked session that ran
+     * long or started early): the attendee picks. [candidates] are in time order; [likely] is preselected.
+     */
+    data class Ask(val candidates: List<SessionId>, val likely: SessionId? = null) : MediaMatch
 
     /** Taken outside any session, in a break or the evening: the sessions just before and after are offered. */
     data class Between(val before: SessionId?, val after: SessionId?) : MediaMatch
@@ -37,31 +40,68 @@ object MediaMatcher {
     val LATE = 15.minutes
     val ALL_DAY = 3.hours
 
+    /** How far a bookmarked session may have run over, or the next one started early, and still be the likely one. */
+    val RAN_LONG = 30.minutes
+    val STARTED_EARLY = 20.minutes
+
     fun match(at: LocalDateTime?, sessions: List<SessionCardView>, attended: Set<SessionId>): MediaMatch {
         if (at == null) return MediaMatch.NoTime
         val (allDay, talks) = sessions.filterNot { it.isServiceEvent }.partition { it.endsAt - it.startsAt > ALL_DAY }
 
         fun inside(list: List<SessionCardView>) = list.filter { at >= it.startsAt && at < it.endsAt }
         fun near(list: List<SessionCardView>) = list.filter { it.startsAt - at <= EARLY && at - it.endsAt < LATE }
+        val mine = talks.filter { it.id in attended }
+        // The attendee's sessions just before and after on that day: the schedule slipping is the usual reason a
+        // photo does not fall inside one
+        val previous = mine.filter { it.startsAt.date == at.date && it.endsAt <= at }.maxByOrNull { it.endsAt }
+        val next = mine.filter { it.startsAt.date == at.date && it.startsAt > at }.minByOrNull { it.startsAt }
+
         fun oneOrAsk(list: List<SessionCardView>): MediaMatch? = when (list.size) {
             0 -> null
             1 -> MediaMatch.Matched(list.single().id)
-            else -> MediaMatch.Ask(ordered(list, attended, at))
+            // A clash: the one that started last is the talk sat down for; a true tie has no likely one
+            else -> MediaMatch.Ask(
+                timeOrder(list),
+                likely = list.maxOf { it.startsAt }.let { latest -> list.filter { it.startsAt == latest }.singleOrNull()?.id },
+            )
         }
-        fun askAll(list: List<SessionCardView>): MediaMatch? = list.takeIf { it.isNotEmpty() }?.let { MediaMatch.Ask(ordered(it, attended, at)) }
 
-        val mine = talks.filter { it.id in attended }
+        val ranLong = previous?.takeIf { at - it.endsAt <= RAN_LONG }
+        val earlyStart = next?.takeIf { it.startsAt - at <= STARTED_EARLY }
+        val drifted = listOfNotNull(ranLong, earlyStart)
+
+        // Just before or after several of the attendee's sessions: the closest one in time is likely (a talk ran long)
+        fun closestOrAsk(list: List<SessionCardView>): MediaMatch? = when (list.size) {
+            0 -> null
+            1 -> MediaMatch.Matched(list.single().id)
+            else -> {
+                val gaps = list.associateWith { gap(at, it).coerceAtLeast(kotlin.time.Duration.ZERO) }
+                val closest = gaps.values.min()
+                MediaMatch.Ask(timeOrder(list), likely = gaps.filterValues { it == closest }.keys.singleOrNull()?.id)
+            }
+        }
+
         return oneOrAsk(inside(mine))
-            ?: oneOrAsk(near(mine))
+            ?: closestOrAsk(near(mine))
+            // Just outside a bookmarked session: it ran long or the next started early. Offer them, the closer one
+            // preselected, next to whatever else was running then
+            ?: drifted.takeIf { it.isNotEmpty() }?.let { near ->
+                val likely = near.minByOrNull { gap(at, it) }!!
+                MediaMatch.Ask(timeOrder(near + inside(talks)), likely = likely.id)
+            }
             // Nothing marked: the only talk running then (a keynote) is a safe guess, parallel talks are not
             ?: inside(talks).singleOrNull()?.let { MediaMatch.Matched(it.id) }
-            ?: askAll(inside(talks))
-            ?: askAll(near(talks))
+            ?: inside(talks).takeIf { it.isNotEmpty() }?.let { MediaMatch.Ask(timeOrder(it + listOfNotNull(previous, next))) }
+            ?: near(talks).takeIf { it.isNotEmpty() }?.let { MediaMatch.Ask(timeOrder(it + listOfNotNull(previous, next))) }
             ?: oneOrAsk(inside(allDay.filter { it.id in attended }))
             ?: between(at, talks, attended)
     }
 
-    private fun between(at: LocalDateTime, talks: List<SessionCardView>, attended: Set<SessionId>): MediaMatch {
+    /** Minutes between a photo and a session it is not inside. */
+    private fun gap(at: LocalDateTime, session: SessionCardView) =
+        if (at < session.startsAt) session.startsAt - at else at - session.endsAt
+
+    private fun between(at: LocalDateTime, talks: List<SessionCardView>, attended: Set<SessionId>): MediaMatch.Between {
         val sameDay = talks.filter { it.startsAt.date == at.date }
         val pool = sameDay.filter { it.id in attended }.ifEmpty { sameDay }
         val before = pool.filter { it.endsAt <= at }.maxByOrNull { it.endsAt }
@@ -69,9 +109,9 @@ object MediaMatcher {
         return MediaMatch.Between(before?.id, after?.id)
     }
 
-    /** Marked sessions first, then the one that started most recently before the photo (the talk you sat down for). */
-    private fun ordered(list: List<SessionCardView>, attended: Set<SessionId>, at: LocalDateTime): List<SessionId> =
-        list.sortedWith(compareBy({ it.id !in attended }, { (at - it.startsAt).absoluteValue }, { it.title.lowercase() })).map { it.id }
+    /** In the order they happened, so the list reads like the schedule. */
+    private fun timeOrder(list: List<SessionCardView>): List<SessionId> =
+        list.distinctBy { it.id }.sortedWith(compareBy({ it.startsAt }, { it.endsAt }, { it.title.lowercase() })).map { it.id }
 }
 
 /** Photos and videos with the same answer to give, shown together: one question per group, not per photo. */
@@ -79,12 +119,10 @@ data class MediaGroup(val match: MediaMatch, val items: List<Int>)
 
 /**
  * Groups the items (by index) that share a match: all photos from one session, or all taken in the same
- * ambiguous slot. Questions come first, in the order the photos were taken; then the matched sessions.
+ * ambiguous slot. Everything in the order the photos were taken, like the day itself; undated photos last.
  */
 fun groupMatches(matches: List<MediaMatch>, times: List<LocalDateTime?>): List<MediaGroup> {
     val groups = matches.indices.groupBy { matches[it] }.map { (match, items) -> MediaGroup(match, items) }
     fun firstTime(group: MediaGroup) = group.items.mapNotNull { times[it] }.minOrNull()
-    val (questions, matched) = groups.partition { it.match.needsAnswer }
-    return questions.sortedWith(compareBy(nullsLast()) { firstTime(it) }) +
-        matched.sortedWith(compareBy(nullsLast()) { firstTime(it) })
+    return groups.sortedWith(compareBy(nullsLast()) { firstTime(it) })
 }

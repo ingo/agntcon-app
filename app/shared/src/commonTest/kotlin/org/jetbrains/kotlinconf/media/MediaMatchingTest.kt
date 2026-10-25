@@ -59,6 +59,7 @@ class MediaMatchingTest {
 
     @Test
     fun aClashBetweenTwoMarkedSessionsAsksBetweenThoseTwo() {
+        // Both started at 10:00: no likely one
         assertEquals(MediaMatch.Ask(listOf(SessionId("a"), SessionId("cc"))), match("10:12", attended = setOf("cc", "a")))
     }
 
@@ -78,8 +79,29 @@ class MediaMatchingTest {
     }
 
     @Test
-    fun breaksAreNeverOfferedAndTimeBetweenSessionsAsksAboutTheNeighbours() {
-        assertEquals(MediaMatch.Between(SessionId("k"), SessionId("b")), match("09:50", attended = setOf("k", "b")))
+    fun aBookmarkedSessionThatRanLongOrStartedEarlyIsTheLikelyOne() {
+        // 09:50: the keynote ended 20 minutes ago, the bookmarked talk starts in 10. The closer one is preselected
+        assertEquals(MediaMatch.Ask(listOf(SessionId("k"), SessionId("b")), likely = SessionId("b")), match("09:50", attended = setOf("k", "b")))
+        // 10:50: 20 minutes after the bookmarked talk ended, it ran long
+        assertEquals(MediaMatch.Ask(listOf(SessionId("a")), likely = SessionId("a")), match("10:50", attended = setOf("a")))
+        // 13:45: a quarter of an hour before the bookmarked afternoon talk, it started early
+        assertEquals(MediaMatch.Ask(listOf(SessionId("p")), likely = SessionId("p")), match("13:45", attended = setOf("p")))
+    }
+
+    @Test
+    fun justAfterOneBookmarkedTalkAndJustBeforeTheNextTheOneThatJustEndedIsLikely() {
+        val first = session("f", "09:20", "09:25", room = "Ballroom")
+        val second = session("s", "09:30", "09:40", room = "Ballroom")
+        // 09:26: one minute after the first ended, four before the second starts: it ran long
+        assertEquals(
+            MediaMatch.Ask(listOf(SessionId("f"), SessionId("s")), likely = SessionId("f")),
+            MediaMatcher.match(at("09:26"), listOf(first, second), setOf(SessionId("f"), SessionId("s"))),
+        )
+    }
+
+    @Test
+    fun breaksAreNeverOfferedAndTimeFarFromSessionsAsksAboutTheNeighbours() {
+        assertEquals(MediaMatch.Between(SessionId("b"), null), match("12:00", attended = setOf("k", "b")))
         // Nothing marked: the neighbours among all talks that day
         assertEquals(MediaMatch.Between(SessionId("a"), SessionId("p")), match("12:00"))
     }
@@ -95,10 +117,10 @@ class MediaMatchingTest {
     }
 
     @Test
-    fun choicesStartWithTheTalkThatStartedLast() {
+    fun choicesAreInTimeOrder() {
         val early = session("e", "09:45", "10:45", room = "Hall E")
-        val sessions = listOf(early, trackA)
-        assertEquals(MediaMatch.Ask(listOf(SessionId("a"), SessionId("e"))), MediaMatcher.match(at("10:10"), sessions, emptySet()))
+        val sessions = listOf(trackA, early)
+        assertEquals(MediaMatch.Ask(listOf(SessionId("e"), SessionId("a"))), MediaMatcher.match(at("10:10"), sessions, emptySet()))
     }
 
     @Test
@@ -107,17 +129,17 @@ class MediaMatchingTest {
     }
 
     @Test
-    fun photosWithTheSameAnswerAreOneQuestionAndQuestionsComeFirst() {
+    fun photosWithTheSameAnswerAreOneGroupInTheOrderTheyWereTaken() {
         val times = listOf(at("14:10"), at("10:12"), at("10:20"), null, at("09:05"))
         val matches = times.map { MediaMatcher.match(it, all, emptySet()) }
         val groups = groupMatches(matches, times)
 
         assertEquals(
             listOf(
-                MediaGroup(MediaMatch.Ask(listOf(SessionId("a"), SessionId("b"), SessionId("cc"))), listOf(1, 2)),
-                MediaGroup(MediaMatch.NoTime, listOf(3)),
                 MediaGroup(MediaMatch.Matched(SessionId("k")), listOf(4)),
+                MediaGroup(MediaMatch.Ask(listOf(SessionId("a"), SessionId("b"), SessionId("cc"))), listOf(1, 2)),
                 MediaGroup(MediaMatch.Matched(SessionId("p")), listOf(0)),
+                MediaGroup(MediaMatch.NoTime, listOf(3)),
             ),
             groups,
         )

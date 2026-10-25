@@ -47,6 +47,8 @@ data class ImportGroup(
     val suggested: SessionId? = null,
     /** A photo the attendee took out of the group it was matched to, to add somewhere else or not at all. */
     val movedOut: Boolean = false,
+    /** The session preselected because it is the likely one (a bookmarked session that ran long or started early). */
+    val likely: SessionId? = null,
 ) {
     val kept: List<PickedMedia> get() = items
 
@@ -136,6 +138,7 @@ class MediaImportViewModel(
         val times = picked.map { it.takenAt?.inZone(ActiveEvent.timeZone) }
         val matches = times.map { MediaMatcher.match(it, sessions, attended) }
         val attendedByTime = sessions.filter { it.id in attended && !it.isServiceEvent }.sortedBy { it.startsAt }
+        fun byTime(list: List<SessionCardView>) = list.distinctBy { it.id }.sortedWith(compareBy({ it.startsAt }, { it.endsAt }, { it.title.lowercase() }))
 
         val groups = groupMatches(matches, times).map { group: MediaGroup ->
             val groupTimes = group.items.mapNotNull { times[it] }
@@ -144,17 +147,20 @@ class MediaImportViewModel(
             val options = when (val match = group.match) {
                 is MediaMatch.Matched -> around(from, sessions, attended, byId[match.session])
                 is MediaMatch.Ask -> match.candidates.mapNotNull { byId[it] }
-                is MediaMatch.Between -> listOfNotNull(match.before, match.after).mapNotNull { byId[it] }
+                is MediaMatch.Between -> byTime(listOfNotNull(match.before, match.after).mapNotNull { byId[it] })
                     .ifEmpty { attendedByTime }
                 MediaMatch.NoTime -> attendedByTime
             }
+            val likely = (group.match as? MediaMatch.Ask)?.likely
             ImportGroup(
                 match = group.match,
                 items = group.items.map { picked[it] },
                 from = from,
                 to = to,
                 options = options,
-                answer = (group.match as? MediaMatch.Matched)?.let { ImportAnswer.To(it.session) },
+                answer = (group.match as? MediaMatch.Matched)?.let { ImportAnswer.To(it.session) }
+                    ?: likely?.let { ImportAnswer.To(it) },
+                likely = likely,
             )
         }
         return ImportState(groups = groups, attended = attended)
@@ -165,8 +171,8 @@ class MediaImportViewModel(
         val talks = sessions.filterNot { it.isServiceEvent }
         val nearby = if (at == null) emptyList() else talks.filter { it.startsAt - at <= 30.minutes && at - it.endsAt < 30.minutes }
         val sameDay = if (at == null) emptyList() else talks.filter { it.id in attended && it.startsAt.date == at.date }
-        return (listOfNotNull(matched) + nearby.sortedBy { it.id !in attended } + sameDay.sortedBy { it.startsAt })
-            .distinctBy { it.id }
+        return (listOfNotNull(matched) + nearby + sameDay).distinctBy { it.id }
+            .sortedWith(compareBy({ it.startsAt }, { it.endsAt }, { it.title.lowercase() }))
     }
 
     fun answer(index: Int, answer: ImportAnswer) = _state.update { state ->
@@ -198,7 +204,7 @@ class MediaImportViewModel(
         val groups = state.groups.mapIndexedNotNull { i, g ->
             if (i != groupIndex) g else if (rest.isEmpty()) null else g.copy(items = rest)
         }
-        state.copy(groups = groups + moved)
+        state.copy(groups = (groups + moved).sortedWith(compareBy(nullsLast()) { it.from }))
     }
 
     fun change(index: Int) = _state.update { state ->

@@ -7,6 +7,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import org.jetbrains.kotlinconf.personal.MediaKind
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -37,6 +40,7 @@ import org.jetbrains.kotlinconf.generated.resources.photo_library_24
 import org.jetbrains.kotlinconf.generated.resources.trip_report_add_photos
 import org.jetbrains.kotlinconf.generated.resources.trip_report_add_photos_hint
 import org.jetbrains.kotlinconf.generated.resources.trip_report_download
+import org.jetbrains.kotlinconf.generated.resources.trip_report_preview
 import org.jetbrains.kotlinconf.generated.resources.trip_report_scan_progress
 import org.jetbrains.kotlinconf.generated.resources.trip_report_scan_none
 import org.jetbrains.kotlinconf.generated.resources.trip_report_scan_hint
@@ -116,6 +120,17 @@ fun TripReportScreen(
                 style = KotlinConfTheme.typography.h3,
             )
 
+            val picker = rememberMediaPicker()
+            if (picker != null && viewModel.canDownload) {
+                val scope = rememberCoroutineScope()
+                Button(
+                    stringResource(Res.string.trip_report_preview),
+                    onClick = {
+                        scope.launch { viewModel.previewPath(event, labels)?.let { picker.open(listOf(it), MediaKind.PHOTO) } }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
             if (viewModel.canDownload) {
                 val working = state is TripReportState.Working
                 Button(

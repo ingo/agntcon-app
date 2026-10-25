@@ -15,5 +15,6 @@ class NoMediaFiles : MediaFiles {
     override suspend fun discard(tempPath: String) {}
     override suspend fun size(file: String): Long = 0L
     override suspend fun hashOf(path: String): String? = null
+    override suspend fun writeText(name: String, text: String): String? = null
     override fun newName(extension: String): String = "none.$extension"
 }

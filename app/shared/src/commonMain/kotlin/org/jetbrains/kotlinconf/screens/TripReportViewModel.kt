@@ -27,6 +27,8 @@ import kotlinx.datetime.toInstant
 import org.jetbrains.kotlinconf.event.ActiveEvent
 import org.jetbrains.kotlinconf.isServiceEvent
 import org.jetbrains.kotlinconf.media.MediaMatcher
+import org.jetbrains.kotlinconf.export.ReportMedia
+import org.jetbrains.kotlinconf.export.tripReportHtml
 import org.jetbrains.kotlinconf.media.PickedMedia
 import org.jetbrains.kotlinconf.minus
 import kotlin.time.Instant
@@ -80,6 +82,27 @@ class TripReportViewModel(
 
     init {
         service.cleanUpScreenPhotos()
+    }
+
+    /**
+     * The report as the web page in the zip, written next to the photos so it shows them, to look at before
+     * downloading. Photos show their small previews and link to the full photo; slides link to Sessionize.
+     */
+    suspend fun previewPath(event: ExportEvent, labels: ExportLabels): String? {
+        val media = service.mediaFiles?.takeIf { it.isSupported } ?: return null
+        val snap = service.exportSnapshot()
+        val sessions = sessionsForTripReport(snap.sessions, snap.notes, snap.ratings, snap.attachments)
+        val html = tripReportHtml(
+            sessions, snap.speakers, snap.notes, snap.ratings, snap.met, event, labels,
+            media = { s ->
+                snap.attachments[s.id.id].orEmpty().sortedBy { it.addedAt }.map { a ->
+                    val full = a.cleaned ?: a.file
+                    if (a.kind == MediaKind.PHOTO) ReportMedia(a.kind, a.thumbnail ?: full, original = full)
+                    else ReportMedia(a.kind, a.file)
+                }
+            },
+        )
+        return media.writeText(PREVIEW_FILE, html)
     }
 
     /** Hands photos and videos picked from the library to the review screen. */
@@ -142,6 +165,8 @@ class TripReportViewModel(
         return TripReportSummary(items, bytes, loaded = true)
     }
 }
+
+private const val PREVIEW_FILE = "report-preview.html"
 
 /** A file size for people: "840 KB", "3.2 MB", "120 MB", "1.4 GB". */
 fun formatBytes(bytes: Long): String {

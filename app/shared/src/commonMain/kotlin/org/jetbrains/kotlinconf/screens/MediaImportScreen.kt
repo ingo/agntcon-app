@@ -28,6 +28,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
@@ -52,6 +53,7 @@ import org.jetbrains.kotlinconf.generated.resources.media_unreadable
 import org.jetbrains.kotlinconf.generated.resources.import_intro
 import org.jetbrains.kotlinconf.generated.resources.import_items
 import org.jetbrains.kotlinconf.generated.resources.import_leave_out
+import org.jetbrains.kotlinconf.generated.resources.import_likely
 import org.jetbrains.kotlinconf.generated.resources.import_no_options
 import org.jetbrains.kotlinconf.generated.resources.import_not_added
 import org.jetbrains.kotlinconf.generated.resources.import_nothing_to_add
@@ -193,9 +195,11 @@ private fun GroupCard(
             group.options.forEach { session ->
                 OptionRow(
                     title = session.title,
+                    bold = session.id in attended,
                     detail = listOfNotNull(
                         sessionDetail(session, session.id in attended),
                         if (session.id == group.suggested) stringResource(Res.string.import_slide_matches) else null,
+                        if (session.id == group.likely && session.id != group.suggested) stringResource(Res.string.import_likely) else null,
                     ).joinToString(" · "),
                     selected = group.answer == ImportAnswer.To(session.id),
                     onClick = { onAnswer(ImportAnswer.To(session.id)) },
@@ -203,6 +207,7 @@ private fun GroupCard(
             }
             OptionRow(
                 title = stringResource(if (group.movedOut) Res.string.import_dont_add_it else Res.string.import_dont_add),
+                bold = false,
                 detail = null,
                 selected = group.answer == ImportAnswer.Skip,
                 onClick = { onAnswer(ImportAnswer.Skip) },
@@ -212,7 +217,10 @@ private fun GroupCard(
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     val session = group.matchedSession
                     if (session != null) {
-                        Text(session.title, style = KotlinConfTheme.typography.text1)
+                        Text(
+                            session.title,
+                            style = if (session.id in attended) KotlinConfTheme.typography.text1.copy(fontWeight = FontWeight.Bold) else KotlinConfTheme.typography.text1,
+                        )
                         Text(sessionDetail(session, session.id in attended), style = KotlinConfTheme.typography.text2, color = KotlinConfTheme.colors.noteText)
                     } else {
                         Text(stringResource(Res.string.import_not_added), style = KotlinConfTheme.typography.text1)
@@ -283,7 +291,7 @@ private fun Thumbnails(items: List<PickedMedia>, canTakeOut: Boolean, onView: (P
 }
 
 @Composable
-private fun OptionRow(title: String, detail: String?, selected: Boolean, onClick: () -> Unit) {
+private fun OptionRow(title: String, bold: Boolean, detail: String?, selected: Boolean, onClick: () -> Unit) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -304,7 +312,11 @@ private fun OptionRow(title: String, detail: String?, selected: Boolean, onClick
                 .background(if (selected) KotlinConfTheme.colors.primaryBackground else Color.Transparent),
         )
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(title, style = KotlinConfTheme.typography.text1)
+            // The attendee's own sessions stand out: most likely the right answer
+            Text(
+                title,
+                style = if (bold) KotlinConfTheme.typography.text1.copy(fontWeight = FontWeight.Bold) else KotlinConfTheme.typography.text1,
+            )
             if (detail != null) Text(detail, style = KotlinConfTheme.typography.text2, color = KotlinConfTheme.colors.noteText)
         }
     }

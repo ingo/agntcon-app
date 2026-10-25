@@ -398,4 +398,6 @@ Bitte versuchen Sie es erneut.</string>
         <item quantity="one">Das %1$d zugeordnete hinzufügen, Rest weglassen</item>
         <item quantity="other">Die %1$d zugeordneten hinzufügen, Rest weglassen</item>
     </plurals>
+    <string name="import_likely">Wahrscheinlich: überzogen oder früher begonnen</string>
+    <string name="trip_report_preview">Bericht ansehen</string>
 </resources>

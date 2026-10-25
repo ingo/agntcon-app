@@ -28,6 +28,9 @@ interface MediaFiles {
     /** SHA-256 of a file at an absolute path (read in chunks, so videos are fine), or null when it cannot be read. */
     suspend fun hashOf(path: String): String?
 
+    /** Writes a text file into the folder (e.g. the report preview, next to the photos it shows); its path, or null. */
+    suspend fun writeText(name: String, text: String): String?
+
     /** A fresh name in the folder for a file the app makes itself, e.g. a cleaned-up photo. */
     fun newName(extension: String): String
 }
