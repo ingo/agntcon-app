@@ -7,7 +7,6 @@ import com.russhwolf.settings.set
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.jetbrains.kotlinconf.SessionId
-import org.jetbrains.kotlinconf.storage.AssetStorage
 import org.jetbrains.kotlinconf.storage.YearlyStorageImpl
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -17,10 +16,6 @@ import kotlin.test.assertNull
 @OptIn(ExperimentalSettingsApi::class)
 class AttachmentsTest {
     private val settings = MapSettings().makeObservable()
-    private val noAssets = object : AssetStorage {
-        override suspend fun read(key: String): String? = null
-        override suspend fun write(key: String, content: String) {}
-    }
 
     private fun photo(id: String, at: Long) = Attachment(id, MediaKind.PHOTO, "$id.jpg", addedAt = at)
     private fun video(id: String, at: Long) = Attachment(id, MediaKind.VIDEO, "$id.mov", thumbnail = "$id-still.jpg", addedAt = at)
@@ -63,17 +58,17 @@ class AttachmentsTest {
 
     @Test
     fun attachmentsAreStoredPerEventYear() = runTest {
-        val storage2026 = YearlyStorageImpl(2026, settings, noAssets)
+        val storage2026 = YearlyStorageImpl(2026, settings)
         storage2026.setAttachments(emptyMap<String, List<Attachment>>().withAdded(SessionId("s1"), listOf(video("v", 5))))
 
-        assertEquals(listOf(video("v", 5)), YearlyStorageImpl(2026, settings, noAssets).getAttachments().first()["s1"])
-        assertEquals(emptyMap(), YearlyStorageImpl(2025, settings, noAssets).getAttachments().first())
+        assertEquals(listOf(video("v", 5)), YearlyStorageImpl(2026, settings).getAttachments().first()["s1"])
+        assertEquals(emptyMap(), YearlyStorageImpl(2025, settings).getAttachments().first())
     }
 
     @Test
     fun unreadableAttachmentsReadAsNone() = runTest {
         settings["2026_attachments"] = "{broken"
 
-        assertEquals(emptyMap(), YearlyStorageImpl(2026, settings, noAssets).getAttachments().first())
+        assertEquals(emptyMap(), YearlyStorageImpl(2026, settings).getAttachments().first())
     }
 }

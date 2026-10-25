@@ -37,7 +37,7 @@ class TripReportBundleTest {
         endsAt = LocalDateTime.parse("${day}T$start").let { LocalDateTime(it.date, kotlinx.datetime.LocalTime(it.hour, 59)) },
         slidesUrl = slides,
         videoUrl = recording,
-    ).asSessionCard(emptyMap(), LocalDateTime(2026, 10, 1, 0, 0), if (favorite) setOf(SessionId(id)) else emptySet(), null)
+    ).asSessionCard(emptyMap(), LocalDateTime(2026, 10, 1, 0, 0), if (favorite) setOf(SessionId(id)) else emptySet())
 
     private val keynote = card("1", "Opening Keynote: Agents & MCP!", "09:00", slides = "https://sessionize.com/download/x~a.pdf~keynote.pdf")
     private val workshop = card("2", "Hands-on A2A", "14:20", slides = "https://sessionize.com/download/y~b.pptx~deck.pptx")

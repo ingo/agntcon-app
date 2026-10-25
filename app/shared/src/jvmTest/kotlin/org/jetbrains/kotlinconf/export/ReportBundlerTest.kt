@@ -45,7 +45,7 @@ class ReportBundlerTest {
         startsAt = LocalDateTime(2026, 10, 22, hour, 0),
         endsAt = LocalDateTime(2026, 10, 22, hour, 45),
         slidesUrl = slides,
-    ).asSessionCard(emptyMap(), LocalDateTime(2026, 10, 1, 0, 0), setOf(SessionId(id)), null)
+    ).asSessionCard(emptyMap(), LocalDateTime(2026, 10, 1, 0, 0), setOf(SessionId(id)))
 
     private fun mediaFile(name: String, bytes: ByteArray): String {
         File(mediaDir, name).writeBytes(bytes)
