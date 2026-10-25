@@ -28,7 +28,7 @@ jobs:
         run: |
           umask 077
           printf '%s' "$ASC_KEY_P8" > "$RUNNER_TEMP/AuthKey.p8"
-          ASC_KEY_PATH="$RUNNER_TEMP/AuthKey.p8" scripts/fetch-testflight-feedback.rb com.muschenetz.agntcon build/feedback.json
+          ASC_KEY_PATH="$RUNNER_TEMP/AuthKey.p8" bundle exec scripts/fetch-testflight-feedback.rb com.muschenetz.agntcon build/feedback.json
           rm -f "$RUNNER_TEMP/AuthKey.p8"
       - name: File issues for new items
         env:
