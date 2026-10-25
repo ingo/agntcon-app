@@ -9,6 +9,7 @@ import java.awt.Frame
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
+import kotlin.time.Instant
 
 @Composable
 actual fun rememberMediaPicker(): MediaPicker? = remember { DesktopMediaPicker }
@@ -41,7 +42,9 @@ private object DesktopMediaPicker : MediaPicker {
             }
             val copy = Files.createTempFile("media", ".$extension")
             Files.copy(file.toPath(), copy, StandardCopyOption.REPLACE_EXISTING)
-            PickedMedia(copy.toString(), kind, extension)
+            // The desktop reads no EXIF; the file's date is the best guess of when it was taken
+            val takenAt = file.lastModified().takeIf { it > 0 }?.let { MediaTime.of(Instant.fromEpochMilliseconds(it)) }
+            PickedMedia(copy.toString(), kind, extension, takenAt = takenAt)
         })
     }
 

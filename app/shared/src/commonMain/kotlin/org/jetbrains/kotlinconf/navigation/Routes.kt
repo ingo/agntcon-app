@@ -67,6 +67,10 @@ data object MyScheduleScreen : AppRoute, TopLevelRoute
 data object TripReportScreen : AppRoute
 
 @Serializable
+@SerialName("MediaImport")
+data object MediaImportScreen : AppRoute
+
+@Serializable
 @SerialName("SessionizeSync")
 data object SessionizeSyncScreen : AppRoute
 

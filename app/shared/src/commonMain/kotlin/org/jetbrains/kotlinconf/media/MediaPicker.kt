@@ -12,6 +12,8 @@ class PickedMedia(
     val kind: MediaKind,
     val extension: String,
     val thumbnailPath: String? = null,
+    /** When it was taken, if the file says so; used to match photos from the library to sessions. */
+    val takenAt: MediaTime? = null,
 )
 
 /**

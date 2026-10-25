@@ -10,11 +10,29 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.useContents
 import org.jetbrains.kotlinconf.personal.MediaKind
 import platform.AVFoundation.AVAssetImageGenerator
+import platform.AVFoundation.AVMetadataCommonKeyCreationDate
+import platform.AVFoundation.AVMetadataItem
 import platform.AVFoundation.AVURLAsset
+import platform.AVFoundation.commonKey
+import platform.AVFoundation.availableMetadataFormats
+import platform.AVFoundation.commonMetadata
+import platform.AVFoundation.metadataForFormat
+import platform.AVFoundation.dateValue
+import platform.AVFoundation.stringValue
+import platform.CoreFoundation.CFRelease
+import platform.CoreFoundation.CFURLRef
+import platform.Foundation.CFBridgingRelease
+import platform.Foundation.CFBridgingRetain
+import platform.Foundation.timeIntervalSince1970
+import platform.ImageIO.CGImageSourceCopyPropertiesAtIndex
+import platform.ImageIO.CGImageSourceCreateWithURL
+import kotlin.time.Instant
 import platform.CoreGraphics.CGRectMake
 import platform.CoreGraphics.CGSizeMake
 import platform.CoreMedia.CMTimeMakeWithSeconds
+import platform.Foundation.NSDate
 import platform.Foundation.NSFileManager
+import platform.Foundation.NSFileModificationDate
 import platform.Foundation.NSTemporaryDirectory
 import platform.Foundation.NSURL
 import platform.Foundation.NSUUID
@@ -175,9 +193,12 @@ private class LibraryDelegate(
     private fun copyPicked(url: NSURL, type: String): PickedMedia? = when (type) {
         TYPE_MOVIE -> copyVideo(url)
         TYPE_JPEG, TYPE_PNG -> copyFile(url, url.pathExtension?.ifEmpty { null } ?: if (type == TYPE_PNG) "png" else "jpg")
-            ?.let { PickedMedia(it, MediaKind.PHOTO, it.substringAfterLast('.')) }
-        // Another image format (rare once HEIC is converted): re-encode it as JPEG
-        else -> url.path?.let { UIImage.imageWithContentsOfFile(it) }?.let { saveJpeg(it) }
+            ?.let { PickedMedia(it, MediaKind.PHOTO, it.substringAfterLast('.'), takenAt = photoTime(it)) }
+        // Another image format (rare once HEIC is converted): re-encode it as JPEG, keeping when it was taken
+        else -> url.path?.let { path ->
+            val takenAt = photoTime(path)
+            UIImage.imageWithContentsOfFile(path)?.let { saveJpeg(it) }?.let { PickedMedia(it.path, it.kind, it.extension, takenAt = takenAt) }
+        }
     }
 }
 
@@ -203,7 +224,52 @@ private fun copyFile(url: NSURL, extension: String): String? {
 private fun copyVideo(url: NSURL): PickedMedia? {
     val extension = url.pathExtension?.ifEmpty { null } ?: "mov"
     val path = copyFile(url, extension) ?: return null
-    return PickedMedia(path, MediaKind.VIDEO, extension.lowercase(), thumbnailPath = videoStill(path))
+    return PickedMedia(path, MediaKind.VIDEO, extension.lowercase(), thumbnailPath = videoStill(path), takenAt = videoTime(path))
+}
+
+/** When a photo was taken, from its EXIF date and time zone offset (a screenshot has them too). */
+private fun photoTime(path: String): MediaTime? {
+    val url = CFBridgingRetain(NSURL.fileURLWithPath(path)) as CFURLRef? ?: return null
+    val source = CGImageSourceCreateWithURL(url, null)
+    CFRelease(url)
+    source ?: return null
+    @Suppress("UNCHECKED_CAST")
+    val properties = CFBridgingRelease(CGImageSourceCopyPropertiesAtIndex(source, 0u, null)) as? Map<Any?, *>
+    CFRelease(source)
+    val exif = properties?.get("{Exif}") as? Map<*, *>
+    val tiff = properties?.get("{TIFF}") as? Map<*, *>
+    return MediaTime.fromExif(
+        dateTime = exif?.get("DateTimeOriginal") as? String ?: tiff?.get("DateTime") as? String,
+        offset = exif?.get("OffsetTimeOriginal") as? String ?: exif?.get("OffsetTime") as? String,
+    ) ?: fileTime(path)
+}
+
+/**
+ * The file's date. The photo picker sets it to when the Photos library says the item was taken, so it stands in
+ * for files that carry no date of their own (screenshots without EXIF, videos from other apps).
+ */
+private fun fileTime(path: String): MediaTime? {
+    val date = NSFileManager.defaultManager.attributesOfItemAtPath(path, error = null)?.get(NSFileModificationDate) as? NSDate
+        ?: return null
+    return MediaTime.of(Instant.fromEpochMilliseconds((date.timeIntervalSince1970 * 1000).toLong()))
+}
+
+/** When a video was recorded: its creation date, an exact moment. */
+private fun videoTime(path: String): MediaTime? {
+    val asset = AVURLAsset(uRL = NSURL.fileURLWithPath(path), options = null)
+    val common = asset.commonMetadata.filterIsInstance<AVMetadataItem>().filter { it.commonKey == AVMetadataCommonKeyCreationDate }
+    // Other writers put the date under their own keys; any item whose value is a date will do
+    val all = asset.availableMetadataFormats.flatMap { format -> asset.metadataForFormat(format as String).filterIsInstance<AVMetadataItem>() }
+    for (item in common + all) {
+        item.dateValue?.let { return MediaTime.of(Instant.fromEpochMilliseconds((it.timeIntervalSince1970 * 1000).toLong())) }
+        // As ISO 8601 text, often with the offset written as "-0700"
+        val text = item.stringValue?.trim() ?: continue
+        if (!Regex("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}").containsMatchIn(text)) continue
+        runCatching { Instant.parse(text.replace(Regex("([+-]\\d{2})(\\d{2})$"), "$1:$2")) }.getOrNull()
+            ?.takeIf { it.toEpochMilliseconds() > 946_684_800_000 }
+            ?.let { return MediaTime.of(it) }
+    }
+    return fileTime(path)
 }
 
 /** A camera photo drawn upright, so viewers that ignore the orientation flag show it the right way up. */

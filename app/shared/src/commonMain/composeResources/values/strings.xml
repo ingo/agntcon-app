@@ -347,4 +347,30 @@ Please try again.</string>
     <string name="export_video">Video</string>
     <string name="now_trip_report_title">Your trip report</string>
     <string name="now_trip_report_text">The sessions you went to, your notes, the slides and your photos and videos, in one zip to send to yourself.</string>
+    <string name="trip_report_add_photos">Add photos from the event</string>
+    <string name="trip_report_add_photos_hint">Pick photos and videos from the conference. Each one goes to the session it was taken in; you confirm before anything is added.</string>
+    <string name="trip_report_reading_photos">Reading photos…</string>
+    <string name="import_title">Add photos</string>
+    <string name="import_intro">Matched to sessions by the time they were taken. Check them, answer where it is not clear, then add.</string>
+    <string name="import_question_ask">Which session were you in?</string>
+    <string name="import_question_between">Taken between sessions. Add them to:</string>
+    <string name="import_question_no_time">These have no date. Add them to:</string>
+    <string name="import_no_options">There is no session to suggest.</string>
+    <string name="import_dont_add">Don't add these</string>
+    <string name="import_not_added">Not added</string>
+    <string name="import_change">Change</string>
+    <string name="import_bookmarked">Bookmarked</string>
+    <string name="import_nothing_to_add">Nothing to add</string>
+    <plurals name="import_items">
+        <item quantity="one">%1$d photo or video</item>
+        <item quantity="other">%1$d photos and videos</item>
+    </plurals>
+    <plurals name="import_add">
+        <item quantity="one">Add %1$d photo or video</item>
+        <item quantity="other">Add %1$d photos and videos</item>
+    </plurals>
+    <plurals name="import_answer_first">
+        <item quantity="one">Answer the question above first</item>
+        <item quantity="other">Answer the %1$d questions above first</item>
+    </plurals>
 </resources>

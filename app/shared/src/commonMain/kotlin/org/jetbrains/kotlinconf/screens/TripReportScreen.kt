@@ -7,6 +7,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
@@ -25,9 +28,15 @@ import org.jetbrains.kotlinconf.export.ReportProgress
 import org.jetbrains.kotlinconf.export.ReportResult
 import org.jetbrains.kotlinconf.export.rememberExportLabels
 import org.jetbrains.kotlinconf.export.rememberExporter
+import org.jetbrains.kotlinconf.media.PickedMedia
+import org.jetbrains.kotlinconf.media.rememberMediaPicker
 import org.jetbrains.kotlinconf.generated.resources.Res
 import org.jetbrains.kotlinconf.generated.resources.my_schedule_trip_report
+import org.jetbrains.kotlinconf.generated.resources.photo_library_24
+import org.jetbrains.kotlinconf.generated.resources.trip_report_add_photos
+import org.jetbrains.kotlinconf.generated.resources.trip_report_add_photos_hint
 import org.jetbrains.kotlinconf.generated.resources.trip_report_download
+import org.jetbrains.kotlinconf.generated.resources.trip_report_reading_photos
 import org.jetbrains.kotlinconf.generated.resources.trip_report_download_hint
 import org.jetbrains.kotlinconf.generated.resources.trip_report_download_size
 import org.jetbrains.kotlinconf.generated.resources.trip_report_downloading_slides
@@ -50,6 +59,7 @@ import org.jetbrains.kotlinconf.generated.resources.trip_report_videos
 import org.jetbrains.kotlinconf.generated.resources.trip_report_with_slides
 import org.jetbrains.kotlinconf.generated.resources.export_slides
 import org.jetbrains.kotlinconf.ui.components.Button
+import org.jetbrains.kotlinconf.ui.components.PageMenuItem
 import org.jetbrains.kotlinconf.ui.components.Text
 import org.jetbrains.kotlinconf.ui.theme.KotlinConfTheme
 import org.jetbrains.kotlinconf.utils.DateTimeFormatting
@@ -64,6 +74,7 @@ private const val ZIP_MIME_TYPE = "application/zip"
 fun TripReportScreen(
     onBack: () -> Unit,
     onSession: (SessionId) -> Unit,
+    onImport: () -> Unit,
     viewModel: TripReportViewModel = metroViewModel(),
 ) {
     val summary by viewModel.summary.collectAsStateWithLifecycle()
@@ -80,6 +91,12 @@ fun TripReportScreen(
             modifier = Modifier.padding(vertical = 24.dp),
         ) {
             Text(stringResource(Res.string.trip_report_intro), color = KotlinConfTheme.colors.longText)
+            AddPhotos(onPicked = { picked ->
+                if (picked.isNotEmpty()) {
+                    viewModel.startImport(picked)
+                    onImport()
+                }
+            })
             if (summary.items.isEmpty()) {
                 Text(stringResource(Res.string.trip_report_empty), color = KotlinConfTheme.colors.noteText)
                 return@Column
@@ -128,6 +145,27 @@ fun TripReportScreen(
             summary.items.forEach { item -> ReportRow(item, onClick = { onSession(item.session.id) }) }
         }
     }
+}
+
+/** Photos and videos from the library for the whole event, matched to sessions on the next screen. */
+@Composable
+private fun AddPhotos(onPicked: (List<PickedMedia>) -> Unit) {
+    val picker = rememberMediaPicker() ?: return
+    var reading by remember { mutableStateOf(false) }
+    PageMenuItem(
+        label = stringResource(Res.string.trip_report_add_photos),
+        onClick = {
+            if (!reading) picker.pickFromLibrary(onLoading = { reading = true }) { picked ->
+                reading = false
+                onPicked(picked)
+            }
+        },
+        drawableStart = Res.drawable.photo_library_24,
+    )
+    Text(
+        stringResource(if (reading) Res.string.trip_report_reading_photos else Res.string.trip_report_add_photos_hint),
+        color = KotlinConfTheme.colors.noteText,
+    )
 }
 
 @Composable

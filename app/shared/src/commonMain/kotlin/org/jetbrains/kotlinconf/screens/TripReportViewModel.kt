@@ -23,6 +23,7 @@ import org.jetbrains.kotlinconf.export.ReportProgress
 import org.jetbrains.kotlinconf.export.ReportResult
 import org.jetbrains.kotlinconf.export.reportBundleBuilder
 import org.jetbrains.kotlinconf.export.sessionsForTripReport
+import org.jetbrains.kotlinconf.media.PickedMedia
 import org.jetbrains.kotlinconf.personal.Attachment
 import org.jetbrains.kotlinconf.personal.MediaKind
 
@@ -68,6 +69,9 @@ class TripReportViewModel(
     val state: StateFlow<TripReportState> = _state
 
     private var job: Job? = null
+
+    /** Hands photos and videos picked from the library to the review screen. */
+    fun startImport(picked: List<PickedMedia>) = service.startImport(picked)
 
     /** Builds the zip and hands it to [share] when it is ready. */
     fun download(event: ExportEvent, labels: ExportLabels, share: (ReportResult.Done) -> Unit) {

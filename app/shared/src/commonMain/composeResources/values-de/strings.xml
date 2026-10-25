@@ -347,4 +347,30 @@ Bitte versuchen Sie es erneut.</string>
     <string name="export_video">Video</string>
     <string name="now_trip_report_title">Ihr Reisebericht</string>
     <string name="now_trip_report_text">Ihre Sessions, Notizen, Folien, Fotos und Videos in einer ZIP-Datei, die Sie sich selbst schicken können.</string>
+    <string name="trip_report_add_photos">Fotos von der Konferenz hinzufügen</string>
+    <string name="trip_report_add_photos_hint">Wählen Sie Fotos und Videos von der Konferenz. Jedes kommt zu der Session, in der es aufgenommen wurde; Sie bestätigen, bevor etwas hinzugefügt wird.</string>
+    <string name="trip_report_reading_photos">Fotos werden gelesen …</string>
+    <string name="import_title">Fotos hinzufügen</string>
+    <string name="import_intro">Nach der Aufnahmezeit den Sessions zugeordnet. Prüfen Sie die Zuordnung, antworten Sie, wo sie nicht eindeutig ist, und fügen Sie dann hinzu.</string>
+    <string name="import_question_ask">In welcher Session waren Sie?</string>
+    <string name="import_question_between">Zwischen zwei Sessions aufgenommen. Hinzufügen zu:</string>
+    <string name="import_question_no_time">Diese haben kein Datum. Hinzufügen zu:</string>
+    <string name="import_no_options">Keine Session zum Vorschlagen.</string>
+    <string name="import_dont_add">Diese nicht hinzufügen</string>
+    <string name="import_not_added">Nicht hinzugefügt</string>
+    <string name="import_change">Ändern</string>
+    <string name="import_bookmarked">Gemerkt</string>
+    <string name="import_nothing_to_add">Nichts hinzuzufügen</string>
+    <plurals name="import_items">
+        <item quantity="one">%1$d Foto oder Video</item>
+        <item quantity="other">%1$d Fotos und Videos</item>
+    </plurals>
+    <plurals name="import_add">
+        <item quantity="one">%1$d Foto oder Video hinzufügen</item>
+        <item quantity="other">%1$d Fotos und Videos hinzufügen</item>
+    </plurals>
+    <plurals name="import_answer_first">
+        <item quantity="one">Beantworten Sie zuerst die Frage oben</item>
+        <item quantity="other">Beantworten Sie zuerst die %1$d Fragen oben</item>
+    </plurals>
 </resources>

@@ -19,6 +19,9 @@ interface MediaFiles {
 
     suspend fun delete(file: String)
 
+    /** Deletes a temporary file the picker made that was not kept (an absolute path, not a stored name). */
+    suspend fun discard(tempPath: String)
+
     /** The size of a stored file in bytes, 0 when it is missing. */
     suspend fun size(file: String): Long
 }

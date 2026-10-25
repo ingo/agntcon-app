@@ -56,6 +56,13 @@ class OkioMediaFiles(
         }
     }
 
+    override suspend fun discard(tempPath: String) = withContext(Dispatchers.IO) {
+        try {
+            fileSystem.delete(tempPath.toPath(), mustExist = false)
+        } catch (_: IOException) {
+        }
+    }
+
     override suspend fun size(file: String): Long = withContext(Dispatchers.IO) {
         try {
             fileSystem.metadataOrNull(resolve(file))?.size ?: 0L

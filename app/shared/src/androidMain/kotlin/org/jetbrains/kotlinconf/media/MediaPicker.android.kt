@@ -3,8 +3,10 @@ package org.jetbrains.kotlinconf.media
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.media.ExifInterface
 import android.media.MediaMetadataRetriever
 import android.net.Uri
+import android.provider.MediaStore
 import android.webkit.MimeTypeMap
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -20,6 +22,7 @@ import kotlinx.coroutines.withContext
 import org.jetbrains.kotlinconf.personal.MediaKind
 import java.io.File
 import java.util.UUID
+import kotlin.time.Instant
 
 /** What a launched picker should report back to; the launchers outlive a single request. */
 private class Pending {
@@ -118,7 +121,40 @@ private fun copyFromUri(context: Context, uri: Uri): PickedMedia? {
     } ?: false
     if (!copied) return null
     val still = if (kind == MediaKind.VIDEO) videoStill(context, file.path) else null
-    return PickedMedia(file.path, kind, extension, still)
+    return PickedMedia(file.path, kind, extension, still, takenAt = takenAt(context, uri, file, kind))
+}
+
+/** When it was taken: the media store's date if the picker gives one, else the file's own EXIF or video date. */
+private fun takenAt(context: Context, uri: Uri, copy: File, kind: MediaKind): MediaTime? {
+    try {
+        context.contentResolver.query(uri, arrayOf(MediaStore.MediaColumns.DATE_TAKEN), null, null, null)?.use { cursor ->
+            if (cursor.moveToFirst() && !cursor.isNull(0)) {
+                val millis = cursor.getLong(0)
+                if (millis > 0) return MediaTime.of(Instant.fromEpochMilliseconds(millis))
+            }
+        }
+    } catch (_: Exception) {
+        // Not every provider has the column
+    }
+    return try {
+        if (kind == MediaKind.VIDEO) {
+            val retriever = MediaMetadataRetriever()
+            try {
+                retriever.setDataSource(copy.path)
+                MediaTime.fromAndroidVideoDate(retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DATE))
+            } finally {
+                retriever.release()
+            }
+        } else {
+            val exif = ExifInterface(copy.path)
+            MediaTime.fromExif(
+                exif.getAttribute(ExifInterface.TAG_DATETIME_ORIGINAL) ?: exif.getAttribute(ExifInterface.TAG_DATETIME),
+                exif.getAttribute(ExifInterface.TAG_OFFSET_TIME_ORIGINAL) ?: exif.getAttribute(ExifInterface.TAG_OFFSET_TIME),
+            )
+        }
+    } catch (_: Exception) {
+        null
+    }
 }
 
 /** A small still from the first second of a video, for the list on the session page. */

@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -202,6 +203,29 @@ class ConferenceService(
             )
         }
         savePersonal { it.setAttachments(it.getAttachments().first().withAdded(sessionId, added)) }
+    }
+
+    // Photos and videos picked on the trip report page, waiting to be matched to sessions on the review screen
+    private val pendingImport = MutableStateFlow<List<PickedMedia>>(emptyList())
+
+    /** Hands photos and videos from the library to the review screen, which matches them to sessions. */
+    fun startImport(picked: List<PickedMedia>) {
+        discardPicked(pendingImport.getAndUpdate { picked })
+    }
+
+    /** The photos and videos waiting for the review screen; they are handed over once. */
+    fun takeImport(): List<PickedMedia> = pendingImport.getAndUpdate { emptyList() }
+
+    /** Deletes the temporary copies of picked photos and videos that were not kept. */
+    fun discardPicked(picked: List<PickedMedia>) {
+        if (picked.isEmpty()) return
+        scope.launch {
+            val media = mediaFiles ?: return@launch
+            picked.forEach { item ->
+                media.discard(item.path)
+                item.thumbnailPath?.let { media.discard(it) }
+            }
+        }
     }
 
     /** Removes a photo or video from a session and deletes its files from the device. */
