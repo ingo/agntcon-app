@@ -31,6 +31,13 @@ export ORG_GRADLE_PROJECT_event=$EVENT
 
 mkdir -p "$OUT"
 
+# With an App Store Connect API key, xcodebuild signs without an Xcode account (CI); otherwise it uses the Xcode account
+AUTH_ARGS=()
+if [[ -n "${ASC_KEY_ID:-}" && -n "${ASC_ISSUER_ID:-}" ]]; then
+  ASC_KEY_PATH=${ASC_KEY_PATH:-$HOME/.appstoreconnect/private_keys/AuthKey_$ASC_KEY_ID.p8}
+  AUTH_ARGS=(-authenticationKeyPath "$ASC_KEY_PATH" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID")
+fi
+
 # Per-conference icon and launch screen, when the asset catalog has them
 ASSETS="$ROOT/app/iosApp/iosApp/Assets.xcassets"
 EVENT_SETTINGS=()
@@ -45,6 +52,7 @@ xcodebuild archive \
   -destination 'generic/platform=iOS' \
   -archivePath "$ARCHIVE" \
   -allowProvisioningUpdates \
+  ${AUTH_ARGS[@]+"${AUTH_ARGS[@]}"} \
   DEVELOPMENT_TEAM="$TEAM_ID" \
   CODE_SIGN_STYLE=Automatic \
   CODE_SIGN_IDENTITY="Apple Development" \
@@ -62,7 +70,6 @@ echo "Archive: $ARCHIVE"
 
 : "${ASC_KEY_ID:?Set ASC_KEY_ID (App Store Connect API key id) to upload}"
 : "${ASC_ISSUER_ID:?Set ASC_ISSUER_ID (App Store Connect API issuer id) to upload}"
-ASC_KEY_PATH=${ASC_KEY_PATH:-$HOME/.appstoreconnect/private_keys/AuthKey_$ASC_KEY_ID.p8}
 
 cat > "$OUT/ExportOptions.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
@@ -83,6 +90,4 @@ xcodebuild -exportArchive \
   -exportOptionsPlist "$OUT/ExportOptions.plist" \
   -exportPath "$OUT/export" \
   -allowProvisioningUpdates \
-  -authenticationKeyPath "$ASC_KEY_PATH" \
-  -authenticationKeyID "$ASC_KEY_ID" \
-  -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+  "${AUTH_ARGS[@]}"
