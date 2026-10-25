@@ -52,10 +52,13 @@ import org.jetbrains.kotlinconf.generated.resources.import_nothing_to_add
 import org.jetbrains.kotlinconf.generated.resources.import_question_ask
 import org.jetbrains.kotlinconf.generated.resources.import_question_between
 import org.jetbrains.kotlinconf.generated.resources.import_question_no_time
+import org.jetbrains.kotlinconf.generated.resources.import_slide_matches
+import org.jetbrains.kotlinconf.generated.resources.import_tap_to_view
 import org.jetbrains.kotlinconf.generated.resources.import_title
 import org.jetbrains.kotlinconf.generated.resources.play_video
 import org.jetbrains.kotlinconf.media.MediaMatch
 import org.jetbrains.kotlinconf.media.PickedMedia
+import org.jetbrains.kotlinconf.media.rememberMediaPicker
 import org.jetbrains.kotlinconf.personal.MediaKind
 import org.jetbrains.kotlinconf.ui.components.Button
 import org.jetbrains.kotlinconf.ui.components.Text
@@ -72,6 +75,7 @@ fun MediaImportScreen(
     viewModel: MediaImportViewModel = metroViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val picker = rememberMediaPicker()
     LaunchedEffect(state.done) { if (state.done) onDone() }
 
     ScreenWithTitle(title = stringResource(Res.string.import_title), onBack = onDone) {
@@ -84,6 +88,7 @@ fun MediaImportScreen(
                 GroupCard(
                     group = group,
                     attended = state.attended,
+                    onView = { item -> picker?.open(item.path, item.kind) },
                     onAnswer = { viewModel.answer(index, it) },
                     onChange = { viewModel.change(index) },
                 )
@@ -113,6 +118,7 @@ fun MediaImportScreen(
 private fun GroupCard(
     group: ImportGroup,
     attended: Set<SessionId>,
+    onView: (PickedMedia) -> Unit,
     onAnswer: (ImportAnswer) -> Unit,
     onChange: () -> Unit,
 ) {
@@ -145,7 +151,10 @@ private fun GroupCard(
             style = KotlinConfTheme.typography.text2,
             color = KotlinConfTheme.colors.noteText,
         )
-        Thumbnails(group.items)
+        Thumbnails(group.items, onView)
+        if (group.isQuestion) {
+            Text(stringResource(Res.string.import_tap_to_view), style = KotlinConfTheme.typography.text2, color = KotlinConfTheme.colors.noteText)
+        }
 
         if (group.isQuestion || group.changing) {
             if (group.options.isEmpty()) {
@@ -154,7 +163,10 @@ private fun GroupCard(
             group.options.forEach { session ->
                 OptionRow(
                     title = session.title,
-                    detail = sessionDetail(session, session.id in attended),
+                    detail = listOfNotNull(
+                        sessionDetail(session, session.id in attended),
+                        if (session.id == group.suggested) stringResource(Res.string.import_slide_matches) else null,
+                    ).joinToString(" · "),
                     selected = group.answer == ImportAnswer.To(session.id),
                     onClick = { onAnswer(ImportAnswer.To(session.id)) },
                 )
@@ -187,15 +199,20 @@ private fun GroupCard(
     }
 }
 
+/** Large enough to make out a slide; tap one to see it full screen. */
 @Composable
-private fun Thumbnails(items: List<PickedMedia>) {
+private fun Thumbnails(items: List<PickedMedia>, onView: (PickedMedia) -> Unit) {
     Row(
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
     ) {
         items.forEach { item ->
             Box(
-                Modifier.size(64.dp).clip(KotlinConfTheme.shapes.roundedCornerSm).background(KotlinConfTheme.colors.mainBackground),
+                Modifier
+                    .size(width = 176.dp, height = 132.dp)
+                    .clip(KotlinConfTheme.shapes.roundedCornerSm)
+                    .background(KotlinConfTheme.colors.mainBackground)
+                    .clickable(role = Role.Image, onClick = { onView(item) }),
                 contentAlignment = Alignment.Center,
             ) {
                 val preview = if (item.kind == MediaKind.VIDEO) item.thumbnailPath else item.path
@@ -204,10 +221,10 @@ private fun Thumbnails(items: List<PickedMedia>) {
                 }
                 if (item.kind == MediaKind.VIDEO) {
                     Box(
-                        Modifier.size(26.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.85f)),
+                        Modifier.size(36.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.85f)),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Image(painterResource(Res.drawable.play_video), contentDescription = null, modifier = Modifier.padding(start = 2.dp).size(13.dp))
+                        Image(painterResource(Res.drawable.play_video), contentDescription = null, modifier = Modifier.padding(start = 3.dp).size(18.dp))
                     }
                 }
             }

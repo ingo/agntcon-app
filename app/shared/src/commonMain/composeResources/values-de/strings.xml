@@ -373,4 +373,6 @@ Bitte versuchen Sie es erneut.</string>
         <item quantity="one">Beantworten Sie zuerst die Frage oben</item>
         <item quantity="other">Beantworten Sie zuerst die %1$d Fragen oben</item>
     </plurals>
+    <string name="import_tap_to_view">Tippen Sie auf ein Foto, um es groß zu sehen.</string>
+    <string name="import_slide_matches">Folientext passt</string>
 </resources>

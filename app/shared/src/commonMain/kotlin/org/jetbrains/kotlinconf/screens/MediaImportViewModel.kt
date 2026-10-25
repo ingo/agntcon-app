@@ -19,6 +19,9 @@ import org.jetbrains.kotlinconf.media.MediaGroup
 import org.jetbrains.kotlinconf.media.MediaMatch
 import org.jetbrains.kotlinconf.media.MediaMatcher
 import org.jetbrains.kotlinconf.media.PickedMedia
+import org.jetbrains.kotlinconf.media.SlideTextMatcher
+import org.jetbrains.kotlinconf.media.recognizeText
+import org.jetbrains.kotlinconf.personal.MediaKind
 import org.jetbrains.kotlinconf.media.groupMatches
 import org.jetbrains.kotlinconf.minus
 import kotlin.time.Duration.Companion.minutes
@@ -40,6 +43,8 @@ data class ImportGroup(
     val answer: ImportAnswer?,
     /** A matched group whose session the attendee wants to change. */
     val changing: Boolean = false,
+    /** The session whose title or speakers the text on the photos matches (see [SlideTextMatcher]). */
+    val suggested: SessionId? = null,
 ) {
     val isQuestion: Boolean get() = match.needsAnswer
     val matchedSession: SessionCardView? get() = (answer as? ImportAnswer.To)?.let { a -> options.find { it.id == a.session } }
@@ -70,6 +75,34 @@ class MediaImportViewModel(
 
     private val _state = MutableStateFlow(build())
     val state: StateFlow<ImportState> = _state
+
+    init {
+        readSlides()
+    }
+
+    /**
+     * Reads the text on the photos of each question and, when it clearly names one of the candidates, preselects it.
+     * Runs after the screen is up; a few photos per group are enough and keep it quick.
+     */
+    private fun readSlides() {
+        val byId = service.exportSnapshot().sessions.associateBy { it.id }
+        _state.value.groups.forEachIndexed { index, group ->
+            if (group.match !is MediaMatch.Ask) return@forEachIndexed
+            viewModelScope.launch {
+                val paths = group.items.mapNotNull { if (it.kind == MediaKind.PHOTO) it.path else it.thumbnailPath }.take(MAX_PHOTOS_READ)
+                val text = paths.mapNotNull { recognizeText(it) }.joinToString("\n")
+                if (text.isBlank()) return@launch
+                val candidates = group.options.mapNotNull { byId[it.id] }.map { it.id to "${it.title} ${it.speakerLine}" }
+                val suggested = SlideTextMatcher.best(text, candidates) ?: return@launch
+                _state.update { state ->
+                    state.copy(groups = state.groups.mapIndexed { i, g ->
+                        if (i != index) g
+                        else g.copy(suggested = suggested, answer = g.answer ?: ImportAnswer.To(suggested))
+                    })
+                }
+            }
+        }
+    }
 
     private fun build(): ImportState {
         val snapshot = service.exportSnapshot()
@@ -138,6 +171,10 @@ class MediaImportViewModel(
             }
             _state.update { it.copy(saving = false, done = true) }
         }
+    }
+
+    private companion object {
+        const val MAX_PHOTOS_READ = 4
     }
 
     override fun onCleared() {

@@ -373,4 +373,6 @@ Please try again.</string>
         <item quantity="one">Answer the question above first</item>
         <item quantity="other">Answer the %1$d questions above first</item>
     </plurals>
+    <string name="import_tap_to_view">Tap a photo to see it full size.</string>
+    <string name="import_slide_matches">Slide text matches</string>
 </resources>
