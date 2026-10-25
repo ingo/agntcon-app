@@ -38,6 +38,8 @@ import org.jetbrains.kotlinconf.generated.resources.photo_library_24
 import org.jetbrains.kotlinconf.generated.resources.play_video
 import org.jetbrains.kotlinconf.generated.resources.session_media_actions
 import org.jetbrains.kotlinconf.generated.resources.import_duplicates
+import org.jetbrains.kotlinconf.generated.resources.media_reading_progress
+import org.jetbrains.kotlinconf.generated.resources.media_unreadable
 import org.jetbrains.kotlinconf.generated.resources.session_media_adding
 import org.jetbrains.kotlinconf.generated.resources.session_media_cleaned
 import org.jetbrains.kotlinconf.generated.resources.session_media_cancel
@@ -70,9 +72,11 @@ fun MediaBlock(
     attachments: List<Attachment>,
     adding: Boolean,
     skippedDuplicates: Int,
+    progress: Pair<Int, Int>?,
+    unreadable: Int,
     pathOf: (String) -> String?,
-    onLoading: () -> Unit,
-    onPicked: (List<PickedMedia>) -> Unit,
+    onProgress: (done: Int, total: Int) -> Unit,
+    onPicked: (List<PickedMedia>, failed: Int) -> Unit,
     onRemove: (Attachment) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -149,9 +153,17 @@ fun MediaBlock(
                 color = KotlinConfTheme.colors.secondaryText,
             )
         }
+        if (unreadable > 0 && !adding) {
+            Text(
+                pluralStringResource(Res.plurals.media_unreadable, unreadable, unreadable),
+                style = KotlinConfTheme.typography.text2,
+                color = KotlinConfTheme.colors.orangeText,
+            )
+        }
         if (adding) {
             Text(
-                stringResource(Res.string.session_media_adding),
+                progress?.let { (done, total) -> stringResource(Res.string.media_reading_progress, done, total) }
+                    ?: stringResource(Res.string.session_media_adding),
                 style = KotlinConfTheme.typography.text2,
                 color = KotlinConfTheme.colors.secondaryText,
             )
@@ -161,18 +173,18 @@ fun MediaBlock(
             if (picker.hasCamera) {
                 PageMenuItem(
                     label = stringResource(Res.string.session_media_take_photo),
-                    onClick = { picker.takePhoto(onPicked) },
+                    onClick = { picker.takePhoto { onPicked(it, 0) } },
                     drawableStart = Res.drawable.camera_24,
                 )
                 PageMenuItem(
                     label = stringResource(Res.string.session_media_record_video),
-                    onClick = { picker.recordVideo(onPicked) },
+                    onClick = { picker.recordVideo { onPicked(it, 0) } },
                     drawableStart = Res.drawable.videocam_24,
                 )
             }
             PageMenuItem(
                 label = stringResource(Res.string.session_media_from_library),
-                onClick = { picker.pickFromLibrary(onLoading, onPicked) },
+                onClick = { if (!adding) picker.pickFromLibrary(onProgress, onPicked) },
                 drawableStart = Res.drawable.photo_library_24,
             )
         }

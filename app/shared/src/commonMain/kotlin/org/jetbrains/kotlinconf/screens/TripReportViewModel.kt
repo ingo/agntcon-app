@@ -23,7 +23,13 @@ import org.jetbrains.kotlinconf.export.ReportProgress
 import org.jetbrains.kotlinconf.export.ReportResult
 import org.jetbrains.kotlinconf.export.reportBundleBuilder
 import org.jetbrains.kotlinconf.export.sessionsForTripReport
+import kotlinx.datetime.toInstant
+import org.jetbrains.kotlinconf.event.ActiveEvent
+import org.jetbrains.kotlinconf.isServiceEvent
+import org.jetbrains.kotlinconf.media.MediaMatcher
 import org.jetbrains.kotlinconf.media.PickedMedia
+import org.jetbrains.kotlinconf.minus
+import kotlin.time.Instant
 import org.jetbrains.kotlinconf.personal.Attachment
 import org.jetbrains.kotlinconf.personal.MediaKind
 
@@ -77,7 +83,31 @@ class TripReportViewModel(
     }
 
     /** Hands photos and videos picked from the library to the review screen. */
-    fun startImport(picked: List<PickedMedia>) = service.startImport(picked)
+    fun startImport(picked: List<PickedMedia>, unreadable: Int = 0) = service.startImport(picked, unreadable)
+
+    /**
+     * When to look for photos in the library: every talk of the event, from a few minutes before it starts to a
+     * quarter of an hour after it ends, as exact moments. Breaks and all-day items are left out.
+     */
+    fun scanWindows(): List<ClosedRange<Instant>> {
+        val zone = ActiveEvent.timeZone
+        return service.exportSnapshot().sessions
+            .filterNot { it.isServiceEvent || it.endsAt - it.startsAt > MediaMatcher.ALL_DAY }
+            .map { (it.startsAt.toInstant(zone) - MediaMatcher.EARLY)..(it.endsAt.toInstant(zone) + MediaMatcher.LATE) }
+            .sortedBy { it.start }
+            .fold(mutableListOf<ClosedRange<Instant>>()) { merged, range ->
+                val last = merged.lastOrNull()
+                if (last != null && range.start <= last.endInclusive) {
+                    merged[merged.lastIndex] = last.start..maxOf(last.endInclusive, range.endInclusive)
+                } else {
+                    merged += range
+                }
+                merged
+            }
+    }
+
+    /** Library ids of the photos and videos already attached, so a scan does not copy them again. */
+    fun knownSourceIds(): Set<String> = service.attachments.value.values.flatten().mapNotNullTo(mutableSetOf()) { it.sourceId }
 
     /** Builds the zip and hands it to [share] when it is ready. */
     fun download(event: ExportEvent, labels: ExportLabels, share: (ReportResult.Done) -> Unit) {

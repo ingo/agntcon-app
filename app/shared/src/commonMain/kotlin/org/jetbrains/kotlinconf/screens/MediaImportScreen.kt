@@ -24,6 +24,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -41,17 +42,22 @@ import org.jetbrains.kotlinconf.SessionId
 import org.jetbrains.kotlinconf.generated.resources.Res
 import org.jetbrains.kotlinconf.generated.resources.import_answer_first
 import org.jetbrains.kotlinconf.generated.resources.import_add
+import org.jetbrains.kotlinconf.generated.resources.import_add_matched
 import org.jetbrains.kotlinconf.generated.resources.import_bookmarked
 import org.jetbrains.kotlinconf.generated.resources.import_change
 import org.jetbrains.kotlinconf.generated.resources.import_dont_add
+import org.jetbrains.kotlinconf.generated.resources.import_dont_add_it
 import org.jetbrains.kotlinconf.generated.resources.import_duplicates
+import org.jetbrains.kotlinconf.generated.resources.media_unreadable
 import org.jetbrains.kotlinconf.generated.resources.import_intro
 import org.jetbrains.kotlinconf.generated.resources.import_items
+import org.jetbrains.kotlinconf.generated.resources.import_leave_out
 import org.jetbrains.kotlinconf.generated.resources.import_no_options
 import org.jetbrains.kotlinconf.generated.resources.import_not_added
 import org.jetbrains.kotlinconf.generated.resources.import_nothing_to_add
 import org.jetbrains.kotlinconf.generated.resources.import_question_ask
 import org.jetbrains.kotlinconf.generated.resources.import_question_between
+import org.jetbrains.kotlinconf.generated.resources.import_question_moved
 import org.jetbrains.kotlinconf.generated.resources.import_question_no_time
 import org.jetbrains.kotlinconf.generated.resources.import_slide_matches
 import org.jetbrains.kotlinconf.generated.resources.import_tap_to_view
@@ -85,6 +91,12 @@ fun MediaImportScreen(
             modifier = Modifier.padding(vertical = 24.dp),
         ) {
             Text(stringResource(Res.string.import_intro), color = KotlinConfTheme.colors.longText)
+            if (state.unreadable > 0) {
+                Text(
+                    pluralStringResource(Res.plurals.media_unreadable, state.unreadable, state.unreadable),
+                    color = KotlinConfTheme.colors.orangeText,
+                )
+            }
             if (state.duplicates > 0) {
                 Text(
                     pluralStringResource(Res.plurals.import_duplicates, state.duplicates, state.duplicates),
@@ -96,6 +108,7 @@ fun MediaImportScreen(
                     group = group,
                     attended = state.attended,
                     onView = { item -> picker?.open(listOf(item.path), item.kind) },
+                    onTakeOut = { item -> viewModel.takeOut(index, item) },
                     onAnswer = { viewModel.answer(index, it) },
                     onChange = { viewModel.change(index) },
                 )
@@ -117,6 +130,14 @@ fun MediaImportScreen(
                 enabled = state.unanswered == 0 && !state.saving && !state.checking,
                 modifier = Modifier.fillMaxWidth(),
             )
+            if (state.unanswered > 0 && state.answeredToAdd > 0) {
+                Button(
+                    label = pluralStringResource(Res.plurals.import_add_matched, state.answeredToAdd, state.answeredToAdd),
+                    onClick = viewModel::skipUnansweredAndConfirm,
+                    enabled = !state.saving && !state.checking,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
         }
     }
 }
@@ -126,6 +147,7 @@ private fun GroupCard(
     group: ImportGroup,
     attended: Set<SessionId>,
     onView: (PickedMedia) -> Unit,
+    onTakeOut: (Int) -> Unit,
     onAnswer: (ImportAnswer) -> Unit,
     onChange: () -> Unit,
 ) {
@@ -140,10 +162,13 @@ private fun GroupCard(
         if (group.isQuestion) {
             Text(
                 stringResource(
-                    when (group.match) {
+                    when {
+                        group.movedOut -> Res.string.import_question_moved
+                        else -> when (group.match) {
                         is MediaMatch.Ask -> Res.string.import_question_ask
                         is MediaMatch.Between -> Res.string.import_question_between
                         else -> Res.string.import_question_no_time
+                        }
                     }
                 ),
                 style = KotlinConfTheme.typography.h3,
@@ -158,10 +183,8 @@ private fun GroupCard(
             style = KotlinConfTheme.typography.text2,
             color = KotlinConfTheme.colors.noteText,
         )
-        Thumbnails(group.items, onView)
-        if (group.isQuestion) {
-            Text(stringResource(Res.string.import_tap_to_view), style = KotlinConfTheme.typography.text2, color = KotlinConfTheme.colors.noteText)
-        }
+        Thumbnails(group.items, canTakeOut = !group.movedOut && group.items.size > 1, onView, onTakeOut)
+        Text(stringResource(Res.string.import_tap_to_view), style = KotlinConfTheme.typography.text2, color = KotlinConfTheme.colors.noteText)
 
         if (group.isQuestion || group.changing) {
             if (group.options.isEmpty()) {
@@ -179,7 +202,7 @@ private fun GroupCard(
                 )
             }
             OptionRow(
-                title = stringResource(Res.string.import_dont_add),
+                title = stringResource(if (group.movedOut) Res.string.import_dont_add_it else Res.string.import_dont_add),
                 detail = null,
                 selected = group.answer == ImportAnswer.Skip,
                 onClick = { onAnswer(ImportAnswer.Skip) },
@@ -208,12 +231,12 @@ private fun GroupCard(
 
 /** Large enough to make out a slide; tap one to see it full screen. */
 @Composable
-private fun Thumbnails(items: List<PickedMedia>, onView: (PickedMedia) -> Unit) {
+private fun Thumbnails(items: List<PickedMedia>, canTakeOut: Boolean, onView: (PickedMedia) -> Unit, onTakeOut: (Int) -> Unit) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
     ) {
-        items.forEach { item ->
+        items.forEachIndexed { index, item ->
             Box(
                 Modifier
                     .size(width = 176.dp, height = 132.dp)
@@ -222,7 +245,8 @@ private fun Thumbnails(items: List<PickedMedia>, onView: (PickedMedia) -> Unit) 
                     .clickable(role = Role.Image, onClick = { onView(item) }),
                 contentAlignment = Alignment.Center,
             ) {
-                val preview = if (item.kind == MediaKind.VIDEO) item.thumbnailPath else item.path
+                // The small preview made when the photo was copied; the full photo only where there is none
+                val preview = if (item.kind == MediaKind.VIDEO) item.thumbnailPath else item.thumbnailPath ?: item.path
                 if (preview != null) {
                     AsyncImage(model = preview, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
                 }
@@ -233,6 +257,25 @@ private fun Thumbnails(items: List<PickedMedia>, onView: (PickedMedia) -> Unit) 
                     ) {
                         Image(painterResource(Res.drawable.play_video), contentDescription = null, modifier = Modifier.padding(start = 3.dp).size(18.dp))
                     }
+                }
+                // Take this one photo out of the group (it was grouped wrong); it gets a card of its own below
+                if (canTakeOut) {
+                val toggleLabel = stringResource(Res.string.import_leave_out)
+                Box(
+                    Modifier
+                        .align(Alignment.TopEnd)
+                        .size(44.dp)
+                        .clickable(role = Role.Button, onClickLabel = toggleLabel, onClick = { onTakeOut(index) })
+                        .semantics { contentDescription = toggleLabel },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Box(
+                        Modifier.size(26.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.6f)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text("×", style = KotlinConfTheme.typography.text1, color = Color.White)
+                    }
+                }
                 }
             }
         }

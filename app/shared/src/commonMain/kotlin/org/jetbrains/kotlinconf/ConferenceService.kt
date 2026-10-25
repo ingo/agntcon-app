@@ -47,6 +47,7 @@ import org.jetbrains.kotlinconf.media.Fingerprint
 import org.jetbrains.kotlinconf.media.MediaDuplicates
 import org.jetbrains.kotlinconf.media.MediaFiles
 import org.jetbrains.kotlinconf.media.cleanUpScreenPhoto
+import org.jetbrains.kotlinconf.media.makeThumbnail
 import org.jetbrains.kotlinconf.media.screenCleanUpAvailable
 import org.jetbrains.kotlinconf.personal.MediaKind
 import org.jetbrains.kotlinconf.media.PickedMedia
@@ -263,20 +264,41 @@ class ConferenceService(
                 while (true) {
                     val media = mediaFiles ?: return@launch
                     val next = attachments.value.values.flatten()
-                        .firstOrNull { it.kind == MediaKind.PHOTO && !it.cleanChecked } ?: return@launch
+                        .firstOrNull { it.kind == MediaKind.PHOTO && (!it.cleanChecked || !it.previewChecked) } ?: return@launch
+                    // Photos looked at before previews existed only need the preview
                     val name = media.newName("jpg")
-                    val cleaned = if (cleanUpScreenPhoto(media.path(next.file), media.path(name))) name else null
+                    val cleaned = when {
+                        next.cleanChecked -> null
+                        cleanUpScreenPhoto(media.path(next.file), media.path(name)) -> name
+                        else -> null
+                    }
+                    // A preview of what lists should show: the cleaned-up photo if there is one, else the original
+                    val previewName = media.newName("jpg")
+                    val preview = if (cleaned != null || next.thumbnail == null) {
+                        previewName.takeIf { makeThumbnail(media.path(cleaned ?: next.cleaned ?: next.file), media.path(previewName)) }
+                    } else {
+                        null
+                    }
                     savePersonal { storage ->
                         val all = storage.getAttachments().first()
                         val stillThere = all.values.flatten().any { it.id == next.id }
                         if (!stillThere) {
                             cleaned?.let { media.delete(it) }
+                            preview?.let { media.delete(it) }
                         } else {
-                            storage.setAttachments(all.withUpdated(next.id) { it.copy(cleaned = cleaned, cleanChecked = true) })
+                            if (preview != null) next.thumbnail?.let { media.delete(it) }
+                            storage.setAttachments(all.withUpdated(next.id) {
+                                it.copy(
+                                    cleaned = if (it.cleanChecked) it.cleaned else cleaned,
+                                    cleanChecked = true,
+                                    previewChecked = true,
+                                    thumbnail = preview ?: it.thumbnail,
+                                )
+                            })
                         }
                     }
                     // Wait for the stored list to show the change before looking for the next one
-                    attachments.first { list -> list.values.flatten().none { it.id == next.id && !it.cleanChecked } }
+                    attachments.first { list -> list.values.flatten().none { it.id == next.id && (!it.cleanChecked || !it.previewChecked) } }
                 }
             } finally {
                 cleaning.unlock()
@@ -286,14 +308,20 @@ class ConferenceService(
 
     // Photos and videos picked on the trip report page, waiting to be matched to sessions on the review screen
     private val pendingImport = MutableStateFlow<List<PickedMedia>>(emptyList())
+    private var pendingUnreadable = 0
 
-    /** Hands photos and videos from the library to the review screen, which matches them to sessions. */
-    fun startImport(picked: List<PickedMedia>) {
+    /**
+     * Hands photos and videos from the library to the review screen, which matches them to sessions. [unreadable] is
+     * how many of the chosen ones could not be read, to tell the attendee.
+     */
+    fun startImport(picked: List<PickedMedia>, unreadable: Int = 0) {
+        pendingUnreadable = unreadable
         discardPicked(pendingImport.getAndUpdate { picked })
     }
 
-    /** The photos and videos waiting for the review screen; they are handed over once. */
-    fun takeImport(): List<PickedMedia> = pendingImport.getAndUpdate { emptyList() }
+    /** The photos and videos waiting for the review screen, and how many could not be read; handed over once. */
+    fun takeImport(): Pair<List<PickedMedia>, Int> =
+        (pendingImport.getAndUpdate { emptyList() } to pendingUnreadable).also { pendingUnreadable = 0 }
 
     /** Deletes the temporary copies of picked photos and videos that were not kept. */
     fun discardPicked(picked: List<PickedMedia>) {

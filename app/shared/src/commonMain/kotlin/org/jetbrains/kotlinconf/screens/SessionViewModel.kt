@@ -77,11 +77,24 @@ class SessionViewModel(
     /** The absolute path of a stored photo or video, to show or open it. */
     fun mediaPath(file: String): String? = service.mediaFiles?.takeIf { it.isSupported }?.path(file)
 
-    fun onMediaLoading() {
+    private val _mediaProgress = MutableStateFlow<Pair<Int, Int>?>(null)
+
+    /** While picked photos are being copied: how many of how many. */
+    val mediaProgress: StateFlow<Pair<Int, Int>?> = _mediaProgress
+
+    private val _unreadable = MutableStateFlow(0)
+
+    /** How many of the last picked photos could not be read from the library. */
+    val unreadable: StateFlow<Int> = _unreadable
+
+    fun onMediaProgress(done: Int, total: Int) {
         _addingMedia.value = true
+        _mediaProgress.value = done to total
     }
 
-    fun addMedia(picked: List<PickedMedia>) {
+    fun addMedia(picked: List<PickedMedia>, failed: Int = 0) {
+        _mediaProgress.value = null
+        _unreadable.value = failed
         if (picked.isEmpty()) {
             _addingMedia.value = false
             return

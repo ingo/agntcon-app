@@ -11,9 +11,10 @@ import kotlinx.cinterop.useContents
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
+import kotlinx.cinterop.autoreleasepool
 import platform.CoreGraphics.CGColorSpaceCreateDeviceRGB
+import platform.CoreGraphics.CGImageRelease
 import platform.CoreGraphics.CGRectMake
-import platform.CoreImage.createCGImage
 import platform.CoreImage.kCIFormatRGBA8
 import platform.CoreImage.filterWithName
 import platform.Foundation.setValue
@@ -33,6 +34,8 @@ import platform.Vision.VNRectangleObservation
 actual val screenCleanUpAvailable: Boolean = true
 
 private const val INSET = 0.012
+private const val DETECT_PIXELS = 1600
+private const val MAX_OUTPUT = 3000.0
 
 /**
  * Vision finds the largest clear four-sided shape (a projection screen, a monitor, a whiteboard); CoreImage maps it to
@@ -42,12 +45,21 @@ private const val INSET = 0.012
  */
 actual suspend fun cleanUpScreenPhoto(input: String, output: String): Boolean = withContext(Dispatchers.IO) {
     try {
-        val image = CIImage(
-            contentsOfURL = NSURL.fileURLWithPath(input),
-            options = mapOf<Any?, Any?>(kCIImageApplyOrientationProperty to true),
-        )
-        val context = CIContext(options = null)
-        val quad = findScreen(image, context) ?: return@withContext false
+        autoreleasepool { cleanUp(input, output) }
+    } catch (_: Throwable) {
+        false
+    }
+}
+
+private fun cleanUp(input: String, output: String): Boolean {
+    // The screen is found on a small copy; only a photo that has one is opened at full size
+    val quad = findScreen(input) ?: return false
+    val image = CIImage(
+        contentsOfURL = NSURL.fileURLWithPath(input),
+        options = mapOf<Any?, Any?>(kCIImageApplyOrientationProperty to true),
+    )
+    val context = sharedCIContext
+    run {
 
         val (width, height) = image.extent.useContents { size.width to size.height }
         val points = listOf(quad.topLeft, quad.topRight, quad.bottomLeft, quad.bottomRight).map { p -> p.useContents { x to y } }
@@ -63,28 +75,32 @@ actual suspend fun cleanUpScreenPhoto(input: String, output: String): Boolean = 
             setValue(corner(points[1]), forKey = "inputTopRight")
             setValue(corner(points[2]), forKey = "inputBottomLeft")
             setValue(corner(points[3]), forKey = "inputBottomRight")
-        } ?: return@withContext false
+        } ?: return false
 
         val enhanced = if (isLight(flat, context)) whiteboard(flat) else darkSlide(flat)
         val sharp = filter("CIUnsharpMask", enhanced) {
             setValue(NSNumber(2.0), forKey = "inputRadius")
             setValue(NSNumber(0.6), forKey = "inputIntensity")
         } ?: enhanced
+        // A slide is legible at 3000 pixels; larger only costs memory and space
+        val longSide = sharp.extent.useContents { maxOf(size.width, size.height) }
+        val sized = if (longSide <= MAX_OUTPUT) sharp else filter("CILanczosScaleTransform", sharp) {
+            setValue(NSNumber(MAX_OUTPUT / longSide), forKey = "inputScale")
+            setValue(NSNumber(1.0), forKey = "inputAspectRatio")
+        } ?: sharp
 
-        context.writeJPEGRepresentationOfImage(
-            sharp,
+        return context.writeJPEGRepresentationOfImage(
+            sized,
             toURL = NSURL.fileURLWithPath(output),
             colorSpace = CGColorSpaceCreateDeviceRGB(),
             options = mapOf<Any?, Any?>("kCGImageDestinationLossyCompressionQuality" to 0.9),
             error = null,
         )
-    } catch (_: Throwable) {
-        false
     }
 }
 
-/** The screen or board: one clear, large, roughly rectangular shape, or nothing. */
-private fun findScreen(image: CIImage, context: CIContext): VNRectangleObservation? {
+/** The screen or board: one clear, large, roughly rectangular shape, or nothing. Looked for on a small copy. */
+private fun findScreen(path: String): VNRectangleObservation? {
     val request = VNDetectRectanglesRequest()
     request.maximumObservations = 1u
     request.minimumConfidence = 0.8f
@@ -92,11 +108,15 @@ private fun findScreen(image: CIImage, context: CIContext): VNRectangleObservati
     request.minimumSize = 0.3f
     request.minimumAspectRatio = 0.3f
     request.quadratureTolerance = 25f
-    // Vision gets a rendered bitmap; its corners come back normalised, origin bottom left, as CoreImage uses them
-    val bitmap = context.createCGImage(image, fromRect = image.extent) ?: return null
-    val handler = VNImageRequestHandler(cGImage = bitmap, options = emptyMap<Any?, Any?>())
-    if (!handler.performRequests(listOf(request), error = null)) return null
-    return request.results?.filterIsInstance<VNRectangleObservation>()?.firstOrNull()
+    // Corners come back normalised, origin bottom left, as CoreImage uses them, so they fit the full photo too
+    val bitmap = downsampledImage(path, DETECT_PIXELS) ?: return null
+    try {
+        val handler = VNImageRequestHandler(cGImage = bitmap, options = emptyMap<Any?, Any?>())
+        if (!handler.performRequests(listOf(request), error = null)) return null
+        return request.results?.filterIsInstance<VNRectangleObservation>()?.firstOrNull()
+    } finally {
+        CGImageRelease(bitmap)
+    }
 }
 
 /** Average brightness above the middle: a whiteboard or a light slide. */

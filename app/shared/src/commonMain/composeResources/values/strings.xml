@@ -373,12 +373,29 @@ Please try again.</string>
         <item quantity="one">Answer the question above first</item>
         <item quantity="other">Answer the %1$d questions above first</item>
     </plurals>
-    <string name="import_tap_to_view">Tap a photo to see it full size.</string>
+    <string name="import_tap_to_view">Tap a photo to see it full size, × to take just that one out and put it somewhere else.</string>
     <string name="import_slide_matches">Slide text matches</string>
     <string name="session_media_cleaned">Photos of screens and whiteboards are straightened and cleaned up. In the viewer, swipe left for the original.</string>
     <string name="export_original">original</string>
     <plurals name="import_duplicates">
         <item quantity="one">%1$d was already added and is left out.</item>
         <item quantity="other">%1$d were already added and are left out.</item>
+    </plurals>
+    <string name="import_leave_out">Take this photo out of the group</string>
+    <string name="import_question_moved">Taken out of a group. Add it to another session?</string>
+    <string name="import_dont_add_it">Don't add it</string>
+    <string name="media_reading_progress">Reading photos: %1$d of %2$d…</string>
+    <string name="trip_report_scan">Find photos from the sessions</string>
+    <string name="trip_report_scan_hint">Looks in your photo library for everything you took during the sessions, copies it one photo at a time and lets you check it before it is added. Needs access to your photos.</string>
+    <string name="trip_report_scan_progress">Copying photos: %1$d of %2$d…</string>
+    <string name="trip_report_scan_denied">The app may not look at your photos. Allow it in Settings, Privacy &amp; Security, Photos, or pick them yourself below.</string>
+    <string name="trip_report_scan_none">No new photos or videos from the sessions in your library.</string>
+    <plurals name="media_unreadable">
+        <item quantity="one">%1$d photo could not be read from your library. Try adding it again.</item>
+        <item quantity="other">%1$d photos could not be read from your library. Try adding them again.</item>
+    </plurals>
+    <plurals name="import_add_matched">
+        <item quantity="one">Add the %1$d matched one, skip the rest</item>
+        <item quantity="other">Add the %1$d matched ones, skip the rest</item>
     </plurals>
 </resources>

@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.autoreleasepool
 import kotlinx.cinterop.useContents
 import org.jetbrains.kotlinconf.personal.MediaKind
 import platform.AVFoundation.AVAssetImageGenerator
@@ -27,6 +28,7 @@ import platform.Foundation.timeIntervalSince1970
 import platform.ImageIO.CGImageSourceCopyPropertiesAtIndex
 import platform.ImageIO.CGImageSourceCreateWithURL
 import kotlin.time.Instant
+import platform.CoreGraphics.CGImageRelease
 import platform.CoreGraphics.CGRectMake
 import platform.CoreGraphics.CGSizeMake
 import platform.CoreMedia.CMTimeMakeWithSeconds
@@ -65,10 +67,9 @@ import platform.darwin.NSInteger
 import platform.darwin.NSObject
 import platform.darwin.dispatch_async
 import platform.darwin.dispatch_get_main_queue
-import platform.darwin.dispatch_group_create
-import platform.darwin.dispatch_group_enter
-import platform.darwin.dispatch_group_leave
-import platform.darwin.dispatch_group_notify
+import platform.darwin.DISPATCH_TIME_NOW
+import platform.darwin.dispatch_after
+import platform.darwin.dispatch_time
 
 @Composable
 actual fun rememberMediaPicker(): MediaPicker? = remember { IosMediaPicker() }
@@ -110,7 +111,7 @@ private class IosMediaPicker : MediaPicker {
         present(picker)
     }
 
-    override fun pickFromLibrary(onLoading: () -> Unit, onPicked: (List<PickedMedia>) -> Unit) {
+    override fun pickFromLibrary(onProgress: (done: Int, total: Int) -> Unit, onPicked: (List<PickedMedia>, failed: Int) -> Unit) {
         // Made with the library, the picker hands back each item's library id (needs no access to the library),
         // which recognises a photo picked a second time
         val config = PHPickerConfiguration(photoLibrary = PHPhotoLibrary.sharedPhotoLibrary())
@@ -121,14 +122,23 @@ private class IosMediaPicker : MediaPicker {
         // HEIC photos arrive as JPEG and HEVC videos as H.264, which every recipient of the report can open
         config.preferredAssetRepresentationMode = PHPickerConfigurationAssetRepresentationModeCompatible
         val picker = PHPickerViewController(configuration = config)
-        val delegate = LibraryDelegate(onLoading) { result ->
+        val delegate = LibraryDelegate(onProgress) { result, failed ->
             libraryDelegate = null
-            onPicked(result)
+            onPicked(result, failed)
         }
         libraryDelegate = delegate
         picker.delegate = delegate
         present(picker)
     }
+
+    override val canScanLibrary: Boolean = true
+
+    override fun scanLibrary(
+        windows: List<ClosedRange<kotlin.time.Instant>>,
+        skipIds: Set<String>,
+        onProgress: (done: Int, total: Int) -> Unit,
+        onResult: (LibraryScan) -> Unit,
+    ) = scanPhotoLibrary(windows, skipIds, onProgress, onResult)
 
     override fun open(paths: List<String>, kind: MediaKind) {
         if (paths.isEmpty()) return
@@ -161,38 +171,79 @@ private class CameraDelegate(
     }
 }
 
+private const val CONCURRENT_LOADS = 2
+private const val MAX_ATTEMPTS = 3
+
 private class LibraryDelegate(
-    private val onLoading: () -> Unit,
-    private val done: (List<PickedMedia>) -> Unit,
+    private val onProgress: (done: Int, total: Int) -> Unit,
+    private val done: (List<PickedMedia>, failed: Int) -> Unit,
 ) : NSObject(), PHPickerViewControllerDelegateProtocol {
+    // Main-thread bookkeeping for the queue of items to copy
+    private var results: List<PHPickerResult> = emptyList()
+    private var picked = arrayOfNulls<PickedMedia>(0)
+    private var next = 0
+    private var inFlight = 0
+    private var finished = 0
+    private var failed = 0
+
     override fun picker(picker: PHPickerViewController, didFinishPicking: List<*>) {
         picker.dismissViewControllerAnimated(true, completion = null)
-        val results = didFinishPicking.filterIsInstance<PHPickerResult>()
-        if (results.isEmpty()) return done(emptyList())
-        onLoading()
+        results = didFinishPicking.filterIsInstance<PHPickerResult>()
+        if (results.isEmpty()) return done(emptyList(), 0)
+        picked = arrayOfNulls(results.size)
+        onProgress(0, results.size)
+        repeat(CONCURRENT_LOADS) { startNext() }
+    }
 
-        val picked = arrayOfNulls<PickedMedia>(results.size)
-        val group = dispatch_group_create()
-        results.forEachIndexed { index, result ->
-            val provider = result.itemProvider
-            val type = when {
-                provider.hasItemConformingToTypeIdentifier(TYPE_MOVIE) -> TYPE_MOVIE
-                provider.hasItemConformingToTypeIdentifier(TYPE_JPEG) -> TYPE_JPEG
-                provider.hasItemConformingToTypeIdentifier(TYPE_PNG) -> TYPE_PNG
-                provider.hasItemConformingToTypeIdentifier(TYPE_IMAGE) -> TYPE_IMAGE
-                else -> return@forEachIndexed
-            }
-            dispatch_group_enter(group)
-            // The file is only there while the handler runs: copy it right away
-            val assetId = result.assetIdentifier
-            provider.loadFileRepresentationForTypeIdentifier(type) { url, _ ->
-                picked[index] = url?.let { copyPicked(it, type) }?.withSource(assetId)
-                dispatch_group_leave(group)
+    /**
+     * A few at a time: the Photos services that hand over the files have small memory limits, and asking for
+     * hundreds at once gets them killed, after which every remaining load fails.
+     */
+    private fun startNext() {
+        if (next >= results.size) {
+            if (inFlight == 0) done(picked.filterNotNull(), failed)
+            return
+        }
+        val index = next++
+        inFlight++
+        load(index, attempt = 1)
+    }
+
+    private fun load(index: Int, attempt: Int) {
+        val result = results[index]
+        val provider = result.itemProvider
+        val type = when {
+            provider.hasItemConformingToTypeIdentifier(TYPE_MOVIE) -> TYPE_MOVIE
+            provider.hasItemConformingToTypeIdentifier(TYPE_JPEG) -> TYPE_JPEG
+            provider.hasItemConformingToTypeIdentifier(TYPE_PNG) -> TYPE_PNG
+            provider.hasItemConformingToTypeIdentifier(TYPE_IMAGE) -> TYPE_IMAGE
+            else -> return finish(index, null)
+        }
+        val assetId = result.assetIdentifier
+        // The file is only there while the handler runs: copy it right away
+        provider.loadFileRepresentationForTypeIdentifier(type) { url, _ ->
+            val copy = url?.let { autoreleasepool { copyPicked(it, type) } }?.withSource(assetId)
+            dispatch_async(dispatch_get_main_queue()) {
+                if (copy == null && attempt < MAX_ATTEMPTS) {
+                    // Most likely a Photos service restarting: wait a moment and ask again
+                    dispatch_after(
+                        dispatch_time(DISPATCH_TIME_NOW, attempt * 1_500_000_000L),
+                        dispatch_get_main_queue(),
+                    ) { load(index, attempt + 1) }
+                } else {
+                    finish(index, copy)
+                }
             }
         }
-        dispatch_group_notify(group, dispatch_get_main_queue()) {
-            done(picked.filterNotNull())
-        }
+    }
+
+    private fun finish(index: Int, copy: PickedMedia?) {
+        picked[index] = copy
+        if (copy == null) failed++
+        inFlight--
+        finished++
+        onProgress(finished, results.size)
+        startNext()
     }
 
     private fun copyPicked(url: NSURL, type: String): PickedMedia? = when (type) {
@@ -208,7 +259,14 @@ private class LibraryDelegate(
 }
 
 private fun PickedMedia.withSource(id: String?): PickedMedia =
-    PickedMedia(path, kind, extension, thumbnailPath, takenAt, sourceId = id)
+    PickedMedia(path, kind, extension, thumbnailPath ?: photoThumbnail(this), takenAt, sourceId = id)
+
+/** A small preview next to a picked photo, so lists never decode the full photo. */
+internal fun photoThumbnail(item: PickedMedia): String? {
+    if (item.kind != MediaKind.PHOTO) return null
+    val target = item.path.substringBeforeLast('.') + "-thumb.jpg"
+    return if (makeThumbnail(item.path, target)) target else null
+}
 
 private class PreviewItem(private val url: NSURL) : NSObject(), QLPreviewItemProtocol {
     override fun previewItemURL(): NSURL = url
@@ -298,14 +356,16 @@ private fun saveJpeg(image: UIImage): PickedMedia? {
 }
 
 /** A small still from the first second of a video, for the list on the session page. */
-private fun videoStill(path: String): String? {
+internal fun videoStill(path: String): String? {
     val generator = AVAssetImageGenerator(asset = AVURLAsset(uRL = NSURL.fileURLWithPath(path), options = null))
     generator.appliesPreferredTrackTransform = true
     generator.maximumSize = CGSizeMake(480.0, 480.0)
     val still = generator.copyCGImageAtTime(CMTimeMakeWithSeconds(1.0, 600), actualTime = null, error = null)
         ?: generator.copyCGImageAtTime(CMTimeMakeWithSeconds(0.0, 600), actualTime = null, error = null)
         ?: return null
-    val data = UIImageJPEGRepresentation(UIImage.imageWithCGImage(still), 0.8) ?: return null
+    val data = UIImageJPEGRepresentation(UIImage.imageWithCGImage(still), 0.8)
+    CGImageRelease(still)
+    data ?: return null
     val target = tempPath("jpg")
     return if (data.writeToFile(target, atomically = true)) target else null
 }

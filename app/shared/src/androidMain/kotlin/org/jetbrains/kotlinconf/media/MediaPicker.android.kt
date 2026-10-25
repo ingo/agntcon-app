@@ -26,8 +26,8 @@ import kotlin.time.Instant
 
 /** What a launched picker should report back to; the launchers outlive a single request. */
 private class Pending {
-    var library: ((List<PickedMedia>) -> Unit)? = null
-    var loading: (() -> Unit)? = null
+    var library: ((List<PickedMedia>, Int) -> Unit)? = null
+    var progress: ((Int, Int) -> Unit)? = null
     var capture: Pair<File, (List<PickedMedia>) -> Unit>? = null
 }
 
@@ -40,10 +40,17 @@ actual fun rememberMediaPicker(): MediaPicker? {
     val library = rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia()) { uris ->
         val done = pending.library ?: return@rememberLauncherForActivityResult
         pending.library = null
-        if (uris.isEmpty()) return@rememberLauncherForActivityResult done(emptyList())
-        pending.loading?.invoke()
+        if (uris.isEmpty()) return@rememberLauncherForActivityResult done(emptyList(), 0)
+        val progress = pending.progress
+        progress?.invoke(0, uris.size)
         scope.launch {
-            done(withContext(Dispatchers.IO) { uris.mapNotNull { copyFromUri(context, it) } })
+            // One at a time, with progress, so a few hundred photos neither run out of memory nor look stuck
+            val copied = mutableListOf<PickedMedia>()
+            uris.forEachIndexed { index, uri ->
+                withContext(Dispatchers.IO) { copyFromUri(context, uri) }?.let { copied += it }
+                progress?.invoke(index + 1, uris.size)
+            }
+            done(copied, uris.size - copied.size)
         }
     }
     val photo = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { saved ->
@@ -81,9 +88,9 @@ actual fun rememberMediaPicker(): MediaPicker? {
                 video.launch(shareUri(context, file))
             }
 
-            override fun pickFromLibrary(onLoading: () -> Unit, onPicked: (List<PickedMedia>) -> Unit) {
+            override fun pickFromLibrary(onProgress: (done: Int, total: Int) -> Unit, onPicked: (List<PickedMedia>, failed: Int) -> Unit) {
                 pending.library = onPicked
-                pending.loading = onLoading
+                pending.progress = onProgress
                 library.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo))
             }
 

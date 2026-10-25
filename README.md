@@ -74,6 +74,9 @@ the changes made in this fork are listed below and in the git history.
 - **Add photos from the event**: pick a batch from the library on the trip report page and each one is matched to the
   session it was taken in, by its date. Where it is not clear (two bookmarked sessions at once, parallel talks you did not
   mark, a break, no date) the app asks, once per group of photos; nothing is added before you confirm.
+- **Find photos from the sessions** (iPhone): with your permission, the app looks through your photo library for
+  everything taken during the event's talks and copies it one photo at a time, then you check the matches as above.
+  On the review screen, × takes a single photo out of its group so you can give it another session.
 - **Duplicates and clean-up**: a photo or video that is already attached (picked again, or the same file) is left out.
   On iPhone, photos of screens and whiteboards are straightened, cropped and cleaned up on the device; the original is
   kept, one swipe away in the viewer, and both go into the trip report.

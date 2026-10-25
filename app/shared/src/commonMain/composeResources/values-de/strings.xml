@@ -373,12 +373,29 @@ Bitte versuchen Sie es erneut.</string>
         <item quantity="one">Beantworten Sie zuerst die Frage oben</item>
         <item quantity="other">Beantworten Sie zuerst die %1$d Fragen oben</item>
     </plurals>
-    <string name="import_tap_to_view">Tippen Sie auf ein Foto, um es groß zu sehen.</string>
+    <string name="import_tap_to_view">Tippen Sie auf ein Foto, um es groß zu sehen, auf ×, um nur dieses herauszunehmen und anders zuzuordnen.</string>
     <string name="import_slide_matches">Folientext passt</string>
     <string name="session_media_cleaned">Fotos von Bildschirmen und Whiteboards werden begradigt und aufbereitet. Im Viewer nach links wischen für das Original.</string>
     <string name="export_original">Original</string>
     <plurals name="import_duplicates">
         <item quantity="one">%1$d war schon hinzugefügt und wird weggelassen.</item>
         <item quantity="other">%1$d waren schon hinzugefügt und werden weggelassen.</item>
+    </plurals>
+    <string name="import_leave_out">Dieses Foto aus der Gruppe nehmen</string>
+    <string name="import_question_moved">Aus einer Gruppe genommen. Zu einer anderen Session hinzufügen?</string>
+    <string name="import_dont_add_it">Nicht hinzufügen</string>
+    <string name="media_reading_progress">Fotos werden gelesen: %1$d von %2$d …</string>
+    <string name="trip_report_scan">Fotos aus den Sessions finden</string>
+    <string name="trip_report_scan_hint">Sucht in Ihrer Fotomediathek alles, was Sie während der Sessions aufgenommen haben, kopiert es Foto für Foto und lässt Sie es prüfen, bevor es hinzugefügt wird. Braucht Zugriff auf Ihre Fotos.</string>
+    <string name="trip_report_scan_progress">Fotos werden kopiert: %1$d von %2$d …</string>
+    <string name="trip_report_scan_denied">Die App darf Ihre Fotos nicht sehen. Erlauben Sie es unter Einstellungen, Datenschutz &amp; Sicherheit, Fotos, oder wählen Sie sie unten selbst aus.</string>
+    <string name="trip_report_scan_none">Keine neuen Fotos oder Videos aus den Sessions in Ihrer Mediathek.</string>
+    <plurals name="media_unreadable">
+        <item quantity="one">%1$d Foto konnte nicht aus Ihrer Mediathek gelesen werden. Fügen Sie es erneut hinzu.</item>
+        <item quantity="other">%1$d Fotos konnten nicht aus Ihrer Mediathek gelesen werden. Fügen Sie sie erneut hinzu.</item>
+    </plurals>
+    <plurals name="import_add_matched">
+        <item quantity="one">Das %1$d zugeordnete hinzufügen, Rest weglassen</item>
+        <item quantity="other">Die %1$d zugeordneten hinzufügen, Rest weglassen</item>
     </plurals>
 </resources>

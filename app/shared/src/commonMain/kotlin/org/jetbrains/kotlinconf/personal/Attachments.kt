@@ -16,7 +16,7 @@ data class Attachment(
     val id: String,
     val kind: MediaKind,
     val file: String,
-    /** A still picture for a video; photos are shown from [file] itself. */
+    /** A small preview: a still for a video, a shrunk copy for a photo (of the cleaned-up one, if there is one). */
     val thumbnail: String? = null,
     /** When it was added, in milliseconds since 1970; attachments are shown and exported in this order. */
     val addedAt: Long = 0,
@@ -28,9 +28,11 @@ data class Attachment(
     val cleaned: String? = null,
     /** True once the clean-up has looked at this photo, whether or not it found a screen to straighten. */
     val cleanChecked: Boolean = false,
+    /** True once a small preview was made (or tried) for this photo. */
+    val previewChecked: Boolean = false,
 ) {
-    /** The picture to show in a list: the video's still, or the photo (cleaned up where there is one). */
-    val preview: String? get() = if (kind == MediaKind.VIDEO) thumbnail else cleaned ?: file
+    /** The picture to show in a list: the small preview, else the photo itself (cleaned up where there is one). */
+    val preview: String? get() = if (kind == MediaKind.VIDEO) thumbnail else thumbnail ?: cleaned ?: file
 
     /** The files to show in the viewer, best first: the cleaned-up photo, then the original. */
     val viewFiles: List<String> get() = listOfNotNull(cleaned, file)

@@ -25,15 +25,15 @@ private object DesktopMediaPicker : MediaPicker {
 
     override fun recordVideo(onPicked: (List<PickedMedia>) -> Unit) = onPicked(emptyList())
 
-    override fun pickFromLibrary(onLoading: () -> Unit, onPicked: (List<PickedMedia>) -> Unit) {
+    override fun pickFromLibrary(onProgress: (done: Int, total: Int) -> Unit, onPicked: (List<PickedMedia>, failed: Int) -> Unit) {
         val dialog = FileDialog(null as Frame?, "", FileDialog.LOAD).apply {
             isMultipleMode = true
             setFilenameFilter { _, name -> name.substringAfterLast('.').lowercase() in VIDEO_EXTENSIONS + IMAGE_EXTENSIONS }
             isVisible = true
         }
         val files = dialog.files.orEmpty().toList()
-        if (files.isNotEmpty()) onLoading()
-        onPicked(files.mapNotNull { file ->
+        if (files.isNotEmpty()) onProgress(0, files.size)
+        val copied = files.mapNotNull { file ->
             val extension = file.extension.lowercase()
             val kind = when (extension) {
                 in VIDEO_EXTENSIONS -> MediaKind.VIDEO
@@ -45,7 +45,8 @@ private object DesktopMediaPicker : MediaPicker {
             // The desktop reads no EXIF; the file's date is the best guess of when it was taken
             val takenAt = file.lastModified().takeIf { it > 0 }?.let { MediaTime.of(Instant.fromEpochMilliseconds(it)) }
             PickedMedia(copy.toString(), kind, extension, takenAt = takenAt)
-        })
+        }
+        onPicked(copied, files.size - copied.size)
     }
 
     override fun open(paths: List<String>, kind: MediaKind) {

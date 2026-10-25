@@ -45,7 +45,11 @@ data class ImportGroup(
     val changing: Boolean = false,
     /** The session whose title or speakers the text on the photos matches (see [SlideTextMatcher]). */
     val suggested: SessionId? = null,
+    /** A photo the attendee took out of the group it was matched to, to add somewhere else or not at all. */
+    val movedOut: Boolean = false,
 ) {
+    val kept: List<PickedMedia> get() = items
+
     val isQuestion: Boolean get() = match.needsAnswer
     val matchedSession: SessionCardView? get() = (answer as? ImportAnswer.To)?.let { a -> options.find { it.id == a.session } }
 }
@@ -59,9 +63,13 @@ data class ImportState(
     val duplicates: Int = 0,
     /** True while the picked items are compared with the ones already attached. */
     val checking: Boolean = true,
+    /** Chosen items that could not be read from the library. */
+    val unreadable: Int = 0,
 ) {
     val unanswered: Int get() = groups.count { it.answer == null }
-    val toAdd: Int get() = groups.filter { it.answer is ImportAnswer.To }.sumOf { it.items.size }
+    val toAdd: Int get() = groups.filter { it.answer is ImportAnswer.To }.sumOf { it.kept.size }
+    /** What would be added if the open questions were skipped. */
+    val answeredToAdd: Int get() = toAdd
     val total: Int get() = groups.sumOf { it.items.size }
 }
 
@@ -74,7 +82,8 @@ data class ImportState(
 class MediaImportViewModel(
     private val service: ConferenceService,
 ) : ViewModel() {
-    private var picked: List<PickedMedia> = service.takeImport()
+    private val handedOver = service.takeImport()
+    private var picked: List<PickedMedia> = handedOver.first
     private var finished = false
 
     private val _state = MutableStateFlow(ImportState())
@@ -86,7 +95,7 @@ class MediaImportViewModel(
             val duplicates = service.findDuplicates(picked)
             service.discardPicked(picked.filterIndexed { i, _ -> i in duplicates })
             picked = picked.filterIndexed { i, _ -> i !in duplicates }
-            _state.value = build().copy(duplicates = duplicates.size, checking = false)
+            _state.value = build().copy(duplicates = duplicates.size, checking = false, unreadable = handedOver.second)
             readSlides()
         }
     }
@@ -97,14 +106,15 @@ class MediaImportViewModel(
      */
     private fun readSlides() {
         val byId = service.exportSnapshot().sessions.associateBy { it.id }
-        _state.value.groups.forEachIndexed { index, group ->
+        // One photo at a time: reading text is heavy, and a big import has many questions
+        viewModelScope.launch { _state.value.groups.forEachIndexed { index, group ->
             if (group.match !is MediaMatch.Ask) return@forEachIndexed
-            viewModelScope.launch {
+            run {
                 val paths = group.items.mapNotNull { if (it.kind == MediaKind.PHOTO) it.path else it.thumbnailPath }.take(MAX_PHOTOS_READ)
                 val text = paths.mapNotNull { recognizeText(it) }.joinToString("\n")
-                if (text.isBlank()) return@launch
+                if (text.isBlank()) return@run
                 val candidates = group.options.mapNotNull { byId[it.id] }.map { it.id to "${it.title} ${it.speakerLine}" }
-                val suggested = SlideTextMatcher.best(text, candidates) ?: return@launch
+                val suggested = SlideTextMatcher.best(text, candidates) ?: return@run
                 _state.update { state ->
                     state.copy(groups = state.groups.mapIndexed { i, g ->
                         if (i != index) g
@@ -112,7 +122,7 @@ class MediaImportViewModel(
                     })
                 }
             }
-        }
+        } }
     }
 
     private fun build(): ImportState {
@@ -163,11 +173,48 @@ class MediaImportViewModel(
         state.copy(groups = state.groups.mapIndexed { i, g -> if (i == index) g.copy(answer = answer, changing = false) else g })
     }
 
+    /**
+     * Takes one photo out of its group (it was grouped wrong): the rest keep their session, and the photo gets a card
+     * of its own at the end, not added unless the attendee picks a session for it there.
+     */
+    fun takeOut(groupIndex: Int, itemIndex: Int) = _state.update { state ->
+        val group = state.groups.getOrNull(groupIndex) ?: return@update state
+        val item = group.items.getOrNull(itemIndex) ?: return@update state
+        val at = item.takenAt?.inZone(ActiveEvent.timeZone)
+        val snapshot = service.exportSnapshot()
+        val byId = snapshot.sessions.associateBy { it.id }
+        val previous = (group.answer as? ImportAnswer.To)?.session?.let { byId[it] }
+        val options = (around(at, snapshot.sessions, state.attended, null) + listOfNotNull(previous)).distinctBy { it.id }
+        val moved = ImportGroup(
+            match = MediaMatch.Between(null, null),
+            items = listOf(item),
+            from = at,
+            to = at,
+            options = options,
+            answer = ImportAnswer.Skip,
+            movedOut = true,
+        )
+        val rest = group.items.filterIndexed { i, _ -> i != itemIndex }
+        val groups = state.groups.mapIndexedNotNull { i, g ->
+            if (i != groupIndex) g else if (rest.isEmpty()) null else g.copy(items = rest)
+        }
+        state.copy(groups = groups + moved)
+    }
+
     fun change(index: Int) = _state.update { state ->
         state.copy(groups = state.groups.mapIndexed { i, g -> if (i == index) g.copy(changing = !g.changing) else g })
     }
 
-    /** Keeps the photos for the sessions chosen and deletes the rest. */
+    /** Leaves the questions not answered yet out and adds the rest: a big import need not be answered to the end. */
+    fun skipUnansweredAndConfirm() {
+        _state.update { state -> state.copy(groups = state.groups.map { if (it.answer == null) it.copy(answer = ImportAnswer.Skip) else it }) }
+        confirm()
+    }
+
+    /**
+     * Keeps the photos for the sessions chosen and deletes the rest. Groups are saved one after another, so even a
+     * few hundred photos go in without holding everything in memory at once.
+     */
     fun confirm() {
         val state = _state.value
         if (state.unanswered > 0 || state.saving || state.checking) return

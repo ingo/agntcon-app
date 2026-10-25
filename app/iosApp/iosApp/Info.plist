@@ -35,6 +35,8 @@
 	<string>To take photos and videos of a session and keep them with your notes and trip report.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>To record the sound of a session when you record a video of it.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>To find the photos and videos you took during the sessions and add them to your notes and trip report. They stay on this device.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

@@ -28,6 +28,7 @@ import org.jetbrains.kotlinconf.export.ReportProgress
 import org.jetbrains.kotlinconf.export.ReportResult
 import org.jetbrains.kotlinconf.export.rememberExportLabels
 import org.jetbrains.kotlinconf.export.rememberExporter
+import org.jetbrains.kotlinconf.media.LibraryScan
 import org.jetbrains.kotlinconf.media.PickedMedia
 import org.jetbrains.kotlinconf.media.rememberMediaPicker
 import org.jetbrains.kotlinconf.generated.resources.Res
@@ -36,7 +37,12 @@ import org.jetbrains.kotlinconf.generated.resources.photo_library_24
 import org.jetbrains.kotlinconf.generated.resources.trip_report_add_photos
 import org.jetbrains.kotlinconf.generated.resources.trip_report_add_photos_hint
 import org.jetbrains.kotlinconf.generated.resources.trip_report_download
-import org.jetbrains.kotlinconf.generated.resources.trip_report_reading_photos
+import org.jetbrains.kotlinconf.generated.resources.trip_report_scan_progress
+import org.jetbrains.kotlinconf.generated.resources.trip_report_scan_none
+import org.jetbrains.kotlinconf.generated.resources.trip_report_scan_hint
+import org.jetbrains.kotlinconf.generated.resources.trip_report_scan_denied
+import org.jetbrains.kotlinconf.generated.resources.trip_report_scan
+import org.jetbrains.kotlinconf.generated.resources.media_reading_progress
 import org.jetbrains.kotlinconf.generated.resources.trip_report_download_hint
 import org.jetbrains.kotlinconf.generated.resources.trip_report_download_size
 import org.jetbrains.kotlinconf.generated.resources.trip_report_downloading_slides
@@ -91,11 +97,9 @@ fun TripReportScreen(
             modifier = Modifier.padding(vertical = 24.dp),
         ) {
             Text(stringResource(Res.string.trip_report_intro), color = KotlinConfTheme.colors.longText)
-            AddPhotos(onPicked = { picked ->
-                if (picked.isNotEmpty()) {
-                    viewModel.startImport(picked)
-                    onImport()
-                }
+            AddPhotos(viewModel, onPicked = { picked, failed ->
+                viewModel.startImport(picked, failed)
+                onImport()
             })
             if (!summary.loaded) return@Column
             if (summary.items.isEmpty()) {
@@ -148,24 +152,69 @@ fun TripReportScreen(
     }
 }
 
-/** Photos and videos from the library for the whole event, matched to sessions on the next screen. */
+/**
+ * Photos and videos from the library for the whole event, matched to sessions on the next screen: found by scanning
+ * the library (iOS, with permission) or picked by hand. Both copy a few at a time and show how far they are.
+ */
 @Composable
-private fun AddPhotos(onPicked: (List<PickedMedia>) -> Unit) {
+private fun AddPhotos(viewModel: TripReportViewModel, onPicked: (List<PickedMedia>, Int) -> Unit) {
     val picker = rememberMediaPicker() ?: return
-    var reading by remember { mutableStateOf(false) }
+    var progress by remember { mutableStateOf<Pair<Int, Int>?>(null) }
+    var scanning by remember { mutableStateOf(false) }
+    var message by remember { mutableStateOf<org.jetbrains.compose.resources.StringResource?>(null) }
+    val busy = progress != null
+
+    if (picker.canScanLibrary) {
+        PageMenuItem(
+            label = stringResource(Res.string.trip_report_scan),
+            onClick = {
+                if (!busy) {
+                    message = null
+                    scanning = true
+                    progress = 0 to 0
+                    picker.scanLibrary(
+                        windows = viewModel.scanWindows(),
+                        skipIds = viewModel.knownSourceIds(),
+                        onProgress = { done, total -> progress = done to total },
+                    ) { result ->
+                        progress = null
+                        scanning = false
+                        when (result) {
+                            is LibraryScan.Found ->
+                                if (result.items.isEmpty() && result.failed == 0) message = Res.string.trip_report_scan_none
+                                else onPicked(result.items, result.failed)
+                            LibraryScan.Denied -> message = Res.string.trip_report_scan_denied
+                            LibraryScan.Unavailable -> Unit
+                        }
+                    }
+                }
+            },
+            drawableStart = Res.drawable.photo_library_24,
+        )
+    }
     PageMenuItem(
         label = stringResource(Res.string.trip_report_add_photos),
         onClick = {
-            if (!reading) picker.pickFromLibrary(onLoading = { reading = true }) { picked ->
-                reading = false
-                onPicked(picked)
+            if (!busy) {
+                message = null
+                picker.pickFromLibrary(onProgress = { done, total -> progress = done to total }) { picked, failed ->
+                    progress = null
+                    if (picked.isNotEmpty() || failed > 0) onPicked(picked, failed)
+                }
             }
         },
         drawableStart = Res.drawable.photo_library_24,
     )
+    val status = progress
     Text(
-        stringResource(if (reading) Res.string.trip_report_reading_photos else Res.string.trip_report_add_photos_hint),
-        color = KotlinConfTheme.colors.noteText,
+        when {
+            status != null && scanning -> stringResource(Res.string.trip_report_scan_progress, status.first, status.second)
+            status != null -> stringResource(Res.string.media_reading_progress, status.first, status.second)
+            message != null -> stringResource(message!!)
+            picker.canScanLibrary -> stringResource(Res.string.trip_report_scan_hint)
+            else -> stringResource(Res.string.trip_report_add_photos_hint)
+        },
+        color = if (message == Res.string.trip_report_scan_denied) KotlinConfTheme.colors.orangeText else KotlinConfTheme.colors.noteText,
     )
 }
 
