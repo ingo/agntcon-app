@@ -400,4 +400,9 @@ Bitte versuchen Sie es erneut.</string>
     </plurals>
     <string name="import_likely">Wahrscheinlich: überzogen oder früher begonnen</string>
     <string name="trip_report_preview">Bericht ansehen</string>
+    <plurals name="import_outlier">
+        <item quantity="one">Dieses Foto gehört wahrscheinlich zu denen kurz davor und danach: %2$s.</item>
+        <item quantity="other">Diese %1$d Fotos gehören wahrscheinlich zu denen kurz davor und danach: %2$s.</item>
+    </plurals>
+    <string name="import_outlier_move">In diese Session verschieben</string>
 </resources>

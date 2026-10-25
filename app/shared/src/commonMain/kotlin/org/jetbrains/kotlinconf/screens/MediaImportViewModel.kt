@@ -22,6 +22,7 @@ import org.jetbrains.kotlinconf.media.PickedMedia
 import org.jetbrains.kotlinconf.media.SlideTextMatcher
 import org.jetbrains.kotlinconf.media.recognizeText
 import org.jetbrains.kotlinconf.personal.MediaKind
+import org.jetbrains.kotlinconf.media.findOutliers
 import org.jetbrains.kotlinconf.media.groupMatches
 import org.jetbrains.kotlinconf.minus
 import kotlin.time.Duration.Companion.minutes
@@ -67,7 +68,24 @@ data class ImportState(
     val checking: Boolean = true,
     /** Chosen items that could not be read from the library. */
     val unreadable: Int = 0,
+    /** The event's sessions, to name the one a misplaced photo probably belongs to. */
+    val sessions: Map<SessionId, SessionCardView> = emptyMap(),
 ) {
+    /**
+     * Photos that are probably in the wrong session (see [findOutliers]), by group: which of its photos, and the session
+     * the photos around them went to.
+     */
+    val outliers: Map<Int, Pair<Set<Int>, SessionId>> by lazy {
+        val positions = groups.flatMapIndexed { g, group -> group.items.indices.map { g to it } }
+        val items = positions.map { (g, i) ->
+            val group = groups[g]
+            group.items[i].takenAt?.inZone(ActiveEvent.timeZone) to (group.answer as? ImportAnswer.To)?.session
+        }
+        findOutliers(items).entries
+            .groupBy({ positions[it.key].first }, { positions[it.key].second to it.value })
+            .mapValues { (_, flagged) -> flagged.map { it.first }.toSet() to flagged.first().second }
+    }
+
     val unanswered: Int get() = groups.count { it.answer == null }
     val toAdd: Int get() = groups.filter { it.answer is ImportAnswer.To }.sumOf { it.kept.size }
     /** What would be added if the open questions were skipped. */
@@ -97,7 +115,12 @@ class MediaImportViewModel(
             val duplicates = service.findDuplicates(picked)
             service.discardPicked(picked.filterIndexed { i, _ -> i in duplicates })
             picked = picked.filterIndexed { i, _ -> i !in duplicates }
-            _state.value = build().copy(duplicates = duplicates.size, checking = false, unreadable = handedOver.second)
+            _state.value = build().copy(
+                duplicates = duplicates.size,
+                checking = false,
+                unreadable = handedOver.second,
+                sessions = service.exportSnapshot().sessions.associateBy { it.id },
+            )
             readSlides()
         }
     }
@@ -205,6 +228,34 @@ class MediaImportViewModel(
             if (i != groupIndex) g else if (rest.isEmpty()) null else g.copy(items = rest)
         }
         state.copy(groups = (groups + moved).sortedWith(compareBy(nullsLast()) { it.from }))
+    }
+
+    /**
+     * Moves the photos flagged as probably misplaced in a group to the session the photos around them went to. A group
+     * flagged as a whole just gets that session; otherwise the flagged photos get a card of their own with it.
+     */
+    fun moveFlagged(groupIndex: Int) = _state.update { state ->
+        val (flagged, target) = state.outliers[groupIndex] ?: return@update state
+        val group = state.groups[groupIndex]
+        if (flagged.size == group.items.size) {
+            return@update state.copy(groups = state.groups.mapIndexed { i, g ->
+                if (i == groupIndex) g.copy(answer = ImportAnswer.To(target), changing = false) else g
+            })
+        }
+        val moved = group.items.filterIndexed { i, _ -> i in flagged }
+        val times = moved.mapNotNull { it.takenAt?.inZone(ActiveEvent.timeZone) }
+        val snapshot = service.exportSnapshot()
+        val card = ImportGroup(
+            match = MediaMatch.Matched(target),
+            items = moved,
+            from = times.minOrNull(),
+            to = times.maxOrNull(),
+            options = around(times.minOrNull(), snapshot.sessions, state.attended, state.sessions[target]),
+            answer = ImportAnswer.To(target),
+        )
+        val rest = group.copy(items = group.items.filterIndexed { i, _ -> i !in flagged })
+        state.copy(groups = (state.groups.mapIndexed { i, g -> if (i == groupIndex) rest else g } + card)
+            .sortedWith(compareBy(nullsLast()) { it.from }))
     }
 
     fun change(index: Int) = _state.update { state ->

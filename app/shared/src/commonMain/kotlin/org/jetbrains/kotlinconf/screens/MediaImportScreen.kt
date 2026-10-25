@@ -55,6 +55,8 @@ import org.jetbrains.kotlinconf.generated.resources.import_items
 import org.jetbrains.kotlinconf.generated.resources.import_leave_out
 import org.jetbrains.kotlinconf.generated.resources.import_likely
 import org.jetbrains.kotlinconf.generated.resources.import_no_options
+import org.jetbrains.kotlinconf.generated.resources.import_outlier
+import org.jetbrains.kotlinconf.generated.resources.import_outlier_move
 import org.jetbrains.kotlinconf.generated.resources.import_not_added
 import org.jetbrains.kotlinconf.generated.resources.import_nothing_to_add
 import org.jetbrains.kotlinconf.generated.resources.import_question_ask
@@ -111,6 +113,8 @@ fun MediaImportScreen(
                     attended = state.attended,
                     onView = { item -> picker?.open(listOf(item.path), item.kind) },
                     onTakeOut = { item -> viewModel.takeOut(index, item) },
+                    outlier = state.outliers[index]?.let { (flagged, target) -> flagged.size to state.sessions[target] },
+                    onMoveFlagged = { viewModel.moveFlagged(index) },
                     onAnswer = { viewModel.answer(index, it) },
                     onChange = { viewModel.change(index) },
                 )
@@ -150,6 +154,9 @@ private fun GroupCard(
     attended: Set<SessionId>,
     onView: (PickedMedia) -> Unit,
     onTakeOut: (Int) -> Unit,
+    /** How many of this group's photos are probably misplaced, and the session the photos around them went to. */
+    outlier: Pair<Int, SessionCardView?>?,
+    onMoveFlagged: () -> Unit,
     onAnswer: (ImportAnswer) -> Unit,
     onChange: () -> Unit,
 ) {
@@ -186,6 +193,29 @@ private fun GroupCard(
             color = KotlinConfTheme.colors.noteText,
         )
         Thumbnails(group.items, canTakeOut = !group.movedOut && group.items.size > 1, onView, onTakeOut)
+        val target = outlier?.second
+        if (outlier != null && target != null) {
+            // One or two photos going somewhere else than the photos taken just before and after: probably a slip
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(KotlinConfTheme.shapes.roundedCornerSm)
+                    .border(1.dp, KotlinConfTheme.colors.orangeText, KotlinConfTheme.shapes.roundedCornerSm)
+                    .padding(12.dp),
+            ) {
+                Text(
+                    pluralStringResource(Res.plurals.import_outlier, outlier.first, outlier.first, target.title),
+                    style = KotlinConfTheme.typography.text2,
+                    color = KotlinConfTheme.colors.orangeText,
+                )
+                Button(
+                    label = stringResource(Res.string.import_outlier_move),
+                    onClick = onMoveFlagged,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
         Text(stringResource(Res.string.import_tap_to_view), style = KotlinConfTheme.typography.text2, color = KotlinConfTheme.colors.noteText)
 
         if (group.isQuestion || group.changing) {

@@ -5,6 +5,7 @@ import org.jetbrains.kotlinconf.SessionCardView
 import org.jetbrains.kotlinconf.SessionId
 import org.jetbrains.kotlinconf.isServiceEvent
 import org.jetbrains.kotlinconf.minus
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 
@@ -125,4 +126,36 @@ fun groupMatches(matches: List<MediaMatch>, times: List<LocalDateTime?>): List<M
     val groups = matches.indices.groupBy { matches[it] }.map { (match, items) -> MediaGroup(match, items) }
     fun firstTime(group: MediaGroup) = group.items.mapNotNull { times[it] }.minOrNull()
     return groups.sortedWith(compareBy(nullsLast()) { firstTime(it) })
+}
+
+/**
+ * Photos that are probably in the wrong session: one or two going to one session while the photos taken just before
+ * and after them (within [maxGap]) went to another, the same one on both sides. Usually a slip while answering or
+ * changing a group. [items] are each photo's time and assigned session (null when it is not being added; those are
+ * ignored). Returns, by position in [items], the session the photo probably belongs to.
+ */
+fun findOutliers(
+    items: List<Pair<LocalDateTime?, SessionId?>>,
+    maxRun: Int = 2,
+    maxGap: Duration = 15.minutes,
+): Map<Int, SessionId> {
+    val dated = items.indices
+        .filter { items[it].first != null && items[it].second != null }
+        .sortedBy { items[it].first }
+    // Consecutive photos (in time) going to the same session
+    val runs = mutableListOf<MutableList<Int>>()
+    for (index in dated) {
+        val last = runs.lastOrNull()
+        if (last != null && items[last.last()].second == items[index].second) last += index else runs += mutableListOf(index)
+    }
+    val result = mutableMapOf<Int, SessionId>()
+    for (r in 1 until runs.size - 1) {
+        val (before, run, after) = Triple(runs[r - 1], runs[r], runs[r + 1])
+        val around = items[before.last()].second
+        if (run.size > maxRun || around != items[after.first()].second) continue
+        val gapBefore = items[run.first()].first!! - items[before.last()].first!!
+        val gapAfter = items[after.first()].first!! - items[run.last()].first!!
+        if (gapBefore <= maxGap && gapAfter <= maxGap) run.forEach { result[it] = around!! }
+    }
+    return result
 }
