@@ -38,6 +38,9 @@ data class Attachment(
 
     /** The files to show in the viewer, best first: the cleaned-up photo, then the original. */
     val viewFiles: List<String> get() = listOfNotNull(cleaned, file)
+
+    /** Every file stored for it: the original, the cleaned-up copy and the preview. */
+    val files: List<String> get() = listOfNotNull(file, cleaned, thumbnail)
 }
 
 /** Replaces one attachment wherever it is, e.g. when its cleaned-up copy is ready. */

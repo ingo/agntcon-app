@@ -24,3 +24,29 @@ class MediaDuplicates(existing: Collection<Attachment>) {
         return false
     }
 }
+
+/** The attachments left after [removeStoredDuplicates], and the ones taken out, whose files can be deleted. */
+data class StoredDuplicates(val kept: Map<String, List<Attachment>>, val removed: List<Attachment>)
+
+/**
+ * Takes out photos and videos stored more than once, in one session or in different ones (older versions of the app did
+ * not check). Attachments without a [Attachment.contentHash] get one from [hashes] (by attachment id) where it is known.
+ * Of each set of copies, the one added first stays; it is the one a session lists first. Running it again changes
+ * nothing.
+ */
+fun removeStoredDuplicates(
+    all: Map<String, List<Attachment>>,
+    hashes: Map<String, String> = emptyMap(),
+): StoredDuplicates {
+    val backfilled = all.mapValues { (_, list) ->
+        list.map { if (it.contentHash == null && it.id in hashes) it.copy(contentHash = hashes[it.id]) else it }
+    }
+    val seen = MediaDuplicates(emptyList())
+    val removedIds = backfilled.values.flatten()
+        .sortedBy { it.addedAt }
+        .filter { seen.isDuplicate(Fingerprint(it.sourceId, it.contentHash)) }
+        .mapTo(mutableSetOf()) { it.id }
+    val kept = backfilled.mapValues { (_, list) -> list.filterNot { it.id in removedIds } }.filterValues { it.isNotEmpty() }
+    val removed = all.values.flatten().filter { it.id in removedIds }
+    return StoredDuplicates(kept, removed)
+}
