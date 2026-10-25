@@ -41,5 +41,5 @@ jobs:
             Do not change .github/, fastlane/ or scripts/. If the report is unclear or not a bug, comment on
             the issue with what you need instead of guessing.
           claude_args: |
-            --max-turns 40
+            --max-turns 80
             --allowedTools "Read,Edit,Write,Glob,Grep,Bash(./gradlew:*),Bash(git:*),Bash(gh issue view:*),Bash(gh pr:*),Bash(gh issue comment:*)"
