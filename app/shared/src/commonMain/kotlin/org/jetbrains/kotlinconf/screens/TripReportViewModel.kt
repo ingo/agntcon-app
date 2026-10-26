@@ -115,6 +115,13 @@ class TripReportViewModel(
             }
     }
 
+    /** Library ids of the photos that can be looked up in the photo library, to star the hearted ones. */
+    fun photoSourceIds(): Set<String> =
+        service.attachments.value.values.flatten().filter { it.kind == MediaKind.PHOTO }.mapNotNullTo(mutableSetOf()) { it.sourceId }
+
+    /** Stars the photos hearted in the photo library; returns how many were newly starred. */
+    suspend fun starFavorites(favoriteIds: Set<String>): Int = service.starFavorites(favoriteIds)
+
     /** Library ids of the photos and videos already attached, so a scan does not copy them again. */
     fun knownSourceIds(): Set<String> = service.attachments.value.values.flatten().mapNotNullTo(mutableSetOf()) { it.sourceId }
 

@@ -67,6 +67,23 @@ fun Attachment.withCleanUpMode(mode: CleanUpMode?): Attachment =
 fun Attachment.withHighlighted(highlighted: Boolean): Attachment =
     if (highlighted == this.highlighted) this else copy(highlighted = highlighted)
 
+/**
+ * Stars every photo whose library id is in [favoriteIds] (the photos hearted in the photo library). Only ever adds
+ * stars. Gives the new map and how many photos were newly starred.
+ */
+fun Map<String, List<Attachment>>.withStarsFrom(favoriteIds: Set<String>): Pair<Map<String, List<Attachment>>, Int> {
+    var starred = 0
+    val next = mapValues { (_, list) ->
+        list.map {
+            if (it.kind == MediaKind.PHOTO && !it.highlighted && it.sourceId in favoriteIds) {
+                starred++
+                it.copy(highlighted = true)
+            } else it
+        }
+    }
+    return next to starred
+}
+
 /** Replaces one attachment wherever it is, e.g. when its cleaned-up copy is ready. */
 fun Map<String, List<Attachment>>.withUpdated(attachmentId: String, transform: (Attachment) -> Attachment): Map<String, List<Attachment>> =
     mapValues { (_, list) -> list.map { if (it.id == attachmentId) transform(it) else it } }

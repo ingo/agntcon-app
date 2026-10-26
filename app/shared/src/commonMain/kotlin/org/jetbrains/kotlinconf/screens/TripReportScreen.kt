@@ -1,6 +1,8 @@
 package org.jetbrains.kotlinconf.screens
 
 import androidx.compose.foundation.clickable
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -29,6 +31,7 @@ import org.jetbrains.kotlinconf.export.ReportProgress
 import org.jetbrains.kotlinconf.export.ReportResult
 import org.jetbrains.kotlinconf.export.rememberExportLabels
 import org.jetbrains.kotlinconf.export.rememberExporter
+import org.jetbrains.kotlinconf.media.FavoriteLookup
 import org.jetbrains.kotlinconf.media.LibraryScan
 import org.jetbrains.kotlinconf.media.PickedMedia
 import org.jetbrains.kotlinconf.media.rememberMediaPicker
@@ -56,6 +59,10 @@ import org.jetbrains.kotlinconf.generated.resources.trip_report_cleanup_progress
 import org.jetbrains.kotlinconf.generated.resources.trip_report_intro
 import org.jetbrains.kotlinconf.generated.resources.trip_report_note
 import org.jetbrains.kotlinconf.generated.resources.trip_report_packing
+import org.jetbrains.kotlinconf.generated.resources.trip_report_hearts
+import org.jetbrains.kotlinconf.generated.resources.trip_report_hearts_done
+import org.jetbrains.kotlinconf.generated.resources.trip_report_hearts_hint
+import org.jetbrains.kotlinconf.generated.resources.trip_report_hearts_unchecked
 import org.jetbrains.kotlinconf.generated.resources.trip_report_highlights
 import org.jetbrains.kotlinconf.generated.resources.trip_report_highlights_hint
 import org.jetbrains.kotlinconf.generated.resources.trip_report_photos
@@ -130,6 +137,7 @@ fun TripReportScreen(
                 style = KotlinConfTheme.typography.text2,
                 color = KotlinConfTheme.colors.noteText,
             )
+            if (summary.photos > 0) StarFavorites(viewModel)
             // The photos are straightened and cleaned up one at a time in the background; say how far it has got
             cleanUp?.let { progress ->
                 Text(
@@ -244,6 +252,60 @@ private fun AddPhotos(viewModel: TripReportViewModel, onPicked: (List<PickedMedi
             else -> stringResource(Res.string.trip_report_add_photos_hint)
         },
         color = if (message == Res.string.trip_report_scan_denied) KotlinConfTheme.colors.orangeText else KotlinConfTheme.colors.noteText,
+    )
+}
+
+/**
+ * Stars the photos hearted in the Photos app, when the attendee asks (iOS, with permission). It only adds stars, so it
+ * can be run again after hearting more photos, and never undoes a choice made in the app.
+ */
+@Composable
+private fun StarFavorites(viewModel: TripReportViewModel) {
+    val picker = rememberMediaPicker() ?: return
+    if (!picker.canScanLibrary) return
+    var working by remember { mutableStateOf(false) }
+    var result by remember { mutableStateOf<FavoriteLookup.Found?>(null) }
+    var starred by remember { mutableStateOf(0) }
+    var denied by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+
+    PageMenuItem(
+        label = stringResource(Res.string.trip_report_hearts),
+        onClick = {
+            if (!working) {
+                working = true
+                denied = false
+                result = null
+                picker.favoriteIds(viewModel.photoSourceIds()) { lookup ->
+                    when (lookup) {
+                        is FavoriteLookup.Found -> scope.launch {
+                            starred = viewModel.starFavorites(lookup.favorites)
+                            result = lookup
+                            working = false
+                        }
+                        FavoriteLookup.Denied -> {
+                            denied = true
+                            working = false
+                        }
+                        FavoriteLookup.Unavailable -> working = false
+                    }
+                }
+            }
+        },
+        drawableStart = Res.drawable.photo_library_24,
+    )
+    val found = result
+    Text(
+        when {
+            denied -> stringResource(Res.string.trip_report_scan_denied)
+            found != null -> listOfNotNull(
+                pluralStringResource(Res.plurals.trip_report_hearts_done, starred, starred),
+                found.unchecked.takeIf { it > 0 }?.let { pluralStringResource(Res.plurals.trip_report_hearts_unchecked, it, it) },
+            ).joinToString(" ")
+            else -> stringResource(Res.string.trip_report_hearts_hint)
+        },
+        style = KotlinConfTheme.typography.text2,
+        color = if (denied) KotlinConfTheme.colors.orangeText else KotlinConfTheme.colors.noteText,
     )
 }
 

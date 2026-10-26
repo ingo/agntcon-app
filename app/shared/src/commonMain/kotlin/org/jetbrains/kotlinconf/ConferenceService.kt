@@ -65,6 +65,7 @@ import org.jetbrains.kotlinconf.personal.withAdded
 import org.jetbrains.kotlinconf.personal.withMet
 import org.jetbrains.kotlinconf.personal.withCleanUpMode
 import org.jetbrains.kotlinconf.personal.withHighlighted
+import org.jetbrains.kotlinconf.personal.withStarsFrom
 import org.jetbrains.kotlinconf.personal.withMoved
 import org.jetbrains.kotlinconf.personal.withRemoved
 import org.jetbrains.kotlinconf.personal.withUpdated
@@ -231,6 +232,7 @@ class ConferenceService(
                     sourceId = item.sourceId,
                     contentHash = hash,
                     takenAt = item.takenAt?.epochMillis(ActiveEvent.timeZone),
+                    highlighted = item.favorite && item.kind == MediaKind.PHOTO,
                 )
             }
             storage.setAttachments(all.withAdded(sessionId, added))
@@ -365,6 +367,17 @@ class ConferenceService(
         savePersonal { storage ->
             storage.setAttachments(storage.getAttachments().first().withUpdated(attachmentId) { it.withHighlighted(highlighted) })
         }
+    }
+
+    /** Stars the photos hearted in the photo library (by their library ids); never takes a star off. Returns how many. */
+    suspend fun starFavorites(favoriteIds: Set<String>): Int {
+        var starred = 0
+        savePersonal { storage ->
+            val (next, count) = storage.getAttachments().first().withStarsFrom(favoriteIds)
+            starred = count
+            if (count > 0) storage.setAttachments(next)
+        }
+        return starred
     }
 
     /**

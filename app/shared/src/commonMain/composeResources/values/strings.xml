@@ -433,4 +433,14 @@ Please try again.</string>
         <item quantity="other">%1$d highlights</item>
     </plurals>
     <string name="trip_report_highlights_hint">Star the photos that matter, on the session page: they open the report and are shown larger.</string>
+    <string name="trip_report_hearts">Star my favorites from Photos</string>
+    <string name="trip_report_hearts_hint">Stars the photos you hearted in the Photos app. It only adds stars; none are taken off.</string>
+    <plurals name="trip_report_hearts_done">
+        <item quantity="one">%1$d photo starred.</item>
+        <item quantity="other">%1$d photos starred.</item>
+    </plurals>
+    <plurals name="trip_report_hearts_unchecked">
+        <item quantity="one">%1$d photo could not be checked: it is not from your library, or was deleted from it.</item>
+        <item quantity="other">%1$d photos could not be checked: they are not from your library, or were deleted from it.</item>
+    </plurals>
 </resources>

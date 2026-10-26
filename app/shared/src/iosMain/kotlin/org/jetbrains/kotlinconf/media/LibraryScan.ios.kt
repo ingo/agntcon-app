@@ -93,6 +93,25 @@ private fun findAssets(windows: List<ClosedRange<Instant>>): List<PHAsset> {
         }
 }
 
+/** Which of the photos with these library ids are hearted in the Photos app; asks for access the first time. */
+internal fun lookUpFavorites(sourceIds: Set<String>, onResult: (FavoriteLookup) -> Unit) {
+    fun main(block: () -> Unit) = dispatch_async(dispatch_get_main_queue(), block)
+    if (sourceIds.isEmpty()) return onResult(FavoriteLookup.Found(emptySet(), 0))
+    PHPhotoLibrary.requestAuthorizationForAccessLevel(PHAccessLevelReadWrite) { status ->
+        if (status != PHAuthorizationStatusAuthorized && status != PHAuthorizationStatusLimited) {
+            return@requestAuthorizationForAccessLevel main { onResult(FavoriteLookup.Denied) }
+        }
+        val found = PHAsset.fetchAssetsWithLocalIdentifiers(sourceIds.toList(), options = null)
+        val assets = (0 until found.count.toInt()).mapNotNull { found.objectAtIndex(it.toULong()) as? PHAsset }
+        val favorites = assets.filter { it.favorite }.mapTo(mutableSetOf()) { it.localIdentifier }
+        main { onResult(FavoriteLookup.Found(favorites, sourceIds.size - assets.size)) }
+    }
+}
+
+/** Whether the library item with this id is hearted; false when it cannot be read (e.g. no access to the library). */
+internal fun isFavoriteAsset(id: String): Boolean =
+    (PHAsset.fetchAssetsWithLocalIdentifiers(listOf(id), options = null).firstObject as? PHAsset)?.favorite == true
+
 /** Copies one asset's original file to a temporary file; [done] gets null when it cannot be read. */
 private fun copyAsset(asset: PHAsset, done: (PickedMedia?) -> Unit) {
     val isVideo = asset.mediaType == PHAssetMediaTypeVideo
@@ -111,14 +130,14 @@ private fun copyAsset(asset: PHAsset, done: (PickedMedia?) -> Unit) {
         val takenAt = asset.creationDate?.toInstant()?.let { MediaTime.of(it) }
         val item = autoreleasepool {
             if (isVideo) {
-                PickedMedia(temp, MediaKind.VIDEO, extension, thumbnailPath = videoStill(temp), takenAt = takenAt, sourceId = asset.localIdentifier)
+                PickedMedia(temp, MediaKind.VIDEO, extension, thumbnailPath = videoStill(temp), takenAt = takenAt, sourceId = asset.localIdentifier, favorite = asset.favorite)
             } else if (extension == "heic" || extension == "heif") {
                 val jpeg = heicToJpeg(temp)
                 NSFileManager.defaultManager.removeItemAtPath(temp, error = null)
-                jpeg?.let { PickedMedia(it, MediaKind.PHOTO, "jpg", takenAt = takenAt, sourceId = asset.localIdentifier) }
+                jpeg?.let { PickedMedia(it, MediaKind.PHOTO, "jpg", takenAt = takenAt, sourceId = asset.localIdentifier, favorite = asset.favorite) }
             } else {
-                PickedMedia(temp, MediaKind.PHOTO, extension, takenAt = takenAt, sourceId = asset.localIdentifier)
-            }?.let { photo -> photoThumbnail(photo)?.let { PickedMedia(photo.path, photo.kind, photo.extension, it, photo.takenAt, photo.sourceId) } ?: photo }
+                PickedMedia(temp, MediaKind.PHOTO, extension, takenAt = takenAt, sourceId = asset.localIdentifier, favorite = asset.favorite)
+            }?.let { photo -> photoThumbnail(photo)?.let { PickedMedia(photo.path, photo.kind, photo.extension, it, photo.takenAt, photo.sourceId, photo.favorite) } ?: photo }
         }
         done(item)
     }

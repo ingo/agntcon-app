@@ -162,4 +162,22 @@ class AttachmentsTest {
         assertEquals(100L, photo("a", 500).copy(takenAt = 100).orderTime)
         assertEquals(500L, photo("a", 500).orderTime)
     }
+
+    @Test
+    fun starsFromThePhotoLibraryOnlyAddStars() {
+        val hearted = photo("a", 1).copy(sourceId = "lib-a")
+        val alreadyStarred = photo("b", 2).copy(sourceId = "lib-b", highlighted = true)
+        val ownStar = photo("c", 3).copy(sourceId = "lib-c", highlighted = true)
+        val notHearted = photo("d", 4).copy(sourceId = "lib-d")
+        val noSource = photo("e", 5)
+        val aVideo = video("f", 6).copy(sourceId = "lib-f")
+        val all = mapOf("s1" to listOf(hearted, alreadyStarred, ownStar, notHearted, noSource, aVideo))
+
+        val (next, starred) = all.withStarsFrom(setOf("lib-a", "lib-b", "lib-f"))
+
+        // One new star; the star set in the app on c stays although c is not hearted; videos are never starred
+        assertEquals(1, starred)
+        assertEquals(listOf(true, true, true, false, false, false), next.getValue("s1").map { it.highlighted })
+        assertEquals(0, next.withStarsFrom(setOf("lib-a")).second)
+    }
 }
