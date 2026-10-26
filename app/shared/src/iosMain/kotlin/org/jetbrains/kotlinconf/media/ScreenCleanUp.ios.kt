@@ -214,12 +214,12 @@ private fun enhance(image: CIImage, context: CIContext): CIImage {
 /** Removes the colour cast and stretches the levels, as measured by [measureScreenLevels]. */
 private fun balance(image: CIImage, levels: ScreenLevels): CIImage {
     val gains = levels.gains
-    val bias = levels.bias
+    val biases = levels.biases
     return filter("CIColorMatrix", image) {
         setValue(CIVector(x = gains[0], Y = 0.0, Z = 0.0, W = 0.0), forKey = "inputRVector")
         setValue(CIVector(x = 0.0, Y = gains[1], Z = 0.0, W = 0.0), forKey = "inputGVector")
         setValue(CIVector(x = 0.0, Y = 0.0, Z = gains[2], W = 0.0), forKey = "inputBVector")
-        setValue(CIVector(x = -bias[0], Y = -bias[1], Z = -bias[2], W = 0.0), forKey = "inputBiasVector")
+        setValue(CIVector(x = -biases[0], Y = -biases[1], Z = -biases[2], W = 0.0), forKey = "inputBiasVector")
     }?.imageByCroppingToRect(image.extent) ?: image
 }
 

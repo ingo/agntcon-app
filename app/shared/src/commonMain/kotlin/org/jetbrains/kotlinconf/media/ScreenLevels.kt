@@ -4,14 +4,14 @@ package org.jetbrains.kotlinconf.media
 private const val MAX_CAST = 2.5
 private const val MAX_GAIN = 8.0
 
-/** Median brightness (linear) above which a slide counts as light: dark text on a light background. */
-private const val LIGHT_MEDIAN = 0.3
-
 /**
- * The brightest channel (linear) of a dark slide's background, once corrected, up to which it counts as a projector's
- * black rather than a colour of the design. A mid blue background is far brighter in blue.
+ * The brightest channel of a dark slide's background, once corrected and stretched (linear), up to which it counts as
+ * a projector's black rather than a colour of the design. A bright or mid blue background is far brighter in blue.
  */
 private const val BLACKISH_BACKGROUND = 0.1
+
+/** Median brightness (linear) above which a slide counts as light: dark text on a light background. */
+private const val LIGHT_MEDIAN = 0.3
 
 /** A pixel in linear light. */
 internal class Rgb(val r: Double, val g: Double, val b: Double) {
@@ -23,14 +23,14 @@ internal class Rgb(val r: Double, val g: Double, val b: Double) {
 }
 
 /**
- * How to correct a photo of a screen: each channel times its [gains], minus its [bias] (as CoreImage's colour matrix
+ * How to correct a photo of a screen: each channel times its [gains], minus its [biases] (as CoreImage's colour matrix
  * does). [light] is whether the result is a light slide, dark text on a light background.
  */
-internal class ScreenLevels(val gains: List<Double>, val bias: List<Double>, val light: Boolean) {
+internal class ScreenLevels(val gains: List<Double>, val biases: List<Double>, val light: Boolean) {
     fun apply(pixel: Rgb) = Rgb(
-        (pixel.r * gains[0] - bias[0]).coerceIn(0.0, 1.0),
-        (pixel.g * gains[1] - bias[1]).coerceIn(0.0, 1.0),
-        (pixel.b * gains[2] - bias[2]).coerceIn(0.0, 1.0),
+        (pixel.r * gains[0] - biases[0]).coerceIn(0.0, 1.0),
+        (pixel.g * gains[1] - biases[1]).coerceIn(0.0, 1.0),
+        (pixel.b * gains[2] - biases[2]).coerceIn(0.0, 1.0),
     )
 }
 
@@ -45,10 +45,11 @@ internal class ScreenLevels(val gains: List<Double>, val bias: List<Double>, val
  * at least half as bright as the brightest text count as white, and the white is never stretched past white, so the
  * background is not mistaken for the white and stays dark instead of turning orange.
  *
- * The projector's black often has a cast of its own, warmer than its white because the room's light falls on the
- * screen, and is brighter where the projector's hot spot is. So the background of a dark slide, if it is nearly black,
- * becomes the black point of each channel: it turns black rather than staying a stretched orange-brown. A clearly
- * coloured background is part of the design and keeps the one black point.
+ * The background of a dark slide is often lit by the room's warm light rather than the projector, so it is warmer than
+ * the text and keeps a cast once the white is balanced; taking one black off every channel would then leave it orange.
+ * So a dark slide's background, its median, becomes black by a black point per channel, as long as it is nearly black.
+ * A background that is clearly coloured (a bright or mid blue, say) is part of the design, not a cast: it keeps the one
+ * black point and its colour.
  */
 internal fun measureScreenLevels(pixels: List<Rgb>): ScreenLevels? {
     if (pixels.isEmpty()) return null
@@ -65,23 +66,25 @@ internal fun measureScreenLevels(pixels: List<Rgb>): ScreenLevels? {
 
     // The brightest 1.5 % become white once the cast is gone, but nothing darker than the white; the darkest 1 % black,
     // within reason
-    val corrected = pixels.map { Rgb(it.r * tint[0], it.g * tint[1], it.b * tint[2]).luminance }
+    val balanced = pixels.map { Rgb(it.r * tint[0], it.g * tint[1], it.b * tint[2]) }
+    val corrected = balanced.map { it.luminance }
     val high = maxOf(percentile(corrected, 0.985), Rgb(white[0] * tint[0], white[1] * tint[1], white[2] * tint[2]).luminance)
     val black = percentile(corrected, 0.01).coerceIn(0.0, high * 0.3)
     // Limited the same for every channel, so a dim photo keeps its balance rather than shifting hue
     val k = minOf(1 / maxOf(high - black, 0.02), MAX_GAIN / tint.max())
     val light = (percentile(corrected, 0.5) - black) * k > LIGHT_MEDIAN
+    if (light) return ScreenLevels(tint.map { it * k }, List(3) { black * k }, true)
 
-    // A dark slide is mostly background, so its median in each channel is the background's colour
-    val background = listOf(Rgb::r, Rgb::g, Rgb::b).mapIndexed { c, channel ->
-        percentile(pixels.map { channel(it) * tint[c] }, 0.5)
+    // The background's own cast, measured on the pixels around the median, which on a dark slide is background
+    val around = percentile(corrected, 0.4)..percentile(corrected, 0.6)
+    val middle = balanced.filter { it.luminance in around }
+    val background = listOf(middle.sumOf { it.r }, middle.sumOf { it.g }, middle.sumOf { it.b }).map { it / middle.size }
+    if (background.any { (it - black) * k > BLACKISH_BACKGROUND }) {
+        return ScreenLevels(tint.map { it * k }, List(3) { black * k }, false)
     }
-    val blacks = if (!light && background.all { (it - black) * k <= BLACKISH_BACKGROUND }) {
-        background.map { it.coerceIn(black, high * 0.3) }
-    } else {
-        listOf(black, black, black)
-    }
-    return ScreenLevels(tint.map { it * k }, blacks.map { it * k }, light)
+    // Nearly black: the background's own level in each channel is that channel's black point, so it turns black
+    // rather than a stretched orange-brown. Brighter things on the slide (cards, text) keep their light.
+    return ScreenLevels(tint.map { it * k }, background.map { it.coerceIn(black, high * 0.3) * k }, false)
 }
 
 private fun percentile(values: List<Double>, p: Double): Double {
