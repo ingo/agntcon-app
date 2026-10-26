@@ -7,8 +7,9 @@ import org.jetbrains.kotlinconf.personal.CleanUpMode
  * 2: finds screens from further back and slides that fill the frame, removes colour casts, no longer washes out.
  * 3: dark slides with little text stay dark instead of turning orange.
  * 4: dark slides lit by warm room light come out black or grey instead of orange.
+ * 5: dark slides designed in a clearly coloured background (a bright or mid blue) keep it instead of turning grey.
  */
-const val SCREEN_CLEAN_UP_VERSION = 4
+const val SCREEN_CLEAN_UP_VERSION = 5
 
 /** Whether this platform can straighten and clean up photos of screens and whiteboards. */
 expect val screenCleanUpAvailable: Boolean
