@@ -24,14 +24,28 @@ permissions:
   id-token: write
 
 jobs:
+  # Fix runs go one at a time, oldest first (a concurrency group would cancel all but one waiting run, and feedback
+  # would be lost). Feedback sent close together often has one cause, and the later run then sees the earlier PR.
   # An open pull request that mentions the issue means a fix is already waiting for review: do not start another
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 75
     permissions:
       pull-requests: read
+      actions: read
     outputs:
       has_open_pr: ${{ steps.pr.outputs.has_open_pr }}
     steps:
+      - name: Wait for earlier fix runs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for _ in $(seq 1 120); do
+            earlier=$(gh run list -R "$GITHUB_REPOSITORY" --workflow beta-fix.yml --limit 50 --json databaseId,status \
+              | jq --argjson me "$GITHUB_RUN_ID" '[.[] | select(.status != "completed" and .databaseId < $me)] | length')
+            [[ "$earlier" == "0" ]] && exit 0
+            echo "$earlier earlier fix run(s) still going"; sleep 30
+          done
       - id: pr
         env:
           GH_TOKEN: ${{ github.token }}
@@ -72,6 +86,9 @@ jobs:
             Read CLAUDE.md first and follow its conventions (English and German strings, storage version,
             no new network access). Find the cause, add or extend a test where the code has tests, fix the bug,
             run `./gradlew :core:jvmTest :app:shared:jvmTest`, and open a pull request that references the issue.
+            Before changing code, list the open pull requests with `gh pr list --state open` and look at any that could be
+            about the same cause (`gh pr view <number>`): feedback sent close together often is. If one already fixes it,
+            do not open another; comment on the issue with a link to that pull request and stop.
             Do not change .github/, fastlane/ or scripts/. If the report is unclear or not a bug, comment on
             the issue with what you need instead of guessing.
           claude_args: |
