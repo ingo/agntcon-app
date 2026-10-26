@@ -11,6 +11,7 @@ import org.jetbrains.kotlinconf.storage.YearlyStorageImpl
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 
 /** Photos and videos on sessions: which ones, in what order, kept per event next to the notes. */
 @OptIn(ExperimentalSettingsApi::class)
@@ -19,6 +20,27 @@ class AttachmentsTest {
 
     private fun photo(id: String, at: Long) = Attachment(id, MediaKind.PHOTO, "$id.jpg", addedAt = at)
     private fun video(id: String, at: Long) = Attachment(id, MediaKind.VIDEO, "$id.mov", thumbnail = "$id-still.jpg", addedAt = at)
+
+    @Test
+    fun choosingAnotherCleanUpMakesThePhotoBeCleanedUpAgain() {
+        val done = photo("a", 1).copy(cleanChecked = true, cleaned = "a-clean.jpg")
+
+        val dark = done.withCleanUpMode(CleanUpMode.DARK)
+        assertEquals(CleanUpMode.DARK, dark.cleanMode)
+        assertEquals(false, dark.cleanChecked)
+        // The old copy stays until the new one is ready
+        assertEquals("a-clean.jpg", dark.cleaned)
+
+        // The same choice again changes nothing, and going back to automatic is a choice too
+        assertSame(dark, dark.withCleanUpMode(CleanUpMode.DARK))
+        assertNull(dark.copy(cleanChecked = true).withCleanUpMode(null).cleanMode)
+        assertEquals(false, dark.copy(cleanChecked = true).withCleanUpMode(null).cleanChecked)
+    }
+
+    @Test
+    fun aPhotoStoredByAnOlderVersionHasNoCleanUpChoice() {
+        assertNull(photo("a", 1).cleanMode)
+    }
 
     @Test
     fun attachmentsKeepTheOrderTheyWereAddedIn() {

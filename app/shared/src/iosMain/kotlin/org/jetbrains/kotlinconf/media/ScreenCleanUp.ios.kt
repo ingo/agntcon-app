@@ -14,6 +14,7 @@ import kotlinx.cinterop.useContents
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
+import org.jetbrains.kotlinconf.personal.CleanUpMode
 import platform.CoreGraphics.CGAffineTransformMakeScale
 import platform.CoreGraphics.CGColorSpaceCreateDeviceRGB
 import platform.CoreGraphics.CGImageGetHeight
@@ -74,9 +75,11 @@ private const val STAT_PIXELS = 256.0
  * the brightest part is stretched to white and the darkest to black, and light slides get their uneven lighting
  * evened out and faint lines darkened. Everything is sharpened.
  */
-actual suspend fun cleanUpScreenPhoto(input: String, output: String): Boolean = withContext(Dispatchers.IO) {
+actual suspend fun cleanUpScreenPhoto(input: String, output: String, mode: CleanUpMode?): Boolean = withContext(Dispatchers.IO) {
+    // No clean-up at all is the attendee's choice to keep the photo as it was taken
+    if (mode == CleanUpMode.ORIGINAL) return@withContext false
     try {
-        autoreleasepool { cleanUp(input, output) }
+        autoreleasepool { cleanUp(input, output, mode) }
     } catch (_: Throwable) {
         false
     }
@@ -85,7 +88,7 @@ actual suspend fun cleanUpScreenPhoto(input: String, output: String): Boolean = 
 /** What to clean up: the screen's corners (normalised, origin bottom left), or the whole photo. */
 private class Found(val corners: List<Pair<Double, Double>>?)
 
-private fun cleanUp(input: String, output: String): Boolean {
+private fun cleanUp(input: String, output: String, mode: CleanUpMode?): Boolean {
     // The screen is found on a small copy; only a photo that has one is opened at full size
     val found = findScreen(input) ?: return false
     val image = CIImage(
@@ -102,7 +105,7 @@ private fun cleanUp(input: String, output: String): Boolean {
         setValue(NSNumber(1.0), forKey = "inputAspectRatio")
     } ?: flat
 
-    val enhanced = enhance(sized, context)
+    val enhanced = enhance(sized, context, mode)
     val sharp = filter("CIUnsharpMask", enhanced) {
         setValue(NSNumber(2.0), forKey = "inputRadius")
         setValue(NSNumber(0.5), forKey = "inputIntensity")
@@ -205,8 +208,8 @@ private val VNRectangleObservation.area: Double
         return abs(sum) / 2
     }
 
-private fun enhance(image: CIImage, context: CIContext): CIImage {
-    val levels = measureScreenLevels(samplePixels(image, context)) ?: return darkSlide(image)
+private fun enhance(image: CIImage, context: CIContext, mode: CleanUpMode?): CIImage {
+    val levels = measureScreenLevels(samplePixels(image, context), mode) ?: return darkSlide(image)
     val balanced = balance(image, levels)
     return if (levels.light) lightSlide(balanced) else darkSlide(balanced)
 }
