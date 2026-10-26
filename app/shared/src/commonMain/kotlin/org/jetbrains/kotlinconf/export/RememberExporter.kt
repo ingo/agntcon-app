@@ -19,6 +19,7 @@ import org.jetbrains.kotlinconf.generated.resources.export_room
 import org.jetbrains.kotlinconf.generated.resources.export_schedule_heading
 import org.jetbrains.kotlinconf.generated.resources.export_slides
 import org.jetbrains.kotlinconf.generated.resources.export_speakers
+import org.jetbrains.kotlinconf.generated.resources.export_text_on
 import org.jetbrains.kotlinconf.generated.resources.export_trip_report_heading
 import org.jetbrains.kotlinconf.generated.resources.export_video
 
@@ -39,6 +40,7 @@ fun rememberExportLabels(): ExportLabels = ExportLabels(
     photo = stringResource(Res.string.export_photo),
     video = stringResource(Res.string.export_video),
     original = stringResource(Res.string.export_original),
+    textOn = stringResource(Res.string.export_text_on),
 )
 
 /** The share and calendar actions, worded in the app's language. */
