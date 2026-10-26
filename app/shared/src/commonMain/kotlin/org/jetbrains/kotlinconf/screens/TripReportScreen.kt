@@ -19,6 +19,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.kotlinconf.media.SCREEN_CLEAN_UP_VERSION
 import org.jetbrains.kotlinconf.LocalShareHandler
 import org.jetbrains.kotlinconf.ScreenWithTitle
 import org.jetbrains.kotlinconf.SessionId
@@ -50,6 +51,8 @@ import org.jetbrains.kotlinconf.generated.resources.trip_report_downloading_slid
 import org.jetbrains.kotlinconf.generated.resources.trip_report_empty
 import org.jetbrains.kotlinconf.generated.resources.trip_report_failed
 import org.jetbrains.kotlinconf.generated.resources.trip_report_in_report
+import org.jetbrains.kotlinconf.generated.resources.trip_report_cleanup_done
+import org.jetbrains.kotlinconf.generated.resources.trip_report_cleanup_progress
 import org.jetbrains.kotlinconf.generated.resources.trip_report_intro
 import org.jetbrains.kotlinconf.generated.resources.trip_report_note
 import org.jetbrains.kotlinconf.generated.resources.trip_report_packing
@@ -87,6 +90,7 @@ fun TripReportScreen(
 ) {
     val summary by viewModel.summary.collectAsStateWithLifecycle()
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val cleanUp by viewModel.photoCleanUp.collectAsStateWithLifecycle()
     val share = LocalShareHandler.current
     val exporter = rememberExporter()
     val labels = rememberExportLabels()
@@ -117,6 +121,15 @@ fun TripReportScreen(
                 ).joinToString(" · "),
                 style = KotlinConfTheme.typography.h3,
             )
+            // The photos are straightened and cleaned up one at a time in the background; say how far it has got
+            cleanUp?.let { progress ->
+                Text(
+                    if (progress.working) stringResource(Res.string.trip_report_cleanup_progress, progress.done, progress.total)
+                    else stringResource(Res.string.trip_report_cleanup_done, SCREEN_CLEAN_UP_VERSION),
+                    style = KotlinConfTheme.typography.text2,
+                    color = KotlinConfTheme.colors.noteText,
+                )
+            }
 
             Button(
                 stringResource(Res.string.trip_report_preview),

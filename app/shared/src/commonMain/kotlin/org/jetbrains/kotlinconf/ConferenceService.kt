@@ -29,6 +29,7 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.getAndUpdate
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -47,6 +48,8 @@ import org.jetbrains.kotlinconf.media.Fingerprint
 import org.jetbrains.kotlinconf.media.MediaDuplicates
 import org.jetbrains.kotlinconf.media.MediaFiles
 import org.jetbrains.kotlinconf.media.MoveTargets
+import org.jetbrains.kotlinconf.media.PhotoCleanUp
+import org.jetbrains.kotlinconf.media.cleanUpProgress
 import org.jetbrains.kotlinconf.media.cleanUpScreenPhoto
 import org.jetbrains.kotlinconf.media.makeThumbnail
 import org.jetbrains.kotlinconf.media.removeStoredDuplicates
@@ -354,6 +357,15 @@ class ConferenceService(
         }
         cleanUpScreenPhotos()
     }
+
+    /**
+     * How far the background clean-up of the photos has got, so the trip report can show it; null where this platform
+     * has no clean-up or there is no photo.
+     */
+    val photoCleanUp: Flow<PhotoCleanUp?>
+        get() = attachments.map { all ->
+            if (!screenCleanUpAvailable) null else cleanUpProgress(all.values.flatten()) { it.needsCleanUp() }
+        }.distinctUntilChanged()
 
     private fun Attachment.needsNewCleanUp() = !cleanChecked || cleanVersion < SCREEN_CLEAN_UP_VERSION
 
