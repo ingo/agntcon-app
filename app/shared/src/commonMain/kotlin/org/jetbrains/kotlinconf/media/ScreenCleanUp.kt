@@ -3,8 +3,9 @@ package org.jetbrains.kotlinconf.media
 /**
  * Raised whenever the clean-up gets better, so photos cleaned up (or passed over) by an older one are done again.
  * 2: finds screens from further back and slides that fill the frame, removes colour casts, no longer washes out.
+ * 3: dark slides with little text stay dark instead of turning orange.
  */
-const val SCREEN_CLEAN_UP_VERSION = 2
+const val SCREEN_CLEAN_UP_VERSION = 3
 
 /** Whether this platform can straighten and clean up photos of screens and whiteboards. */
 expect val screenCleanUpAvailable: Boolean
