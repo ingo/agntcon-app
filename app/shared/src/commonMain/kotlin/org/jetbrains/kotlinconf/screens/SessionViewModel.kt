@@ -24,6 +24,7 @@ import org.jetbrains.kotlinconf.Speaker
 import org.jetbrains.kotlinconf.media.MoveTargets
 import org.jetbrains.kotlinconf.media.PickedMedia
 import org.jetbrains.kotlinconf.personal.Attachment
+import org.jetbrains.kotlinconf.personal.CleanUpMode
 import org.jetbrains.kotlinconf.personal.SessionRating
 import org.jetbrains.kotlinconf.personal.Thumb
 import org.jetbrains.kotlinconf.utils.ErrorLoadingState
@@ -120,6 +121,11 @@ class SessionViewModel(
 
     fun moveMedia(attachment: Attachment, to: SessionId) {
         viewModelScope.launch { service.moveAttachment(sessionId, to, attachment) }
+    }
+
+    /** Chooses how a photo is cleaned up (null: the app decides); the new copy is made in the background. */
+    fun setCleanUp(attachment: Attachment, mode: CleanUpMode?) {
+        viewModelScope.launch { service.setCleanUpMode(attachment.id, mode) }
     }
 
     /** The rooms with a pin on the venue map, to offer "Find on map". */

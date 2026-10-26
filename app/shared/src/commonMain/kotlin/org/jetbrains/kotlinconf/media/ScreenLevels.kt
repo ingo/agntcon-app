@@ -1,5 +1,7 @@
 package org.jetbrains.kotlinconf.media
 
+import org.jetbrains.kotlinconf.personal.CleanUpMode
+
 /** A colour cast is never stronger than this ratio between channels; past it, the "white" is a coloured shape. */
 private const val MAX_CAST = 2.5
 private const val MAX_GAIN = 8.0
@@ -50,19 +52,29 @@ internal class ScreenLevels(val gains: List<Double>, val biases: List<Double>, v
  * So a dark slide's background, its median, becomes black by a black point per channel, as long as it is nearly black.
  * A background that is clearly coloured (a bright or mid blue, say) is part of the design, not a cast: it keeps the one
  * black point and its colour.
+ *
+ * The attendee can overrule the app's guesses with [mode]: [CleanUpMode.LIGHT] and [CleanUpMode.DARK] decide whether
+ * it is a light or a dark slide, and [CleanUpMode.COLOURFUL] keeps the slide's own colours whatever they are (no cast is
+ * taken out and no background is made black; only the levels are stretched, the same for every channel).
+ * [CleanUpMode.ORIGINAL] is not handled here: it means no clean-up at all.
  */
-internal fun measureScreenLevels(pixels: List<Rgb>): ScreenLevels? {
+internal fun measureScreenLevels(pixels: List<Rgb>, mode: CleanUpMode? = null): ScreenLevels? {
     if (pixels.isEmpty()) return null
     val luminances = pixels.map { it.luminance }
     val bright = maxOf(percentile(luminances, 0.9), percentile(luminances, 0.998) / 2)
     val candidates = pixels.filter { it.luminance >= bright && it.luminance > 0.02 }
     val neutral = candidates.sortedBy { it.saturation }.take(maxOf(1, candidates.size / 3))
     if (neutral.isEmpty()) {
-        return ScreenLevels(listOf(1.0, 1.0, 1.0), listOf(0.0, 0.0, 0.0), percentile(luminances, 0.5) > LIGHT_MEDIAN)
+        val light = when (mode) {
+            CleanUpMode.LIGHT -> true
+            CleanUpMode.DARK -> false
+            else -> percentile(luminances, 0.5) > LIGHT_MEDIAN
+        }
+        return ScreenLevels(listOf(1.0, 1.0, 1.0), listOf(0.0, 0.0, 0.0), light)
     }
     val white = listOf(neutral.sumOf { it.r }, neutral.sumOf { it.g }, neutral.sumOf { it.b }).map { it / neutral.size }
     val top = white.max()
-    val tint = white.map { top / maxOf(it, top / MAX_CAST, 1e-4) }
+    val tint = if (mode == CleanUpMode.COLOURFUL) listOf(1.0, 1.0, 1.0) else white.map { top / maxOf(it, top / MAX_CAST, 1e-4) }
 
     // The brightest 1.5 % become white once the cast is gone, but nothing darker than the white; the darkest 1 % black,
     // within reason
@@ -72,8 +84,13 @@ internal fun measureScreenLevels(pixels: List<Rgb>): ScreenLevels? {
     val black = percentile(corrected, 0.01).coerceIn(0.0, high * 0.3)
     // Limited the same for every channel, so a dim photo keeps its balance rather than shifting hue
     val k = minOf(1 / maxOf(high - black, 0.02), MAX_GAIN / tint.max())
-    val light = (percentile(corrected, 0.5) - black) * k > LIGHT_MEDIAN
+    val light = when (mode) {
+        CleanUpMode.LIGHT -> true
+        CleanUpMode.DARK -> false
+        else -> (percentile(corrected, 0.5) - black) * k > LIGHT_MEDIAN
+    }
     if (light) return ScreenLevels(tint.map { it * k }, List(3) { black * k }, true)
+    if (mode == CleanUpMode.COLOURFUL) return ScreenLevels(tint.map { it * k }, List(3) { black * k }, false)
 
     // The background's own cast, measured on the pixels around the median, which on a dark slide is background
     val around = percentile(corrected, 0.4)..percentile(corrected, 0.6)

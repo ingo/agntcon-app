@@ -52,6 +52,7 @@ import org.jetbrains.kotlinconf.media.makeThumbnail
 import org.jetbrains.kotlinconf.media.removeStoredDuplicates
 import org.jetbrains.kotlinconf.media.screenCleanUpAvailable
 import org.jetbrains.kotlinconf.media.SCREEN_CLEAN_UP_VERSION
+import org.jetbrains.kotlinconf.personal.CleanUpMode
 import org.jetbrains.kotlinconf.personal.MediaKind
 import org.jetbrains.kotlinconf.media.PickedMedia
 import org.jetbrains.kotlinconf.personal.Attachment
@@ -59,6 +60,7 @@ import org.jetbrains.kotlinconf.personal.PersonalNotes
 import org.jetbrains.kotlinconf.personal.SessionRating
 import org.jetbrains.kotlinconf.personal.withAdded
 import org.jetbrains.kotlinconf.personal.withMet
+import org.jetbrains.kotlinconf.personal.withCleanUpMode
 import org.jetbrains.kotlinconf.personal.withMoved
 import org.jetbrains.kotlinconf.personal.withRemoved
 import org.jetbrains.kotlinconf.personal.withUpdated
@@ -300,7 +302,9 @@ class ConferenceService(
                     // Photos looked at by the current clean-up before previews existed only need the preview
                     val redo = next.needsNewCleanUp()
                     val name = media.newName("jpg")
-                    val cleaned = name.takeIf { redo && cleanUpScreenPhoto(media.path(next.file), media.path(name)) }
+                    val cleaned = name.takeIf {
+                        redo && next.cleanMode != CleanUpMode.ORIGINAL && cleanUpScreenPhoto(media.path(next.file), media.path(name), next.cleanMode)
+                    }
                     // A preview of what lists should show: the cleaned-up photo if there is one, else the original
                     val previewName = media.newName("jpg")
                     val preview = if (redo || next.thumbnail == null) {
@@ -322,7 +326,8 @@ class ConferenceService(
                             storage.setAttachments(all.withUpdated(next.id) {
                                 it.copy(
                                     cleaned = if (redo) cleaned else it.cleaned,
-                                    cleanChecked = true,
+                                    // Done, unless the attendee chose another clean-up while this one was running
+                                    cleanChecked = it.cleanMode == next.cleanMode,
                                     cleanVersion = if (redo) SCREEN_CLEAN_UP_VERSION else it.cleanVersion,
                                     previewChecked = true,
                                     thumbnail = preview ?: it.thumbnail,
@@ -331,12 +336,23 @@ class ConferenceService(
                         }
                     }
                     // Wait for the stored list to show the change before looking for the next one
-                    attachments.first { list -> list.values.flatten().none { it.id == next.id && it.needsCleanUp() } }
+                    attachments.first { list -> list.values.flatten().none { it.id == next.id && it.cleanMode == next.cleanMode && it.needsCleanUp() } }
                 }
             } finally {
                 cleaning.unlock()
             }
         }
+    }
+
+    /**
+     * Chooses how a photo is cleaned up (null: the app decides). The new copy is made in the background and replaces
+     * the old one; with [CleanUpMode.ORIGINAL] the photo is shown as it was taken.
+     */
+    suspend fun setCleanUpMode(attachmentId: String, mode: CleanUpMode?) {
+        savePersonal { storage ->
+            storage.setAttachments(storage.getAttachments().first().withUpdated(attachmentId) { it.withCleanUpMode(mode) })
+        }
+        cleanUpScreenPhotos()
     }
 
     private fun Attachment.needsNewCleanUp() = !cleanChecked || cleanVersion < SCREEN_CLEAN_UP_VERSION

@@ -1,5 +1,7 @@
 package org.jetbrains.kotlinconf.media
 
+import org.jetbrains.kotlinconf.personal.CleanUpMode
+
 /**
  * Raised whenever the clean-up gets better, so photos cleaned up (or passed over) by an older one are done again.
  * 2: finds screens from further back and slides that fill the frame, removes colour casts, no longer washes out.
@@ -15,6 +17,7 @@ expect val screenCleanUpAvailable: Boolean
 /**
  * Looks for a screen, slide or whiteboard filling a good part of the photo at [input]. If there is one, writes a
  * straightened, cropped and cleaned-up copy to [output] and returns true; a photo without one (people, a room) is
- * left alone and the result is false. Runs on the device.
+ * left alone and the result is false. [mode] is the attendee's choice of clean-up (null: the app decides; never
+ * [CleanUpMode.ORIGINAL], which means no clean-up at all). Runs on the device.
  */
-expect suspend fun cleanUpScreenPhoto(input: String, output: String): Boolean
+expect suspend fun cleanUpScreenPhoto(input: String, output: String, mode: CleanUpMode? = null): Boolean
