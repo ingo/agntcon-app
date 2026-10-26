@@ -55,8 +55,10 @@ import org.jetbrains.kotlinconf.generated.resources.import_items
 import org.jetbrains.kotlinconf.generated.resources.import_leave_out
 import org.jetbrains.kotlinconf.generated.resources.import_likely
 import org.jetbrains.kotlinconf.generated.resources.import_no_options
+import org.jetbrains.kotlinconf.generated.resources.import_looks_like
 import org.jetbrains.kotlinconf.generated.resources.import_outlier
 import org.jetbrains.kotlinconf.generated.resources.import_outlier_move
+import org.jetbrains.kotlinconf.generated.resources.import_same_moment
 import org.jetbrains.kotlinconf.generated.resources.import_not_added
 import org.jetbrains.kotlinconf.generated.resources.import_nothing_to_add
 import org.jetbrains.kotlinconf.generated.resources.import_question_ask
@@ -113,7 +115,9 @@ fun MediaImportScreen(
                     attended = state.attended,
                     onView = { item -> picker?.open(listOf(item.path), item.kind) },
                     onTakeOut = { item -> viewModel.takeOut(index, item) },
-                    outlier = state.outliers[index]?.let { (flagged, target) -> flagged.size to state.sessions[target] },
+                    outlier = state.flags[index]?.let { flag -> flag.items.size to state.sessions[flag.session] },
+                    outlierBySlide = state.flags[index]?.bySlide == true,
+                    sameMoment = state.sameMoment[index]?.let { (count, other) -> count to state.sessions[other] },
                     onMoveFlagged = { viewModel.moveFlagged(index) },
                     onAnswer = { viewModel.answer(index, it) },
                     onChange = { viewModel.change(index) },
@@ -156,6 +160,10 @@ private fun GroupCard(
     onTakeOut: (Int) -> Unit,
     /** How many of this group's photos are probably misplaced, and the session the photos around them went to. */
     outlier: Pair<Int, SessionCardView?>?,
+    /** True when the photos' own text says so, not just the photos around them. */
+    outlierBySlide: Boolean,
+    /** How many photos were taken at the very moment of ones in another session, and that session. */
+    sameMoment: Pair<Int, SessionCardView?>?,
     onMoveFlagged: () -> Unit,
     onAnswer: (ImportAnswer) -> Unit,
     onChange: () -> Unit,
@@ -205,7 +213,10 @@ private fun GroupCard(
                     .padding(12.dp),
             ) {
                 Text(
-                    pluralStringResource(Res.plurals.import_outlier, outlier.first, outlier.first, target.title),
+                    pluralStringResource(
+                        if (outlierBySlide) Res.plurals.import_looks_like else Res.plurals.import_outlier,
+                        outlier.first, outlier.first, target.title,
+                    ),
                     style = KotlinConfTheme.typography.text2,
                     color = KotlinConfTheme.colors.orangeText,
                 )
@@ -214,6 +225,31 @@ private fun GroupCard(
                     onClick = onMoveFlagged,
                     modifier = Modifier.fillMaxWidth(),
                 )
+            }
+        }
+        val twin = sameMoment?.second
+        if (sameMoment != null && twin != null) {
+            // Identical capture times in two sessions: possibly one photo twice. Only a warning, the attendee decides
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(KotlinConfTheme.shapes.roundedCornerSm)
+                    .border(1.dp, KotlinConfTheme.colors.orangeText, KotlinConfTheme.shapes.roundedCornerSm)
+                    .padding(12.dp),
+            ) {
+                Text(
+                    pluralStringResource(Res.plurals.import_same_moment, sameMoment.first, sameMoment.first, twin.title),
+                    style = KotlinConfTheme.typography.text2,
+                    color = KotlinConfTheme.colors.orangeText,
+                )
+                if (group.answer != ImportAnswer.Skip) {
+                    Button(
+                        label = stringResource(Res.string.import_dont_add),
+                        onClick = { onAnswer(ImportAnswer.Skip) },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
             }
         }
         Text(stringResource(Res.string.import_tap_to_view), style = KotlinConfTheme.typography.text2, color = KotlinConfTheme.colors.noteText)
