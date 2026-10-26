@@ -108,6 +108,9 @@ Use the same command with `--source "Library/Application Support/files/2026/medi
 
 **Tune the clean-up on a Mac.** Use `scripts/tuning/screen-cleanup.swift` and `contact-sheet.py`; the header of the
 Swift file explains how. Version 2 was tuned on 48 real photos (22 the old version skipped, 26 it cleaned).
+To compare two builds on real photos, export the trip report from each and run `scripts/tuning/compare-exports.swift`
+(cast, brightness, blown highlights and lost shadows per group, plus original | A | B sheets); it needs no copy of the
+clean-up logic, because it only reads the pictures the app wrote.
 
 ## Things that cost time
 
