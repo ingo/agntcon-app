@@ -219,7 +219,7 @@ private fun balance(image: CIImage, levels: ScreenLevels): CIImage {
         setValue(CIVector(x = gains[0], Y = 0.0, Z = 0.0, W = 0.0), forKey = "inputRVector")
         setValue(CIVector(x = 0.0, Y = gains[1], Z = 0.0, W = 0.0), forKey = "inputGVector")
         setValue(CIVector(x = 0.0, Y = 0.0, Z = gains[2], W = 0.0), forKey = "inputBVector")
-        setValue(CIVector(x = -bias, Y = -bias, Z = -bias, W = 0.0), forKey = "inputBiasVector")
+        setValue(CIVector(x = -bias[0], Y = -bias[1], Z = -bias[2], W = 0.0), forKey = "inputBiasVector")
     }?.imageByCroppingToRect(image.extent) ?: image
 }
 
