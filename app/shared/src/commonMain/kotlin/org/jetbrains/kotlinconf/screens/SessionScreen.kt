@@ -260,6 +260,7 @@ private fun PersonalSection(viewModel: SessionViewModel) {
                 moveTargets = moveTargets,
                 onMove = viewModel::moveMedia,
                 onCleanUp = viewModel::setCleanUp,
+                onHighlight = viewModel::setHighlighted,
                 modifier = Modifier.padding(bottom = 24.dp),
             )
         }

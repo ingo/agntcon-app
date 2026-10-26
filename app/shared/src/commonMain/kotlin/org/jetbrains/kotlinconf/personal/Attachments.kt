@@ -41,7 +41,14 @@ data class Attachment(
     val previewChecked: Boolean = false,
     /** The attendee's choice of clean-up for this photo; null lets the app decide. */
     val cleanMode: CleanUpMode? = null,
+    /** True when the attendee starred it; the trip report features starred photos. */
+    val highlighted: Boolean = false,
+    /** When it was taken, in milliseconds since 1970, if the file says so; the report orders photos by it. */
+    val takenAt: Long? = null,
 ) {
+    /** When it happened, for ordering: the capture time, else when it was added. */
+    val orderTime: Long get() = takenAt ?: addedAt
+
     /** The picture to show in a list: the small preview, else the photo itself (cleaned up where there is one). */
     val preview: String? get() = if (kind == MediaKind.VIDEO) thumbnail else thumbnail ?: cleaned ?: file
 
@@ -55,6 +62,10 @@ data class Attachment(
 /** The same photo with another clean-up chosen: it is cleaned up again, and the new copy replaces the old one. */
 fun Attachment.withCleanUpMode(mode: CleanUpMode?): Attachment =
     if (mode == cleanMode) this else copy(cleanMode = mode, cleanChecked = false)
+
+/** The same photo starred or not. */
+fun Attachment.withHighlighted(highlighted: Boolean): Attachment =
+    if (highlighted == this.highlighted) this else copy(highlighted = highlighted)
 
 /** Replaces one attachment wherever it is, e.g. when its cleaned-up copy is ready. */
 fun Map<String, List<Attachment>>.withUpdated(attachmentId: String, transform: (Attachment) -> Attachment): Map<String, List<Attachment>> =

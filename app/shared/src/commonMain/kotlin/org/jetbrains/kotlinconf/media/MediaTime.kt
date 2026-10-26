@@ -16,6 +16,10 @@ data class MediaTime(val instant: Instant? = null, val local: LocalDateTime? = n
     /** The time in the event's time zone, to compare with the schedule. */
     fun inZone(timeZone: TimeZone): LocalDateTime? = instant?.toLocalDateTime(timeZone) ?: local
 
+    /** The moment in milliseconds since 1970; a camera clock reading without an offset is read in [timeZone]. */
+    fun epochMillis(timeZone: TimeZone): Long? =
+        instant?.toEpochMilliseconds() ?: local?.toInstant(timeZone)?.toEpochMilliseconds()
+
     companion object {
         fun of(instant: Instant): MediaTime = MediaTime(instant = instant)
 

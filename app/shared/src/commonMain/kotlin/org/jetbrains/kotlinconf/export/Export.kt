@@ -36,10 +36,24 @@ data class ExportLabels(
     val photo: String = "Photo",
     val video: String = "Video",
     val original: String = "original",
+    val highlights: String = "Highlights",
+    val highlight: String = "Highlight",
 )
 
 /** A photo or video in the report bundle, by its path inside the bundle. */
-data class ReportMedia(val kind: MediaKind, val path: String, val original: String? = null)
+data class ReportMedia(val kind: MediaKind, val path: String, val original: String? = null, val highlighted: Boolean = false)
+
+/** A starred photo with the session it was taken in and its number there (Photo 3), for the Highlights section. */
+internal data class ReportHighlight(val session: SessionCardView, val item: ReportMedia, val number: Int)
+
+/** The starred photos of every session, sessions in time order and photos in the order of the report. */
+internal fun highlightsOf(sessions: List<SessionCardView>, media: (SessionCardView) -> List<ReportMedia>): List<ReportHighlight> =
+    byDay(sessions).flatMap { (_, daySessions) ->
+        daySessions.flatMap { s ->
+            media(s).withNumbers().filter { (item, _) -> item.highlighted && item.kind == MediaKind.PHOTO }
+                .map { (item, number) -> ReportHighlight(s, item, number) }
+        }
+    }
 
 /** The event a file or text is about. */
 data class ExportEvent(
@@ -227,6 +241,17 @@ fun tripReportMarkdown(
     media: (SessionCardView) -> List<ReportMedia> = { emptyList() },
 ): String = buildString {
     appendLine("# ${labels.tripReportHeading}: ${event.name}")
+    val highlights = highlightsOf(bookmarked, media)
+    if (highlights.isNotEmpty()) {
+        appendLine()
+        appendLine("## ${labels.highlights}")
+        highlights.forEach { (session, item, number) ->
+            appendLine()
+            val original = item.original?.let { " ([${labels.original}]($it))" }.orEmpty()
+            val caption = "${session.title.mdInline()} · ${DateTimeFormatting.timeToTime(session.startsAt, session.endsAt)}"
+            appendLine("- ![${labels.photo} $number](${item.path}) **$caption**$original")
+        }
+    }
     byDay(bookmarked).forEach { (date, sessions) ->
         appendLine()
         appendLine("## ${DateTimeFormatting.weekdayDate(date)}")
@@ -262,7 +287,8 @@ fun tripReportMarkdown(
                     appendLine()
                     val label = "${labels.mediaLabel(item.kind)} $number"
                     val original = item.original?.let { " ([${labels.original}]($it))" }.orEmpty()
-                    appendLine(if (item.kind == MediaKind.PHOTO) "![$label](${item.path})$original" else "[$label](${item.path})")
+                    val star = if (item.highlighted && item.kind == MediaKind.PHOTO) " ★ ${labels.highlight}" else ""
+                    appendLine(if (item.kind == MediaKind.PHOTO) "![$label](${item.path})$original$star" else "[$label](${item.path})")
                 }
             }
         }

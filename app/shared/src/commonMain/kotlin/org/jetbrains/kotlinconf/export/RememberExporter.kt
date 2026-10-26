@@ -7,6 +7,8 @@ import org.jetbrains.kotlinconf.LocalAppGraph
 import org.jetbrains.kotlinconf.LocalShareHandler
 import org.jetbrains.kotlinconf.event.ActiveEvent
 import org.jetbrains.kotlinconf.generated.resources.Res
+import org.jetbrains.kotlinconf.generated.resources.export_highlight
+import org.jetbrains.kotlinconf.generated.resources.export_highlights
 import org.jetbrains.kotlinconf.generated.resources.export_my_media
 import org.jetbrains.kotlinconf.generated.resources.export_my_notes
 import org.jetbrains.kotlinconf.generated.resources.export_original
@@ -39,6 +41,8 @@ fun rememberExportLabels(): ExportLabels = ExportLabels(
     photo = stringResource(Res.string.export_photo),
     video = stringResource(Res.string.export_video),
     original = stringResource(Res.string.export_original),
+    highlights = stringResource(Res.string.export_highlights),
+    highlight = stringResource(Res.string.export_highlight),
 )
 
 /** The share and calendar actions, worded in the app's language. */

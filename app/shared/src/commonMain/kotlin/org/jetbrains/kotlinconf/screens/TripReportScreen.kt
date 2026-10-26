@@ -56,6 +56,8 @@ import org.jetbrains.kotlinconf.generated.resources.trip_report_cleanup_progress
 import org.jetbrains.kotlinconf.generated.resources.trip_report_intro
 import org.jetbrains.kotlinconf.generated.resources.trip_report_note
 import org.jetbrains.kotlinconf.generated.resources.trip_report_packing
+import org.jetbrains.kotlinconf.generated.resources.trip_report_highlights
+import org.jetbrains.kotlinconf.generated.resources.trip_report_highlights_hint
 import org.jetbrains.kotlinconf.generated.resources.trip_report_photos
 import org.jetbrains.kotlinconf.generated.resources.trip_report_rating
 import org.jetbrains.kotlinconf.generated.resources.trip_report_ready
@@ -120,6 +122,13 @@ fun TripReportScreen(
                     pluralStringResource(Res.plurals.trip_report_videos, summary.videos, summary.videos),
                 ).joinToString(" · "),
                 style = KotlinConfTheme.typography.h3,
+            )
+            // How many photos are starred, or how to star them, since they open the report
+            Text(
+                if (summary.highlights > 0) pluralStringResource(Res.plurals.trip_report_highlights, summary.highlights, summary.highlights)
+                else stringResource(Res.string.trip_report_highlights_hint),
+                style = KotlinConfTheme.typography.text2,
+                color = KotlinConfTheme.colors.noteText,
             )
             // The photos are straightened and cleaned up one at a time in the background; say how far it has got
             cleanUp?.let { progress ->

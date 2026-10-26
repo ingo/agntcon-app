@@ -29,9 +29,12 @@ class ReportLayout(
     fun slidesPath(session: SessionCardView): String? =
         session.slidesUrl?.let { "slides/${folder(session)}.${extensionOf(it, default = "pdf")}" }
 
-    /** The session's photos and videos, in the order they were added, with their place in the bundle. */
+    /**
+     * The session's photos and videos, in the order they were taken (the order they were added where the time is
+     * unknown, a stable sort so ties keep it), with their place in the bundle.
+     */
     fun media(session: SessionCardView): List<Pair<Attachment, String>> =
-        attachments[session.id.id].orEmpty().sortedBy { it.addedAt }.mapIndexed { index, attachment ->
+        attachments[session.id.id].orEmpty().sortedBy { it.orderTime }.mapIndexed { index, attachment ->
             attachment to "media/${folder(session)}/${(index + 1).pad()}.${extensionOf(attachment.cleaned ?: attachment.file, default = "bin")}"
         }
 

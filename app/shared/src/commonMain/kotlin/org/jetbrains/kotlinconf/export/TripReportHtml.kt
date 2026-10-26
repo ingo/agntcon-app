@@ -34,6 +34,18 @@ fun tripReportHtml(
     appendLine("<style>$STYLE</style>")
     appendLine("</head><body><main>")
     appendLine("<h1>$title</h1>")
+    val highlights = highlightsOf(sessions, media)
+    if (highlights.isNotEmpty()) {
+        appendLine("<h2>${labels.highlights.html()}</h2>")
+        appendLine("<div class=\"highlights\">")
+        highlights.forEach { (session, item, number) ->
+            val label = "${labels.photo} $number".html()
+            val href = (item.original ?: item.path).attr()
+            val caption = "${session.title.trim().html()} · ${DateTimeFormatting.timeToTime(session.startsAt, session.endsAt).html()}"
+            appendLine("<figure><a href=\"$href\"><img src=\"${item.path.attr()}\" alt=\"$label\" loading=\"lazy\"></a><figcaption>★ $caption</figcaption></figure>")
+        }
+        appendLine("</div>")
+    }
     byDay(sessions).forEach { (date, daySessions) ->
         appendLine("<h2>${DateTimeFormatting.weekdayDate(date).html()}</h2>")
         daySessions.forEach { s ->
@@ -69,7 +81,8 @@ fun tripReportHtml(
                     if (item.kind == MediaKind.PHOTO) {
                         // A cleaned-up photo links to its original
                         val href = (item.original ?: item.path).attr()
-                        appendLine("<a href=\"$href\"><img src=\"$src\" alt=\"$label\" loading=\"lazy\"></a>")
+                        val big = if (item.highlighted) " class=\"hl\" title=\"★ ${labels.highlight.attr()}\"" else ""
+                        appendLine("<a href=\"$href\"$big><img src=\"$src\" alt=\"$label\" loading=\"lazy\"></a>")
                     } else {
                         appendLine("<video src=\"$src\" controls preload=\"metadata\" title=\"$label\"></video>")
                     }
@@ -111,5 +124,10 @@ private const val STYLE = "body{margin:0;background:#fff;color:#19191c;font:16px
     // Small square thumbnails, so a session with many photos stays short; a click opens the full photo
     ".media{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px}" +
     ".media a{display:block}.media img,.media video{width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;background:#eee;display:block}" +
+    // Starred photos: large inside their session and in the Highlights section at the top
+    ".media a.hl{grid-column:1/-1}.media a.hl img{aspect-ratio:auto;max-height:80vh;object-fit:contain}" +
+    ".highlights figure{margin:0 0 1.5em}.highlights img{width:100%;max-height:80vh;object-fit:contain;border-radius:6px;background:#eee;display:block}" +
+    ".highlights figcaption{margin-top:.3em;color:#666}" +
+    "@media (prefers-color-scheme:dark){.highlights figcaption{color:#aaa}}" +
     "@media (prefers-color-scheme:dark){body{background:#19191c;color:#eee}.meta{color:#aaa}" +
     ".note{color:#ccc}h2{border-color:#444}a{color:#ff6a8f}}"

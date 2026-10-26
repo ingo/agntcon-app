@@ -43,6 +43,7 @@ data class TripReportItem(
     val videos: Int,
     val hasNote: Boolean,
     val hasRating: Boolean,
+    val highlights: Int = 0,
 )
 
 data class TripReportSummary(
@@ -55,6 +56,7 @@ data class TripReportSummary(
     val withSlides: Int get() = items.count { it.session.slidesUrl != null }
     val photos: Int get() = items.sumOf { it.photos }
     val videos: Int get() = items.sumOf { it.videos }
+    val highlights: Int get() = items.sumOf { it.highlights }
 }
 
 sealed interface TripReportState {
@@ -142,6 +144,7 @@ class TripReportViewModel(
                 session = session,
                 photos = attachments.count { it.kind == MediaKind.PHOTO },
                 videos = attachments.count { it.kind == MediaKind.VIDEO },
+                highlights = attachments.count { it.kind == MediaKind.PHOTO && it.highlighted },
                 hasNote = snapshot.notes.sessionNote(session.id).isNotBlank(),
                 hasRating = snapshot.ratings[session.id.id]?.isEmpty == false,
             )

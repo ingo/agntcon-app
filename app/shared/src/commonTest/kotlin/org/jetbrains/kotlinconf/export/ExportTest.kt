@@ -288,4 +288,22 @@ class ExportTest {
 
         assertTrue("### Why \\*agents\\* use\\_tools \\[now\\]" in report)
     }
+
+
+    @Test
+    fun highlightsAreCollectedBySessionTimeThenPhotoOrder() {
+        val late = card("2", "Late", "14:00", "14:30")
+        val early = card("1", "Early", "09:00", "09:30")
+        val media: (SessionCardView) -> List<ReportMedia> = { s ->
+            if (s.id.id == "1") listOf(
+                ReportMedia(org.jetbrains.kotlinconf.personal.MediaKind.PHOTO, "a/01.jpg"),
+                ReportMedia(org.jetbrains.kotlinconf.personal.MediaKind.PHOTO, "a/02.jpg", highlighted = true),
+            ) else listOf(ReportMedia(org.jetbrains.kotlinconf.personal.MediaKind.PHOTO, "b/01.jpg", highlighted = true))
+        }
+
+        val found = highlightsOf(listOf(late, early), media)
+
+        assertEquals(listOf("a/02.jpg" to 2, "b/01.jpg" to 1), found.map { it.item.path to it.number })
+        assertEquals(listOf("Early", "Late"), found.map { it.session.title })
+    }
 }

@@ -90,7 +90,7 @@ class OkioReportBundler(
             layout.slidesPath(s)?.takeIf { it in downloaded } ?: s.slidesUrl
         }
         val reportMedia: (SessionCardView) -> List<ReportMedia> = { s ->
-            media[s.id.id].orEmpty().map { ReportMedia(it.attachment.kind, it.inBundle, it.original?.first) }
+            media[s.id.id].orEmpty().map { ReportMedia(it.attachment.kind, it.inBundle, it.original?.first, it.attachment.highlighted) }
         }
         val markdown = tripReportMarkdown(
             sessions, snap.speakers, snap.notes, snap.ratings, snap.met, input.event, input.labels, slideLink, reportMedia,

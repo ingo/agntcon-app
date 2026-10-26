@@ -424,4 +424,13 @@ Please try again.</string>
     </plurals>
     <string name="import_outlier_move">Move to that session</string>
     <string name="trip_report_preview_hint">How the report will read. Tap a photo to see it full size and swipe through the session’s photos.</string>
+    <string name="export_highlights">Highlights</string>
+    <string name="export_highlight">Highlight</string>
+    <string name="session_media_highlight">Star this photo</string>
+    <string name="session_media_unhighlight">Remove the star</string>
+    <plurals name="trip_report_highlights">
+        <item quantity="one">%1$d highlight</item>
+        <item quantity="other">%1$d highlights</item>
+    </plurals>
+    <string name="trip_report_highlights_hint">Star the photos that matter, on the session page: they open the report and are shown larger.</string>
 </resources>

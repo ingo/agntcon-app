@@ -64,6 +64,7 @@ import org.jetbrains.kotlinconf.personal.SessionRating
 import org.jetbrains.kotlinconf.personal.withAdded
 import org.jetbrains.kotlinconf.personal.withMet
 import org.jetbrains.kotlinconf.personal.withCleanUpMode
+import org.jetbrains.kotlinconf.personal.withHighlighted
 import org.jetbrains.kotlinconf.personal.withMoved
 import org.jetbrains.kotlinconf.personal.withRemoved
 import org.jetbrains.kotlinconf.personal.withUpdated
@@ -229,6 +230,7 @@ class ConferenceService(
                     addedAt = now + index,
                     sourceId = item.sourceId,
                     contentHash = hash,
+                    takenAt = item.takenAt?.epochMillis(ActiveEvent.timeZone),
                 )
             }
             storage.setAttachments(all.withAdded(sessionId, added))
@@ -356,6 +358,13 @@ class ConferenceService(
             storage.setAttachments(storage.getAttachments().first().withUpdated(attachmentId) { it.withCleanUpMode(mode) })
         }
         cleanUpScreenPhotos()
+    }
+
+    /** Stars a photo (or takes the star off), so the trip report features it. */
+    suspend fun setHighlighted(attachmentId: String, highlighted: Boolean) {
+        savePersonal { storage ->
+            storage.setAttachments(storage.getAttachments().first().withUpdated(attachmentId) { it.withHighlighted(highlighted) })
+        }
     }
 
     /**
