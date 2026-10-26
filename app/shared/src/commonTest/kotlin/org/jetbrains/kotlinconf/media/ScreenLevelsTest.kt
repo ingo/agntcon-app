@@ -29,8 +29,10 @@ class ScreenLevelsTest {
     private val darkBackground = Rgb(0.05, 0.04, 0.03)
     private val warmText = Rgb(0.75, 0.6, 0.4)
 
-    private fun assertStaysDark(textShare: Double) {
-        val pixels = slide(darkBackground, warmText, textShare)
+    private fun assertStaysDark(textShare: Double, background: Rgb = darkBackground, text: Rgb = warmText) =
+        assertStaysDark(slide(background, text, textShare), textShare)
+
+    private fun assertStaysDark(pixels: List<Rgb>, textShare: Double) {
         val levels = assertNotNull(measureScreenLevels(pixels))
         val text = pixels.take((pixels.size * textShare).toInt())
         val background = pixels.drop((pixels.size * textShare).toInt() + 1)
@@ -39,7 +41,8 @@ class ScreenLevelsTest {
 
         assertFalse(levels.light, "a dark slide is not treated as a light one")
         assertTrue(backgroundAfter.luminance < 0.08, "background stays dark: ${backgroundAfter.describe()}")
-        assertTrue(spread(backgroundAfter) < 0.03, "background is not coloured: ${backgroundAfter.describe()}")
+        // In linear light: (0.03, 0.003, 0) already shows as a dark orange
+        assertTrue(spread(backgroundAfter) < 0.015, "background is not coloured: ${backgroundAfter.describe()}")
         assertTrue(textAfter.luminance > 0.6, "text is light: ${textAfter.describe()}")
         assertTrue(spread(textAfter) < 0.15, "text is close to white: ${textAfter.describe()}")
     }
@@ -52,6 +55,16 @@ class ScreenLevelsTest {
 
     @Test
     fun aDarkSlideWithMuchTextStaysDark() = assertStaysDark(0.15)
+
+    // The room's warm light falls on the dark screen, the text is the projector's own, near-white light
+    private val roomLitBackground = Rgb(0.05, 0.03, 0.015)
+    private val projectorText = Rgb(0.7, 0.68, 0.65)
+
+    @Test
+    fun aDarkSlideLitByTheRoomIsNotOrange() = assertStaysDark(0.05, roomLitBackground, projectorText)
+
+    @Test
+    fun aDarkSlideLitByTheRoomWithLittleTextIsNotOrange() = assertStaysDark(0.01, roomLitBackground, projectorText)
 
     @Test
     fun aLightSlideLosesItsCastAndBecomesWhite() {

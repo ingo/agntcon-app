@@ -17,14 +17,14 @@ internal class Rgb(val r: Double, val g: Double, val b: Double) {
 }
 
 /**
- * How to correct a photo of a screen: each channel times its [gains], minus [bias] (as CoreImage's colour matrix
+ * How to correct a photo of a screen: each channel times its [gains], minus its [biases] (as CoreImage's colour matrix
  * does). [light] is whether the result is a light slide, dark text on a light background.
  */
-internal class ScreenLevels(val gains: List<Double>, val bias: Double, val light: Boolean) {
+internal class ScreenLevels(val gains: List<Double>, val biases: List<Double>, val light: Boolean) {
     fun apply(pixel: Rgb) = Rgb(
-        (pixel.r * gains[0] - bias).coerceIn(0.0, 1.0),
-        (pixel.g * gains[1] - bias).coerceIn(0.0, 1.0),
-        (pixel.b * gains[2] - bias).coerceIn(0.0, 1.0),
+        (pixel.r * gains[0] - biases[0]).coerceIn(0.0, 1.0),
+        (pixel.g * gains[1] - biases[1]).coerceIn(0.0, 1.0),
+        (pixel.b * gains[2] - biases[2]).coerceIn(0.0, 1.0),
     )
 }
 
@@ -38,6 +38,11 @@ internal class ScreenLevels(val gains: List<Double>, val bias: Double, val light
  * A dark slide has little text: its brightest 10 % is mostly background, tinted by the projector's black. Only pixels
  * at least half as bright as the brightest text count as white, and the white is never stretched past white, so the
  * background is not mistaken for the white and stays dark instead of turning orange.
+ *
+ * The background of a dark slide is often lit by the room's warm light rather than the projector, so it is warmer than
+ * the text and keeps a cast once the white is balanced; taking one black off every channel would then leave it orange.
+ * So a dark slide's background, its median, is made grey by a black point per channel. A slide designed with a dark
+ * coloured background comes out dark grey too.
  */
 internal fun measureScreenLevels(pixels: List<Rgb>): ScreenLevels? {
     if (pixels.isEmpty()) return null
@@ -45,19 +50,30 @@ internal fun measureScreenLevels(pixels: List<Rgb>): ScreenLevels? {
     val bright = maxOf(percentile(luminances, 0.9), percentile(luminances, 0.998) / 2)
     val candidates = pixels.filter { it.luminance >= bright && it.luminance > 0.02 }
     val neutral = candidates.sortedBy { it.saturation }.take(maxOf(1, candidates.size / 3))
-    if (neutral.isEmpty()) return ScreenLevels(listOf(1.0, 1.0, 1.0), 0.0, percentile(luminances, 0.5) > LIGHT_MEDIAN)
+    if (neutral.isEmpty()) {
+        return ScreenLevels(listOf(1.0, 1.0, 1.0), listOf(0.0, 0.0, 0.0), percentile(luminances, 0.5) > LIGHT_MEDIAN)
+    }
     val white = listOf(neutral.sumOf { it.r }, neutral.sumOf { it.g }, neutral.sumOf { it.b }).map { it / neutral.size }
     val top = white.max()
     val tint = white.map { top / maxOf(it, top / MAX_CAST, 1e-4) }
 
     // The brightest 1.5 % become white once the cast is gone, but nothing darker than the white; the darkest 1 % black,
     // within reason
-    val corrected = pixels.map { Rgb(it.r * tint[0], it.g * tint[1], it.b * tint[2]).luminance }
+    val balanced = pixels.map { Rgb(it.r * tint[0], it.g * tint[1], it.b * tint[2]) }
+    val corrected = balanced.map { it.luminance }
     val high = maxOf(percentile(corrected, 0.985), Rgb(white[0] * tint[0], white[1] * tint[1], white[2] * tint[2]).luminance)
     val black = percentile(corrected, 0.01).coerceIn(0.0, high * 0.3)
     // Limited the same for every channel, so a dim photo keeps its balance rather than shifting hue
     val k = minOf(1 / maxOf(high - black, 0.02), MAX_GAIN / tint.max())
-    return ScreenLevels(tint.map { it * k }, black * k, (percentile(corrected, 0.5) - black) * k > LIGHT_MEDIAN)
+    val light = (percentile(corrected, 0.5) - black) * k > LIGHT_MEDIAN
+    if (light) return ScreenLevels(tint.map { it * k }, List(3) { black * k }, true)
+
+    // The background's own cast, measured on the pixels around the median, which on a dark slide is background
+    val around = percentile(corrected, 0.4)..percentile(corrected, 0.6)
+    val middle = balanced.filter { it.luminance in around }
+    val background = listOf(middle.sumOf { it.r }, middle.sumOf { it.g }, middle.sumOf { it.b }).map { it / middle.size }
+    val grey = Rgb(background[0], background[1], background[2]).luminance
+    return ScreenLevels(tint.map { it * k }, background.map { (black + it - grey) * k }, false)
 }
 
 private fun percentile(values: List<Double>, p: Double): Double {
