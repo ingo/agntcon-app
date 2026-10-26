@@ -393,6 +393,7 @@ Please try again.</string>
     <string name="import_slide_matches">Slide text matches</string>
     <string name="session_media_cleaned">Photos of screens and whiteboards are straightened and cleaned up. In the viewer, swipe left for the original.</string>
     <string name="export_original">original</string>
+    <string name="export_text_on">Text on</string>
     <plurals name="import_duplicates">
         <item quantity="one">%1$d was already added and is left out.</item>
         <item quantity="other">%1$d were already added and are left out.</item>

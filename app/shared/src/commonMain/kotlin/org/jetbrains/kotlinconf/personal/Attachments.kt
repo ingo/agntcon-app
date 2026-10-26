@@ -41,6 +41,10 @@ data class Attachment(
     val previewChecked: Boolean = false,
     /** The attendee's choice of clean-up for this photo; null lets the app decide. */
     val cleanMode: CleanUpMode? = null,
+    /** The words on a photo of a slide, read on the device from the cleaned-up copy where there is one; null if none. */
+    val text: String? = null,
+    /** True once the text was read (or tried), so it is read only once. */
+    val textChecked: Boolean = false,
 ) {
     /** The picture to show in a list: the small preview, else the photo itself (cleaned up where there is one). */
     val preview: String? get() = if (kind == MediaKind.VIDEO) thumbnail else thumbnail ?: cleaned ?: file

@@ -90,7 +90,10 @@ class OkioReportBundler(
             layout.slidesPath(s)?.takeIf { it in downloaded } ?: s.slidesUrl
         }
         val reportMedia: (SessionCardView) -> List<ReportMedia> = { s ->
-            media[s.id.id].orEmpty().map { ReportMedia(it.attachment.kind, it.inBundle, it.original?.first) }
+            media[s.id.id].orEmpty().map {
+                val text = it.attachment.text?.takeIf { text -> text.isNotBlank() }
+                ReportMedia(it.attachment.kind, it.inBundle, it.original?.first, text, text?.let { _ -> layout.textPath(it.inBundle) })
+            }
         }
         val markdown = tripReportMarkdown(
             sessions, snap.speakers, snap.notes, snap.ratings, snap.met, input.event, input.labels, slideLink, reportMedia,
@@ -101,8 +104,12 @@ class OkioReportBundler(
 
         val files = downloaded.entries.map { it.key to it.value } +
             media.values.flatten().flatMap { listOfNotNull(it.inBundle to it.path, it.original) }
+        // The text read from each photo, saved as a text file next to it
+        val texts = media.values.flatten().mapNotNull { m ->
+            m.attachment.text?.takeIf { it.isNotBlank() }?.let { layout.textPath(m.inBundle) to it.trim() + "\n" }
+        }
         val total = files.sumOf { (_, path) -> fileSystem.metadataOrNull(path)?.size ?: 0L } +
-            markdown.length * 4L + html.length * 4L
+            markdown.length * 4L + html.length * 4L + texts.sumOf { it.second.length * 4L }
         if (total >= ZipWriter.LIMIT) return ReportResult.TooLarge
 
         val fileName = reportFileName(input.event)
@@ -113,6 +120,7 @@ class OkioReportBundler(
             writer.addText("report.md", markdown)
             writer.addText("report.html", html)
             files.forEach { (inBundle, path) -> writer.addFile(inBundle, fileSystem, path) }
+            texts.forEach { (inBundle, text) -> writer.addText(inBundle, text) }
             writer.finish()
         }
         fileSystem.delete(zip, mustExist = false)

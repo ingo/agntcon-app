@@ -36,10 +36,18 @@ data class ExportLabels(
     val photo: String = "Photo",
     val video: String = "Video",
     val original: String = "original",
+    val textOn: String = "Text on",
 )
 
 /** A photo or video in the report bundle, by its path inside the bundle. */
-data class ReportMedia(val kind: MediaKind, val path: String, val original: String? = null)
+data class ReportMedia(
+    val kind: MediaKind,
+    val path: String,
+    val original: String? = null,
+    /** The words on the photo, and where they are saved as a text file in the bundle. */
+    val text: String? = null,
+    val textPath: String? = null,
+)
 
 /** The event a file or text is about. */
 data class ExportEvent(
@@ -263,6 +271,14 @@ fun tripReportMarkdown(
                     val label = "${labels.mediaLabel(item.kind)} $number"
                     val original = item.original?.let { " ([${labels.original}]($it))" }.orEmpty()
                     appendLine(if (item.kind == MediaKind.PHOTO) "![$label](${item.path})$original" else "[$label](${item.path})")
+                    item.text?.takeIf { it.isNotBlank() }?.let { text ->
+                        // The text file has the photo's name, so each text stays linked to its photo
+                        val file = item.textPath?.let { " ([${it.substringAfterLast('/')}]($it))" }.orEmpty()
+                        appendLine()
+                        appendLine("> **${labels.textOn} $label**$file")
+                        appendLine(">")
+                        text.mdBlock().lines().forEach { line -> appendLine("> ${line.trimEnd()}  ") }
+                    }
                 }
             }
         }

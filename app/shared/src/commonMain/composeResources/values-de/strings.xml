@@ -393,6 +393,7 @@ Bitte versuchen Sie es erneut.</string>
     <string name="import_slide_matches">Folientext passt</string>
     <string name="session_media_cleaned">Fotos von Bildschirmen und Whiteboards werden begradigt und aufbereitet. Im Viewer nach links wischen für das Original.</string>
     <string name="export_original">Original</string>
+    <string name="export_text_on">Text auf</string>
     <plurals name="import_duplicates">
         <item quantity="one">%1$d war schon hinzugefügt und wird weggelassen.</item>
         <item quantity="other">%1$d waren schon hinzugefügt und werden weggelassen.</item>
