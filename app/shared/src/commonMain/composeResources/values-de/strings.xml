@@ -423,6 +423,14 @@ Bitte versuchen Sie es erneut.</string>
         <item quantity="one">Dieses Foto gehört wahrscheinlich zu denen kurz davor und danach: %2$s.</item>
         <item quantity="other">Diese %1$d Fotos gehören wahrscheinlich zu denen kurz davor und danach: %2$s.</item>
     </plurals>
+    <plurals name="import_looks_like">
+        <item quantity="one">Das sieht nach %2$s aus: Der Text auf dem Foto passt besser zu dieser Session.</item>
+        <item quantity="other">Diese %1$d Fotos sehen nach %2$s aus: Der Text darauf passt besser zu dieser Session.</item>
+    </plurals>
+    <plurals name="import_same_moment">
+        <item quantity="one">%1$d Foto wurde im selben Moment aufgenommen wie eines in %2$s. Es könnte eine Kopie sein.</item>
+        <item quantity="other">%1$d Fotos wurden im selben Moment aufgenommen wie Fotos in %2$s. Es könnten Kopien sein.</item>
+    </plurals>
     <string name="import_outlier_move">In diese Session verschieben</string>
     <string name="trip_report_preview_hint">So wird der Bericht aussehen. Tippen Sie auf ein Foto, um es groß zu sehen, und wischen Sie durch die Fotos der Session.</string>
 </resources>

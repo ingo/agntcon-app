@@ -82,13 +82,28 @@ object MediaMatcher {
             }
         }
 
+        // Sessions running at that moment that the candidates do not cover: a photo inside another session is not
+        // silently filed under one that has ended, or that has not started yet
+        fun running(candidates: List<SessionCardView>) = inside(talks).filter { r -> candidates.none { it.id == r.id } }
+
+        /**
+         * The candidates and whatever else is running, to ask. The one running is the likely answer when it is the
+         * only one and every candidate is already over (the photo is inside it, the candidates are not).
+         */
+        fun askWithRunning(candidates: List<SessionCardView>): MediaMatch? {
+            val others = running(candidates).takeIf { it.isNotEmpty() } ?: return null
+            val likely = others.singleOrNull()?.takeIf { candidates.all { c -> at >= c.endsAt } }
+            return MediaMatch.Ask(timeOrder(candidates + others), likely = likely?.id)
+        }
+
+        val nearMine = near(mine)
         return oneOrAsk(inside(mine))
-            ?: closestOrAsk(near(mine))
+            ?: nearMine.takeIf { it.isNotEmpty() }?.let { askWithRunning(it) }
+            ?: closestOrAsk(nearMine)
             // Just outside a bookmarked session: it ran long or the next started early. Offer them, the closer one
-            // preselected, next to whatever else was running then
+            // preselected, unless something else is running (then see askWithRunning)
             ?: drifted.takeIf { it.isNotEmpty() }?.let { near ->
-                val likely = near.minByOrNull { gap(at, it) }!!
-                MediaMatch.Ask(timeOrder(near + inside(talks)), likely = likely.id)
+                askWithRunning(near) ?: MediaMatch.Ask(timeOrder(near), likely = near.minByOrNull { gap(at, it) }!!.id)
             }
             // Nothing marked: the only talk running then (a keynote) is a safe guess, parallel talks are not
             ?: inside(talks).singleOrNull()?.let { MediaMatch.Matched(it.id) }

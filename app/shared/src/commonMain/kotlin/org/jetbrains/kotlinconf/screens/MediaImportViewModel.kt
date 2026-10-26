@@ -19,6 +19,7 @@ import org.jetbrains.kotlinconf.media.MediaGroup
 import org.jetbrains.kotlinconf.media.MediaMatch
 import org.jetbrains.kotlinconf.media.MediaMatcher
 import org.jetbrains.kotlinconf.media.PickedMedia
+import org.jetbrains.kotlinconf.media.SlideCheck
 import org.jetbrains.kotlinconf.media.SlideTextMatcher
 import org.jetbrains.kotlinconf.media.recognizeText
 import org.jetbrains.kotlinconf.personal.MediaKind
@@ -44,8 +45,13 @@ data class ImportGroup(
     val answer: ImportAnswer?,
     /** A matched group whose session the attendee wants to change. */
     val changing: Boolean = false,
-    /** The session whose title or speakers the text on the photos matches (see [SlideTextMatcher]). */
+    /**
+     * The session the text on the photos names (see [SlideCheck]). When it is not the answer, the screen says "This
+     * looks like ..." and offers to move the photos; nothing moves on its own.
+     */
     val suggested: SessionId? = null,
+    /** Which photos of the group [suggested] is for, by position; null for the whole group. */
+    val suggestedItems: Set<Int>? = null,
     /** A photo the attendee took out of the group it was matched to, to add somewhere else or not at all. */
     val movedOut: Boolean = false,
     /** The session preselected because it is the likely one (a bookmarked session that ran long or started early). */
@@ -56,6 +62,9 @@ data class ImportGroup(
     val isQuestion: Boolean get() = match.needsAnswer
     val matchedSession: SessionCardView? get() = (answer as? ImportAnswer.To)?.let { a -> options.find { it.id == a.session } }
 }
+
+/** Photos of a group to offer moving to [session]: [bySlide] when their text says so, else by the photos around them. */
+data class MoveFlag(val items: Set<Int>, val session: SessionId, val bySlide: Boolean)
 
 data class ImportState(
     val groups: List<ImportGroup> = emptyList(),
@@ -84,6 +93,36 @@ data class ImportState(
         findOutliers(items).entries
             .groupBy({ positions[it.key].first }, { positions[it.key].second to it.value })
             .mapValues { (_, flagged) -> flagged.map { it.first }.toSet() to flagged.first().second }
+    }
+
+    /** Photos to offer moving, by group: what the slides say, else what the photos around them say. */
+    val flags: Map<Int, MoveFlag> by lazy {
+        val byPhotos = outliers.mapValues { (_, v) -> MoveFlag(v.first, v.second, bySlide = false) }
+        val bySlide = groups.mapIndexedNotNull { i, g ->
+            val target = g.suggested ?: return@mapIndexedNotNull null
+            if (g.answer == ImportAnswer.To(target)) return@mapIndexedNotNull null
+            i to MoveFlag(g.suggestedItems ?: g.items.indices.toSet(), target, bySlide = true)
+        }.toMap()
+        byPhotos + bySlide
+    }
+
+    /**
+     * Groups holding photos taken at the very second of photos going to a different session, so the same photo may be
+     * about to be in two: group to how many, and the other session. A warning only: photos of a burst share a second.
+     */
+    val sameMoment: Map<Int, Pair<Int, SessionId>> by lazy {
+        fun moment(item: PickedMedia) = item.takenAt?.inZone(ActiveEvent.timeZone)
+        val moments = groups.flatMapIndexed { g, group -> group.items.mapNotNull { item -> moment(item)?.let { it to g } } }
+        groups.mapIndexedNotNull { g, group ->
+            val mine = (group.answer as? ImportAnswer.To)?.session
+            val others = group.items.mapNotNull { item ->
+                val at = moment(item) ?: return@mapNotNull null
+                moments.firstOrNull { (t, other) -> t == at && other != g }
+                    ?.let { (_, other) -> (groups[other].answer as? ImportAnswer.To)?.session?.takeIf { it != mine } }
+            }
+            val target = others.groupingBy { it }.eachCount().maxByOrNull { it.value } ?: return@mapIndexedNotNull null
+            g to (target.value to target.key)
+        }.toMap()
     }
 
     val unanswered: Int get() = groups.count { it.answer == null }
@@ -126,28 +165,55 @@ class MediaImportViewModel(
     }
 
     /**
-     * Reads the text on the photos of each question and, when it clearly names one of the candidates, preselects it.
-     * Runs after the screen is up; a few photos per group are enough and keep it quick.
+     * Reads the text on the photos of every group (see [SlideCheck]) and, when it clearly names another session than the
+     * one the group is filed under, remembers it as [ImportGroup.suggested]; a group without an answer gets it
+     * preselected. Runs after the screen is up, one photo at a time: reading text is heavy, and a big import has
+     * many groups. The attendee's own answers are never changed.
      */
     private fun readSlides() {
-        val byId = service.exportSnapshot().sessions.associateBy { it.id }
-        // One photo at a time: reading text is heavy, and a big import has many questions
-        viewModelScope.launch { _state.value.groups.forEachIndexed { index, group ->
-            if (group.match !is MediaMatch.Ask) return@forEachIndexed
-            run {
-                val paths = group.items.mapNotNull { if (it.kind == MediaKind.PHOTO) it.path else it.thumbnailPath }.take(MAX_PHOTOS_READ)
-                val text = paths.mapNotNull { recognizeText(it) }.joinToString("\n")
-                if (text.isBlank()) return@run
-                val candidates = group.options.mapNotNull { byId[it.id] }.map { it.id to "${it.title} ${it.speakerLine}" }
-                val suggested = SlideTextMatcher.best(text, candidates) ?: return@run
+        val snapshot = service.exportSnapshot()
+        val byId = snapshot.sessions.associateBy { it.id }
+        val zone = ActiveEvent.timeZone
+        viewModelScope.launch {
+            for (group in _state.value.groups) {
+                if (group.movedOut || group.items.isEmpty()) continue
+                val answered = group.answer
+                val current = (answered as? ImportAnswer.To)?.session
+                if (answered == ImportAnswer.Skip) continue
+                val views = (SlideCheck.candidates(group.from, group.to, snapshot.sessions) + group.options + listOfNotNull(current?.let { byId[it] }))
+                    .distinctBy { it.id }
+                val currentView = current?.let { byId[it] }
+                val order = group.items.indices.sortedWith(compareBy(nullsLast()) { group.items[it].takenAt?.inZone(zone) })
+                val finding = SlideCheck.check(
+                    order = order,
+                    current = current,
+                    candidates = views.map { it.id to SlideTextMatcher.candidateText(it) },
+                    edgeStart = currentView != null && group.from != null && group.from - currentView.startsAt <= EDGE,
+                    edgeEnd = currentView != null && group.to != null && currentView.endsAt - group.to <= EDGE,
+                ) { position ->
+                    val item = group.items[position]
+                    val paths = listOfNotNull(if (item.kind == MediaKind.PHOTO) item.path else item.thumbnailPath)
+                    paths.mapNotNull { recognizeText(it) }.joinToString("\n").ifBlank { null }
+                } ?: continue
+                val flagged = finding.items.map { group.items[it] }
                 _state.update { state ->
-                    state.copy(groups = state.groups.mapIndexed { i, g ->
-                        if (i != index) g
-                        else g.copy(suggested = suggested, answer = g.answer ?: ImportAnswer.To(suggested))
+                    // The group may have moved or changed while reading; find it again by its photos
+                    val at = state.groups.indexOfFirst { g -> g.items.any { it === group.items.first() } }
+                    val g = state.groups.getOrNull(at) ?: return@update state
+                    if (g.answer != answered && g.answer != null) return@update state
+                    val positions = g.items.indices.filter { g.items[it] in flagged }.toSet()
+                    if (positions.isEmpty()) return@update state
+                    val whole = positions.size == g.items.size
+                    state.copy(groups = state.groups.mapIndexed { i, x ->
+                        if (i != at) x else x.copy(
+                            suggested = finding.session,
+                            suggestedItems = if (whole) null else positions,
+                            answer = x.answer ?: ImportAnswer.To(finding.session),
+                        )
                     })
                 }
             }
-        } }
+        }
     }
 
     private fun build(): ImportState {
@@ -225,7 +291,10 @@ class MediaImportViewModel(
         )
         val rest = group.items.filterIndexed { i, _ -> i != itemIndex }
         val groups = state.groups.mapIndexedNotNull { i, g ->
-            if (i != groupIndex) g else if (rest.isEmpty()) null else g.copy(items = rest)
+            if (i != groupIndex) g else if (rest.isEmpty()) null else g.copy(items = rest).let {
+                // Positions in a partial suggestion no longer fit
+                if (it.suggestedItems != null) it.copy(suggested = null, suggestedItems = null) else it
+            }
         }
         state.copy(groups = (groups + moved).sortedWith(compareBy(nullsLast()) { it.from }))
     }
@@ -235,11 +304,11 @@ class MediaImportViewModel(
      * flagged as a whole just gets that session; otherwise the flagged photos get a card of their own with it.
      */
     fun moveFlagged(groupIndex: Int) = _state.update { state ->
-        val (flagged, target) = state.outliers[groupIndex] ?: return@update state
+        val (flagged, target) = state.flags[groupIndex]?.let { it.items to it.session } ?: return@update state
         val group = state.groups[groupIndex]
         if (flagged.size == group.items.size) {
             return@update state.copy(groups = state.groups.mapIndexed { i, g ->
-                if (i == groupIndex) g.copy(answer = ImportAnswer.To(target), changing = false) else g
+                if (i == groupIndex) g.copy(answer = ImportAnswer.To(target), changing = false, suggestedItems = null) else g
             })
         }
         val moved = group.items.filterIndexed { i, _ -> i in flagged }
@@ -253,7 +322,7 @@ class MediaImportViewModel(
             options = around(times.minOrNull(), snapshot.sessions, state.attended, state.sessions[target]),
             answer = ImportAnswer.To(target),
         )
-        val rest = group.copy(items = group.items.filterIndexed { i, _ -> i !in flagged })
+        val rest = group.copy(items = group.items.filterIndexed { i, _ -> i !in flagged }, suggested = null, suggestedItems = null)
         state.copy(groups = (state.groups.mapIndexed { i, g -> if (i == groupIndex) rest else g } + card)
             .sortedWith(compareBy(nullsLast()) { it.from }))
     }
@@ -278,10 +347,12 @@ class MediaImportViewModel(
         finished = true
         _state.update { it.copy(saving = true) }
         viewModelScope.launch {
+            // One photo goes into one session: an item that somehow sits in two groups is added once
+            val added = mutableSetOf<PickedMedia>()
             state.groups.forEach { group ->
                 when (val answer = group.answer) {
-                    is ImportAnswer.To -> service.addAttachments(answer.session, group.items)
-                    else -> service.discardPicked(group.items)
+                    is ImportAnswer.To -> service.addAttachments(answer.session, group.items.filter { added.add(it) })
+                    else -> service.discardPicked(group.items.filter { it !in added })
                 }
             }
             _state.update { it.copy(saving = false, done = true) }
@@ -289,7 +360,8 @@ class MediaImportViewModel(
     }
 
     private companion object {
-        const val MAX_PHOTOS_READ = 4
+        /** How close to a session's start or end a group's photos must be for them to be another talk's slides. */
+        val EDGE = 12.minutes
     }
 
     override fun onCleared() {
