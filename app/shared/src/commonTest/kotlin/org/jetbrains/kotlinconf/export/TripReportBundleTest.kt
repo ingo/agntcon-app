@@ -194,6 +194,18 @@ class TripReportBundleTest {
     }
 
     @Test
+    fun theTextBlockIsReadableInLightAndDarkMode() {
+        // In dark mode the page text is light; the block's own light background must not be left under it
+        val media = listOf(ReportMedia(MediaKind.PHOTO, "media/a/01.jpg", null, "Some slide text", "media/a/01.txt"))
+        val html = tripReportHtml(listOf(keynote), emptyMap(), PersonalNotes(), emptyMap(), emptySet(), event, media = { media })
+
+        val light = html.substringBefore("@media (prefers-color-scheme:dark)")
+        val dark = html.substringAfter("@media (prefers-color-scheme:dark)")
+        assertTrue(".texts pre{white-space:pre-wrap;color:#19191c;background:#f6f6f8" in light, "dark text on its light box")
+        assertTrue(".texts pre{color:#eee;background:#26262a}" in dark, "light text on a dark box in dark mode")
+    }
+
+    @Test
     fun aPhotoWithoutTextHasNoTextBlock() {
         val media = listOf(ReportMedia(MediaKind.PHOTO, "media/a/01.jpg", null, null, null), ReportMedia(MediaKind.PHOTO, "media/a/02.jpg", null, "  ", "media/a/02.txt"))
         val report = tripReportMarkdown(listOf(keynote), emptyMap(), PersonalNotes(), emptyMap(), emptySet(), event, media = { media })

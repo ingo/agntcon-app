@@ -118,9 +118,10 @@ private const val STYLE = "body{margin:0;background:#fff;color:#19191c;font:16px
     "h1{font-size:1.6em;line-height:1.2}h2{margin-top:2em;border-bottom:1px solid #ddd}" +
     "section{margin:1.5em 0}h3{margin-bottom:.2em}.meta{margin-top:0;color:#666}" +
     ".note{white-space:normal;color:#333}a{color:#c2003e}" +
-    ".texts details{margin:.4em 0}.texts pre{white-space:pre-wrap;background:#f6f6f8;padding:8px;border-radius:6px}" +
+    ".texts details{margin:.4em 0}.texts pre{white-space:pre-wrap;color:#19191c;background:#f6f6f8;padding:8px;border-radius:6px}" +
     // Small square thumbnails, so a session with many photos stays short; a click opens the full photo
     ".media{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px}" +
     ".media a{display:block}.media img,.media video{width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;background:#eee;display:block}" +
     "@media (prefers-color-scheme:dark){body{background:#19191c;color:#eee}.meta{color:#aaa}" +
-    ".note{color:#ccc}h2{border-color:#444}a{color:#ff6a8f}}"
+    // The text block sets its own colours in both modes: it inherited the light page text on its light background
+    ".note{color:#ccc}h2{border-color:#444}a{color:#ff6a8f}.texts pre{color:#eee;background:#26262a}}"
