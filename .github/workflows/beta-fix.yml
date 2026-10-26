@@ -24,10 +24,29 @@ permissions:
   id-token: write
 
 jobs:
+  # An open pull request that mentions the issue means a fix is already waiting for review: do not start another
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      has_open_pr: ${{ steps.pr.outputs.has_open_pr }}
+    steps:
+      - id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE: ${{ github.event.issue.number || inputs.issue }}
+        run: |
+          count=$(gh pr list -R "$GITHUB_REPOSITORY" --state open --limit 100 --json title,body \
+            | jq --arg n "$ISSUE" '[.[] | select(((.title // "") + " " + (.body // "")) | test("#" + $n + "([^0-9]|$)"))] | length')
+          echo "has_open_pr=$([[ "$count" -gt 0 ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
   fix:
+    needs: check
     if: >-
+      needs.check.outputs.has_open_pr != 'true' && (
       (github.event_name == 'issues' && github.event.label.name == 'claude-fix' && github.actor == github.repository_owner) ||
-      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'))
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
