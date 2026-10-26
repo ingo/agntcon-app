@@ -67,10 +67,6 @@ private const val MIN_TEXT_LINES = 4
 /** Pixels on the long side of the copy the colours are measured on. */
 private const val STAT_PIXELS = 256.0
 
-/** A colour cast is never stronger than this ratio between channels; past it, the "white" is a coloured shape. */
-private const val MAX_CAST = 2.5
-private const val MAX_GAIN = 8.0
-
 /** Median brightness (linear) above which a slide counts as light: dark text on a light background. */
 private const val LIGHT_MEDIAN = 0.3
 
@@ -217,45 +213,20 @@ private fun enhance(image: CIImage, context: CIContext): CIImage {
     return if (median > LIGHT_MEDIAN) lightSlide(balanced) else darkSlide(balanced)
 }
 
-/** A pixel in linear light. */
-private class Rgb(val r: Double, val g: Double, val b: Double) {
-    val luminance: Double get() = 0.2126 * r + 0.7152 * g + 0.0722 * b
-    val saturation: Double get() {
-        val max = maxOf(r, g, b)
-        return if (max > 0) (max - minOf(r, g, b)) / max else 0.0
-    }
-}
-
-/**
- * Removes the colour cast and stretches the levels; returns the result and its median brightness. The white of a
- * slide is the least coloured of its brightest pixels (the background of a light slide, the text of a dark one), so
- * its tint is the cast and is taken out per channel. A coloured slide keeps its colours because its white text or
- * frame sets the balance, not its background. Then one black point for all channels, so nothing shifts hue.
- */
+/** Removes the colour cast and stretches the levels (see [levels]); returns the result and its median brightness. */
 private fun balance(image: CIImage, context: CIContext): Pair<CIImage, Double> {
     val pixels = samplePixels(image, context)
     if (pixels.isEmpty()) return image to 0.0
-    val bright = percentile(pixels.map { it.luminance }, 0.9)
-    val candidates = pixels.filter { it.luminance >= bright && it.luminance > 0.02 }
-    val neutral = candidates.sortedBy { it.saturation }.take(maxOf(1, candidates.size / 3))
-    if (neutral.isEmpty()) return image to percentile(pixels.map { it.luminance }, 0.5)
-    val white = listOf(neutral.sumOf { it.r }, neutral.sumOf { it.g }, neutral.sumOf { it.b }).map { it / neutral.size }
-    val top = white.max()
-    val tint = white.map { top / maxOf(it, top / MAX_CAST, 1e-4) }
-
-    // The brightest 1.5 % become white once the cast is gone; the darkest 1 % black, within reason
-    val corrected = pixels.map { Rgb(it.r * tint[0], it.g * tint[1], it.b * tint[2]).luminance }
-    val high = percentile(corrected, 0.985)
-    val black = percentile(corrected, 0.01).coerceIn(0.0, high * 0.3)
-    val k = 1 / maxOf(high - black, 0.02)
-    val gains = tint.map { minOf(it * k, MAX_GAIN) }
+    val measured = levels(pixels) ?: return image to percentile(pixels.map { it.luminance }, 0.5)
+    val gains = measured.gains
+    val black = measured.black
     val balanced = filter("CIColorMatrix", image) {
         setValue(CIVector(x = gains[0], Y = 0.0, Z = 0.0, W = 0.0), forKey = "inputRVector")
         setValue(CIVector(x = 0.0, Y = gains[1], Z = 0.0, W = 0.0), forKey = "inputGVector")
         setValue(CIVector(x = 0.0, Y = 0.0, Z = gains[2], W = 0.0), forKey = "inputBVector")
-        setValue(CIVector(x = -black * k, Y = -black * k, Z = -black * k, W = 0.0), forKey = "inputBiasVector")
+        setValue(CIVector(x = -black, Y = -black, Z = -black, W = 0.0), forKey = "inputBiasVector")
     }?.imageByCroppingToRect(image.extent) ?: return image to percentile(pixels.map { it.luminance }, 0.5)
-    return balanced to (percentile(corrected, 0.5) - black) * k
+    return balanced to measured.median
 }
 
 /** The pixels of a small copy, in the linear working space CoreImage filters see. */
@@ -280,11 +251,6 @@ private fun samplePixels(image: CIImage, context: CIContext): List<Rgb> {
         )
         List(width * height) { i -> Rgb(buffer[i * 4].toDouble(), buffer[i * 4 + 1].toDouble(), buffer[i * 4 + 2].toDouble()) }
     }
-}
-
-private fun percentile(values: List<Double>, p: Double): Double {
-    val sorted = values.sorted()
-    return sorted[(sorted.size * p).toInt().coerceIn(0, sorted.lastIndex)]
 }
 
 /**
