@@ -171,6 +171,38 @@ class TripReportBundleTest {
     }
 
     @Test
+    fun theTextOnAPhotoIsSavedNextToItAndShownUnderItInTheReport() {
+        val photo = Attachment("p", MediaKind.PHOTO, "p.jpg", addedAt = 1, text = "Tokenomics\n# not a heading\n> not a quote", textChecked = true)
+        val layout = ReportLayout(listOf(keynote), mapOf("1" to listOf(photo)))
+        val (attachment, path) = layout.media(keynote).single()
+        val textPath = layout.textPath(path)
+        assertEquals("media/2026-10-22-0900-opening-keynote-agents-mcp/01.txt", textPath)
+        val media = listOf(ReportMedia(MediaKind.PHOTO, path, null, attachment.text, textPath))
+
+        val report = tripReportMarkdown(listOf(keynote), emptyMap(), PersonalNotes(), emptyMap(), emptySet(), event, media = { media })
+        assertTrue("![Photo 1]($path)" in report, report)
+        // Named after the photo and linked to its text file
+        assertTrue("> **Text on Photo 1** ([01.txt]($textPath))" in report, report)
+        assertTrue("> Tokenomics" in report, report)
+        // Its characters are not read as formatting
+        assertTrue("> \\# not a heading" in report && "> \\> not a quote" in report, report)
+        assertTrue(report.indexOf("![Photo 1]") < report.indexOf("Text on Photo 1"))
+
+        val html = tripReportHtml(listOf(keynote), emptyMap(), PersonalNotes(), emptyMap(), emptySet(), event, media = { media })
+        assertTrue("<summary>Text on Photo 1 (<a href=\"$textPath\">01.txt</a>)</summary>" in html, html)
+        assertTrue("<pre>Tokenomics\n# not a heading\n&gt; not a quote</pre>" in html, html)
+    }
+
+    @Test
+    fun aPhotoWithoutTextHasNoTextBlock() {
+        val media = listOf(ReportMedia(MediaKind.PHOTO, "media/a/01.jpg", null, null, null), ReportMedia(MediaKind.PHOTO, "media/a/02.jpg", null, "  ", "media/a/02.txt"))
+        val report = tripReportMarkdown(listOf(keynote), emptyMap(), PersonalNotes(), emptyMap(), emptySet(), event, media = { media })
+        assertFalse("Text on" in report, report)
+        val html = tripReportHtml(listOf(keynote), emptyMap(), PersonalNotes(), emptyMap(), emptySet(), event, media = { media })
+        assertFalse("<details>" in html, html)
+    }
+
+    @Test
     fun theZipIsNamedAfterTheEvent() {
         assertEquals("agntcon-mcpcon-na-2026-trip-report.zip", reportFileName(event))
     }
