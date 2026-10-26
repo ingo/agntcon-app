@@ -27,6 +27,7 @@ import kotlinx.datetime.toInstant
 import org.jetbrains.kotlinconf.event.ActiveEvent
 import org.jetbrains.kotlinconf.isServiceEvent
 import org.jetbrains.kotlinconf.media.MediaMatcher
+import org.jetbrains.kotlinconf.media.PhotoCleanUp
 import org.jetbrains.kotlinconf.export.ReportMedia
 import org.jetbrains.kotlinconf.export.tripReportHtml
 import org.jetbrains.kotlinconf.media.PickedMedia
@@ -74,6 +75,10 @@ class TripReportViewModel(
     val summary: StateFlow<TripReportSummary> = service.exportSnapshots
         .mapLatest { summarize(it) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TripReportSummary())
+
+    /** How far the clean-up of the photos has got; null when there is nothing to show. */
+    val photoCleanUp: StateFlow<PhotoCleanUp?> = service.photoCleanUp
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     private val _state = MutableStateFlow<TripReportState>(TripReportState.Idle)
     val state: StateFlow<TripReportState> = _state

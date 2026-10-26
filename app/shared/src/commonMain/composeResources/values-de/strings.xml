@@ -322,6 +322,8 @@ Bitte versuchen Sie es erneut.</string>
     <string name="cleanup_light_detail">Dunkle Schrift auf hellem Hintergrund</string>
     <string name="cleanup_colourful">Farbige Folie</string>
     <string name="cleanup_colourful_detail">Behält die Farben der Folie</string>
+    <string name="trip_report_cleanup_progress">Fotos werden aufbereitet: %1$d von %2$d</string>
+    <string name="trip_report_cleanup_done">Fotos aufbereitet (Version %1$d)</string>
     <string name="trip_report_intro">Die Sessions, die Sie besucht haben, mit Ihren Notizen, Bewertungen, den Folien und Ihren Fotos und Videos.</string>
     <string name="trip_report_download">Bericht herunterladen (.zip)</string>
     <string name="trip_report_download_hint">Der Bericht als Markdown und als Webseite, die Folien aus Sessionize und Ihre Fotos und Videos in einer ZIP-Datei zum Mailen oder Speichern.</string>

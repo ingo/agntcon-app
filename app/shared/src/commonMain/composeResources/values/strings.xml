@@ -322,6 +322,8 @@ Please try again.</string>
     <string name="cleanup_light_detail">Dark text on a light background</string>
     <string name="cleanup_colourful">Colourful slide</string>
     <string name="cleanup_colourful_detail">Keeps the colours of the slide</string>
+    <string name="trip_report_cleanup_progress">Cleaning up photos: %1$d of %2$d</string>
+    <string name="trip_report_cleanup_done">Photos cleaned up (version %1$d)</string>
     <string name="trip_report_intro">The sessions you went to with your notes, ratings, the slides and your photos and videos.</string>
     <string name="trip_report_download">Download report (.zip)</string>
     <string name="trip_report_download_hint">The report as Markdown and as a web page, the slides from Sessionize and your photos and videos, in one zip file to mail or save.</string>
