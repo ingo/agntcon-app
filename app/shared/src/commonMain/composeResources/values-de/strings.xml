@@ -433,4 +433,23 @@ Bitte versuchen Sie es erneut.</string>
     </plurals>
     <string name="import_outlier_move">In diese Session verschieben</string>
     <string name="trip_report_preview_hint">So wird der Bericht aussehen. Tippen Sie auf ein Foto, um es groß zu sehen, und wischen Sie durch die Fotos der Session.</string>
+    <string name="export_highlights">Highlights</string>
+    <string name="export_highlight">Highlight</string>
+    <string name="session_media_highlight">Foto mit Stern markieren</string>
+    <string name="session_media_unhighlight">Stern entfernen</string>
+    <plurals name="trip_report_highlights">
+        <item quantity="one">%1$d Highlight</item>
+        <item quantity="other">%1$d Highlights</item>
+    </plurals>
+    <string name="trip_report_highlights_hint">Markiere auf der Session-Seite die wichtigen Fotos mit einem Stern: Sie stehen am Anfang des Berichts und werden größer gezeigt.</string>
+    <string name="trip_report_hearts">Favoriten aus Fotos übernehmen</string>
+    <string name="trip_report_hearts_hint">Markiert die Fotos mit einem Stern, die du in der Fotos-App als Favorit markiert hast. Es werden nur Sterne hinzugefügt, keine entfernt.</string>
+    <plurals name="trip_report_hearts_done">
+        <item quantity="one">%1$d Foto mit Stern markiert.</item>
+        <item quantity="other">%1$d Fotos mit Stern markiert.</item>
+    </plurals>
+    <plurals name="trip_report_hearts_unchecked">
+        <item quantity="one">%1$d Foto konnte nicht geprüft werden: Es stammt nicht aus deiner Mediathek oder wurde dort gelöscht.</item>
+        <item quantity="other">%1$d Fotos konnten nicht geprüft werden: Sie stammen nicht aus deiner Mediathek oder wurden dort gelöscht.</item>
+    </plurals>
 </resources>

@@ -140,6 +140,9 @@ private class IosMediaPicker : MediaPicker {
         onResult: (LibraryScan) -> Unit,
     ) = scanPhotoLibrary(windows, skipIds, onProgress, onResult)
 
+    override fun favoriteIds(sourceIds: Set<String>, onResult: (FavoriteLookup) -> Unit) =
+        lookUpFavorites(sourceIds, onResult)
+
     override fun open(paths: List<String>, kind: MediaKind) {
         if (paths.isEmpty()) return
         val controller = QLPreviewController()
@@ -259,7 +262,7 @@ private class LibraryDelegate(
 }
 
 private fun PickedMedia.withSource(id: String?): PickedMedia =
-    PickedMedia(path, kind, extension, thumbnailPath ?: photoThumbnail(this), takenAt, sourceId = id)
+    PickedMedia(path, kind, extension, thumbnailPath ?: photoThumbnail(this), takenAt, sourceId = id, favorite = id?.let { isFavoriteAsset(it) } == true)
 
 /** A small preview next to a picked photo, so lists never decode the full photo. */
 internal fun photoThumbnail(item: PickedMedia): String? {

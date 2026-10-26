@@ -17,6 +17,8 @@ class PickedMedia(
     val takenAt: MediaTime? = null,
     /** The photo library's id for the item, where the platform gives one; the same photo always has the same id. */
     val sourceId: String? = null,
+    /** True when the photo is a favorite (the heart) in the photo library; such a photo starts out starred. */
+    val favorite: Boolean = false,
 )
 
 /**
@@ -55,6 +57,19 @@ interface MediaPicker {
         onProgress: (done: Int, total: Int) -> Unit,
         onResult: (LibraryScan) -> Unit,
     ) = onResult(LibraryScan.Unavailable)
+
+    /**
+     * Looks up which of the photos with these library ids are favorites (the heart) in the photo library. Asks for
+     * access to the library the first time; only where [canScanLibrary].
+     */
+    fun favoriteIds(sourceIds: Set<String>, onResult: (FavoriteLookup) -> Unit) = onResult(FavoriteLookup.Unavailable)
+}
+
+sealed interface FavoriteLookup {
+    /** [favorites] are the ids that are hearted; [unchecked] ids were not found in the library (deleted, or not from it). */
+    data class Found(val favorites: Set<String>, val unchecked: Int) : FavoriteLookup
+    data object Denied : FavoriteLookup
+    data object Unavailable : FavoriteLookup
 }
 
 sealed interface LibraryScan {

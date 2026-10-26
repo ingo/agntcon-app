@@ -178,4 +178,45 @@ class ReportBundlerTest {
         assertIs<ReportResult.Done>(result)
         ZipFile(File(result.path)).use { assertEquals(listOf("report.md", "report.html"), it.entries().toList().map { e -> e.name }) }
     }
+
+
+    @Test
+    fun theBundleFollowsCaptureOrderAndFeaturesHighlights() = runTest {
+        val shots = (1..4).associateWith { Random(10 + it).nextBytes(2_000) }
+        shots.forEach { (n, bytes) -> mediaFile("s$n.jpg", bytes) }
+        val keynote = card("1", "Opening Keynote", 9)
+        // Imported in the order 3, 1, 4, 2 (as a library scan can): captured in the order 1, 2, 3, 4
+        val snapshot = ExportSnapshot(
+            listOf(keynote), emptyMap(), PersonalNotes(), emptyMap(), emptySet(),
+            attachments = mapOf(
+                "1" to listOf(
+                    Attachment("s3", MediaKind.PHOTO, "s3.jpg", addedAt = 10, takenAt = 3_000),
+                    Attachment("s1", MediaKind.PHOTO, "s1.jpg", addedAt = 11, takenAt = 1_000),
+                    Attachment("s4", MediaKind.PHOTO, "s4.jpg", addedAt = 12, takenAt = 4_000, highlighted = true),
+                    Attachment("s2", MediaKind.PHOTO, "s2.jpg", addedAt = 13, takenAt = 2_000),
+                ),
+            ),
+        )
+        val bundler = OkioReportBundler(outputDir = File(root, "out").toOkioPath(), download = { _, _ -> false })
+
+        val result = bundler.build(ReportInput(snapshot, event, ExportLabels()) { File(mediaDir, it).path }) {}
+
+        assertIs<ReportResult.Done>(result)
+        val contents = ZipInputStream(File(result.path).inputStream()).use { stream ->
+            generateSequence { stream.nextEntry }.associate { it.name to stream.readBytes() }
+        }
+        val folder = "media/2026-10-22-0900-opening-keynote"
+        assertContentEquals(shots.getValue(1), contents.getValue("$folder/01.jpg"))
+        assertContentEquals(shots.getValue(2), contents.getValue("$folder/02.jpg"))
+        assertContentEquals(shots.getValue(3), contents.getValue("$folder/03.jpg"))
+        assertContentEquals(shots.getValue(4), contents.getValue("$folder/04.jpg"))
+
+        val html = contents.getValue("report.html").decodeToString()
+        assertTrue("<h2>Highlights</h2>" in html, html)
+        assertTrue("<figure><a href=\"$folder/04.jpg\"><img src=\"$folder/04.jpg\" alt=\"Photo 4\"" in html, html)
+        assertTrue("<a href=\"$folder/04.jpg\" class=\"hl\"" in html, html)
+        val markdown = contents.getValue("report.md").decodeToString()
+        assertTrue("## Highlights" in markdown)
+        assertTrue("![Photo 4]($folder/04.jpg) ★ Highlight" in markdown, markdown)
+    }
 }

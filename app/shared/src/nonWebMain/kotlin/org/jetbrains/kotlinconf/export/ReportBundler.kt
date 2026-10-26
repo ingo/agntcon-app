@@ -92,7 +92,7 @@ class OkioReportBundler(
         val reportMedia: (SessionCardView) -> List<ReportMedia> = { s ->
             media[s.id.id].orEmpty().map {
                 val text = it.attachment.text?.takeIf { text -> text.isNotBlank() }
-                ReportMedia(it.attachment.kind, it.inBundle, it.original?.first, text, text?.let { _ -> layout.textPath(it.inBundle) })
+                ReportMedia(it.attachment.kind, it.inBundle, it.original?.first, text, text?.let { _ -> layout.textPath(it.inBundle) }, it.attachment.highlighted)
             }
         }
         val markdown = tripReportMarkdown(

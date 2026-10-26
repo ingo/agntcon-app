@@ -206,4 +206,75 @@ class TripReportBundleTest {
     fun theZipIsNamedAfterTheEvent() {
         assertEquals("agntcon-mcpcon-na-2026-trip-report.zip", reportFileName(event))
     }
+
+
+    @Test
+    fun photosAreNumberedInTheOrderTheyWereTakenNotImported() {
+        // Imported 12, 13, 11, 14 style: added in one order, taken in another; ones without a time use when added
+        val late = Attachment("late", MediaKind.PHOTO, "late.jpg", addedAt = 1000, takenAt = 300)
+        val early = Attachment("early", MediaKind.PHOTO, "early.jpg", addedAt = 1001, takenAt = 100)
+        val mid = Attachment("mid", MediaKind.PHOTO, "mid.jpg", addedAt = 1002, takenAt = 200)
+        val noTime = Attachment("none", MediaKind.PHOTO, "none.jpg", addedAt = 250)
+        val tieA = Attachment("tieA", MediaKind.PHOTO, "tieA.jpg", addedAt = 2000, takenAt = 400)
+        val tieB = Attachment("tieB", MediaKind.PHOTO, "tieB.jpg", addedAt = 2001, takenAt = 400)
+        val layout = ReportLayout(listOf(keynote), mapOf("1" to listOf(late, early, mid, noTime, tieA, tieB)))
+
+        val media = layout.media(keynote)
+
+        assertEquals(listOf("early", "mid", "none", "late", "tieA", "tieB"), media.map { it.first.id })
+        assertEquals(
+            listOf("01.jpg", "02.jpg", "03.jpg", "04.jpg", "05.jpg", "06.jpg").map { "media/2026-10-22-0900-opening-keynote-agents-mcp/$it" },
+            media.map { it.second },
+        )
+    }
+
+    private val starred = listOf(
+        ReportMedia(MediaKind.PHOTO, "media/a/01.jpg"),
+        ReportMedia(MediaKind.VIDEO, "media/a/02.mov"),
+        ReportMedia(MediaKind.PHOTO, "media/a/03.jpg", original = "media/a/03-original.heic", highlighted = true),
+    )
+
+    @Test
+    fun htmlFeaturesHighlightsAtTheTopAndLargerInTheSession() {
+        val html = tripReportHtml(
+            listOf(keynote, workshop), emptyMap(), PersonalNotes(), emptyMap(), emptySet(), event,
+            media = { s -> if (s.id.id == "1") starred else emptyList() },
+        )
+
+        assertTrue("<h2>Highlights</h2>" in html, html)
+        assertTrue(html.indexOf("<h2>Highlights</h2>") < html.indexOf("<section>"))
+        // The original is linked, the caption has session title and time, and the photo keeps its session number
+        assertTrue("<figure><a href=\"media/a/03-original.heic\"><img src=\"media/a/03.jpg\" alt=\"Photo 2\"" in html, html)
+        assertTrue("★ Opening Keynote: Agents &amp; MCP! · " in html, html)
+        // Inside the session only the starred one is large
+        assertTrue("<a href=\"media/a/03-original.heic\" class=\"hl\"" in html, html)
+        assertFalse("class=\"hl\"><img src=\"media/a/01.jpg\"" in html)
+        assertTrue("<a href=\"media/a/01.jpg\"><img src=\"media/a/01.jpg\"" in html, html)
+    }
+
+    @Test
+    fun noHighlightsMeansNoHighlightsSection() {
+        val plain = starred.map { it.copy(highlighted = false) }
+        val html = tripReportHtml(listOf(keynote), emptyMap(), PersonalNotes(), emptyMap(), emptySet(), event, media = { plain })
+        val markdown = tripReportMarkdown(listOf(keynote), emptyMap(), PersonalNotes(), emptyMap(), emptySet(), event, media = { plain })
+
+        assertFalse("Highlights" in html)
+        assertFalse("Highlights" in markdown)
+        assertFalse("★" in markdown)
+    }
+
+    @Test
+    fun markdownListsHighlightsFirstAndMarksThem() {
+        val report = tripReportMarkdown(
+            listOf(keynote, workshop), emptyMap(), PersonalNotes(), emptyMap(), emptySet(), event,
+            labels = ExportLabels(highlights = "Höhepunkte", highlight = "Highlight"),
+            media = { s -> if (s.id.id == "1") starred else emptyList() },
+        )
+
+        assertTrue(report.indexOf("## Höhepunkte") < report.indexOf("### Opening"), report)
+        assertTrue("- ![Photo 2](media/a/03.jpg) **Opening Keynote: Agents & MCP! · " in report, report)
+        assertTrue("([original](media/a/03-original.heic))" in report)
+        assertTrue("![Photo 2](media/a/03.jpg) ([original](media/a/03-original.heic)) ★ Highlight" in report, report)
+        assertFalse("![Photo 1](media/a/01.jpg) ★" in report)
+    }
 }

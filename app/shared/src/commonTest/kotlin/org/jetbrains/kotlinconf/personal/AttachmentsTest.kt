@@ -130,4 +130,56 @@ class AttachmentsTest {
 
         assertEquals(emptyMap(), YearlyStorageImpl(2026, settings).getAttachments().first())
     }
+
+
+    @Test
+    fun attachmentsStoredBeforeHighlightsStillLoad() {
+        // As an older version wrote it: no highlighted, no takenAt. The storage decodes with these settings.
+        val json = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
+        val old = """{"s1":[{"id":"a","kind":"PHOTO","file":"a.jpg","addedAt":5,"cleaned":"a-c.jpg","cleanChecked":true,"cleanVersion":2}]}"""
+
+        val loaded = json.decodeFromString<Map<String, List<Attachment>>>(old).getValue("s1").single()
+
+        assertEquals("a-c.jpg", loaded.cleaned)
+        assertEquals(false, loaded.highlighted)
+        assertNull(loaded.takenAt)
+        assertEquals(5L, loaded.orderTime)
+    }
+
+    @Test
+    fun highlightingIsPerPhotoAndKeepsTheRest() {
+        val all = mapOf("s1" to listOf(photo("a", 1), photo("b", 2)))
+
+        val starred = all.withUpdated("b") { it.withHighlighted(true) }
+
+        assertEquals(listOf(false, true), starred.getValue("s1").map { it.highlighted })
+        val b = starred.getValue("s1")[1]
+        assertSame(b, b.withHighlighted(true))
+        assertEquals(false, b.withHighlighted(false).highlighted)
+        assertEquals(b.copy(highlighted = false), b.withHighlighted(false))
+    }
+
+    @Test
+    fun theTimeATakenPhotoWasShotWinsOverWhenItWasAdded() {
+        assertEquals(100L, photo("a", 500).copy(takenAt = 100).orderTime)
+        assertEquals(500L, photo("a", 500).orderTime)
+    }
+
+    @Test
+    fun starsFromThePhotoLibraryOnlyAddStars() {
+        val hearted = photo("a", 1).copy(sourceId = "lib-a")
+        val alreadyStarred = photo("b", 2).copy(sourceId = "lib-b", highlighted = true)
+        val ownStar = photo("c", 3).copy(sourceId = "lib-c", highlighted = true)
+        val notHearted = photo("d", 4).copy(sourceId = "lib-d")
+        val noSource = photo("e", 5)
+        val aVideo = video("f", 6).copy(sourceId = "lib-f")
+        val all = mapOf("s1" to listOf(hearted, alreadyStarred, ownStar, notHearted, noSource, aVideo))
+
+        val (next, starred) = all.withStarsFrom(setOf("lib-a", "lib-b", "lib-f"))
+
+        // One new star; the star set in the app on c stays although c is not hearted; videos are never starred
+        assertEquals(1, starred)
+        assertEquals(listOf(true, true, true, false, false, false), next.getValue("s1").map { it.highlighted })
+        assertEquals(0, next.withStarsFrom(setOf("lib-a")).second)
+    }
 }

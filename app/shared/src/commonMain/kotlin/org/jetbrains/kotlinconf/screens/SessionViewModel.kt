@@ -128,6 +128,11 @@ class SessionViewModel(
         viewModelScope.launch { service.setCleanUpMode(attachment.id, mode) }
     }
 
+    /** Stars a photo, or takes the star off, so the trip report features it. */
+    fun setHighlighted(attachment: Attachment, highlighted: Boolean) {
+        viewModelScope.launch { service.setHighlighted(attachment.id, highlighted) }
+    }
+
     /** The rooms with a pin on the venue map, to offer "Find on map". */
     val pinnedRooms: StateFlow<Set<String>> = service.mapData
         .map { it?.rooms?.keys ?: emptySet() }

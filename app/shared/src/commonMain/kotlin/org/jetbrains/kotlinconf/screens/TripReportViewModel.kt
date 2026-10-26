@@ -43,6 +43,7 @@ data class TripReportItem(
     val videos: Int,
     val hasNote: Boolean,
     val hasRating: Boolean,
+    val highlights: Int = 0,
 )
 
 data class TripReportSummary(
@@ -55,6 +56,7 @@ data class TripReportSummary(
     val withSlides: Int get() = items.count { it.session.slidesUrl != null }
     val photos: Int get() = items.sumOf { it.photos }
     val videos: Int get() = items.sumOf { it.videos }
+    val highlights: Int get() = items.sumOf { it.highlights }
 }
 
 sealed interface TripReportState {
@@ -113,6 +115,13 @@ class TripReportViewModel(
             }
     }
 
+    /** Library ids of the photos that can be looked up in the photo library, to star the hearted ones. */
+    fun photoSourceIds(): Set<String> =
+        service.attachments.value.values.flatten().filter { it.kind == MediaKind.PHOTO }.mapNotNullTo(mutableSetOf()) { it.sourceId }
+
+    /** Stars the photos hearted in the photo library; returns how many were newly starred. */
+    suspend fun starFavorites(favoriteIds: Set<String>): Int = service.starFavorites(favoriteIds)
+
     /** Library ids of the photos and videos already attached, so a scan does not copy them again. */
     fun knownSourceIds(): Set<String> = service.attachments.value.values.flatten().mapNotNullTo(mutableSetOf()) { it.sourceId }
 
@@ -142,6 +151,7 @@ class TripReportViewModel(
                 session = session,
                 photos = attachments.count { it.kind == MediaKind.PHOTO },
                 videos = attachments.count { it.kind == MediaKind.VIDEO },
+                highlights = attachments.count { it.kind == MediaKind.PHOTO && it.highlighted },
                 hasNote = snapshot.notes.sessionNote(session.id).isNotBlank(),
                 hasRating = snapshot.ratings[session.id.id]?.isEmpty == false,
             )

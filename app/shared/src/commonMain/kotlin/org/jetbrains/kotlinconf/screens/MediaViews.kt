@@ -55,6 +55,8 @@ import org.jetbrains.kotlinconf.generated.resources.cleanup_light_detail
 import org.jetbrains.kotlinconf.generated.resources.cleanup_original
 import org.jetbrains.kotlinconf.generated.resources.cleanup_original_detail
 import org.jetbrains.kotlinconf.generated.resources.session_media_cancel
+import org.jetbrains.kotlinconf.generated.resources.session_media_highlight
+import org.jetbrains.kotlinconf.generated.resources.session_media_unhighlight
 import org.jetbrains.kotlinconf.generated.resources.session_media_cleanup
 import org.jetbrains.kotlinconf.generated.resources.session_media_cleanup_title
 import org.jetbrains.kotlinconf.generated.resources.session_media_from_library
@@ -105,6 +107,7 @@ fun MediaBlock(
     moveTargets: MoveTargets,
     onMove: (Attachment, SessionId) -> Unit,
     onCleanUp: (Attachment, CleanUpMode?) -> Unit,
+    onHighlight: (Attachment, Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -142,6 +145,7 @@ fun MediaBlock(
                         label = label,
                         previewPath = attachment.preview?.let(pathOf),
                         selected = attachment.id == selectedId,
+                        onHighlight = { onHighlight(attachment, !attachment.highlighted) },
                         onClick = {
                             if (selectedId != null) {
                                 selectedId = null
@@ -223,6 +227,15 @@ fun MediaBlock(
                         },
                         primary = true,
                     )
+                    if (selected.kind == MediaKind.PHOTO) {
+                        Button(
+                            label = stringResource(if (selected.highlighted) Res.string.session_media_unhighlight else Res.string.session_media_highlight),
+                            onClick = {
+                                selectedId = null
+                                onHighlight(selected, !selected.highlighted)
+                            },
+                        )
+                    }
                     if (screenCleanUpAvailable && selected.kind == MediaKind.PHOTO) {
                         Button(
                             label = stringResource(Res.string.session_media_cleanup),
@@ -306,6 +319,7 @@ private fun MediaTile(
     label: String,
     previewPath: String?,
     selected: Boolean,
+    onHighlight: () -> Unit,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
 ) {
@@ -344,6 +358,28 @@ private fun MediaTile(
                     painter = painterResource(Res.drawable.play_video),
                     contentDescription = null,
                     modifier = Modifier.padding(start = 3.dp).size(20.dp),
+                )
+            }
+        } else {
+            // The star: tap to feature the photo in the trip report. A separate click target on top of the tile
+            Box(
+                Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(4.dp)
+                    .size(32.dp)
+                    .clip(CircleShape)
+                    .background(Color.Black.copy(alpha = 0.45f))
+                    .clickable(
+                        role = Role.Button,
+                        onClickLabel = stringResource(if (attachment.highlighted) Res.string.session_media_unhighlight else Res.string.session_media_highlight),
+                        onClick = onHighlight,
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    if (attachment.highlighted) "★" else "☆",
+                    style = KotlinConfTheme.typography.h3,
+                    color = if (attachment.highlighted) Color(0xFFFFC107) else Color.White,
                 )
             }
         }
