@@ -10,6 +10,7 @@ on:
 permissions:
   contents: read
   issues: write
+  actions: write
 
 jobs:
   poll:
@@ -35,6 +36,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           # Feedback sent before the loop went live is not filed
           FEEDBACK_SINCE: "2026-10-25T18:00:00Z"
+          # Feedback from this tester starts the fix workflow by itself; anyone else's waits for the claude-fix label
+          OWNER_EMAIL: ${{ secrets.OWNER_FEEDBACK_EMAIL }}
         run: |
           gh label create beta-feedback --color BFD4F2 --description "TestFlight tester feedback" 2>/dev/null || true
           gh issue list --label beta-feedback --state all --limit 1000 --json body --jq '.[].body' > build/existing.txt
@@ -55,5 +58,12 @@ jobs:
               echo '~~~~'
             } > build/issue.md
             title=$(jq -r '"Beta feedback: " + ((.comment // .kind) | gsub("\\s+"; " ") | .[0:60])' <<<"$item")
-            gh issue create --title "$title" --label beta-feedback --body-file build/issue.md
+            url=$(gh issue create --title "$title" --label beta-feedback --body-file build/issue.md)
+            mine=$(jq -r --arg e "${OWNER_EMAIL:-}" '$e != "" and ((.raw.email // "") | ascii_downcase) == ($e | ascii_downcase)' <<<"$item")
+            if [[ "$mine" == "true" ]]; then
+              number=${url##*/}
+              # A label added with the workflow token starts nothing, so start the fix workflow directly
+              gh issue edit "$number" --add-label claude-fix
+              gh workflow run beta-fix.yml -f issue="$number"
+            fi
           done
