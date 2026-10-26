@@ -38,6 +38,9 @@ class ReportLayout(
             attachment to "media/${folder(session)}/${(index + 1).pad()}.${extensionOf(attachment.cleaned ?: attachment.file, default = "bin")}"
         }
 
+    /** Where the text read from a photo goes: next to it, with its name (`01.jpg` and `01.txt`). */
+    fun textPath(mediaPath: String): String = mediaPath.substringBeforeLast('.') + ".txt"
+
     /**
      * Where the original of a cleaned-up photo goes, next to the cleaned-up copy: `01-original.jpg`. Null for a photo
      * that was not cleaned up (its original is the one at [media]'s path).

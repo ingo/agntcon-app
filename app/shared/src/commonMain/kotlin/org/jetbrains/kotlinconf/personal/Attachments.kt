@@ -45,6 +45,10 @@ data class Attachment(
     val highlighted: Boolean = false,
     /** When it was taken, in milliseconds since 1970, if the file says so; the report orders photos by it. */
     val takenAt: Long? = null,
+    /** The words on a photo of a slide, read on the device from the cleaned-up copy where there is one; null if none. */
+    val text: String? = null,
+    /** True once the text was read (or tried), so it is read only once. */
+    val textChecked: Boolean = false,
 ) {
     /** When it happened, for ordering: the capture time, else when it was added. */
     val orderTime: Long get() = takenAt ?: addedAt

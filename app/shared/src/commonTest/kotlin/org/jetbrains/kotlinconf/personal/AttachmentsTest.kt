@@ -38,8 +38,10 @@ class AttachmentsTest {
     }
 
     @Test
-    fun aPhotoStoredByAnOlderVersionHasNoCleanUpChoice() {
+    fun aPhotoStoredByAnOlderVersionHasNoCleanUpChoiceAndNoTextYet() {
         assertNull(photo("a", 1).cleanMode)
+        assertNull(photo("a", 1).text)
+        assertEquals(false, photo("a", 1).textChecked)
     }
 
     @Test

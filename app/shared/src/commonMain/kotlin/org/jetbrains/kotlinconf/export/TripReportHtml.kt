@@ -88,6 +88,16 @@ fun tripReportHtml(
                     }
                 }
                 appendLine("</div>")
+                val texts = items.withNumbers().filter { !it.first.text.isNullOrBlank() }
+                if (texts.isNotEmpty()) {
+                    appendLine("<div class=\"texts\">")
+                    texts.forEach { (item, number) ->
+                        val label = "${labels.mediaLabel(item.kind)} $number".html()
+                        val file = item.textPath?.let { " (<a href=\"${it.attr()}\">${it.substringAfterLast('/').html()}</a>)" }.orEmpty()
+                        appendLine("<details><summary>${labels.textOn.html()} $label$file</summary><pre>${item.text.orEmpty().trim().html()}</pre></details>")
+                    }
+                    appendLine("</div>")
+                }
             }
             appendLine("</section>")
         }
@@ -121,6 +131,7 @@ private const val STYLE = "body{margin:0;background:#fff;color:#19191c;font:16px
     "h1{font-size:1.6em;line-height:1.2}h2{margin-top:2em;border-bottom:1px solid #ddd}" +
     "section{margin:1.5em 0}h3{margin-bottom:.2em}.meta{margin-top:0;color:#666}" +
     ".note{white-space:normal;color:#333}a{color:#c2003e}" +
+    ".texts details{margin:.4em 0}.texts pre{white-space:pre-wrap;background:#f6f6f8;padding:8px;border-radius:6px}" +
     // Small square thumbnails, so a session with many photos stays short; a click opens the full photo
     ".media{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px}" +
     ".media a{display:block}.media img,.media video{width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;background:#eee;display:block}" +

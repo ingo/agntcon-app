@@ -38,10 +38,20 @@ data class ExportLabels(
     val original: String = "original",
     val highlights: String = "Highlights",
     val highlight: String = "Highlight",
+    val textOn: String = "Text on",
 )
 
 /** A photo or video in the report bundle, by its path inside the bundle. */
-data class ReportMedia(val kind: MediaKind, val path: String, val original: String? = null, val highlighted: Boolean = false)
+data class ReportMedia(
+    val kind: MediaKind,
+    val path: String,
+    val original: String? = null,
+    /** The words on the photo, and where they are saved as a text file in the bundle. */
+    val text: String? = null,
+    val textPath: String? = null,
+    /** True for a starred photo: it is also shown in the Highlights section and larger in its session. */
+    val highlighted: Boolean = false,
+)
 
 /** A starred photo with the session it was taken in and its number there (Photo 3), for the Highlights section. */
 internal data class ReportHighlight(val session: SessionCardView, val item: ReportMedia, val number: Int)
@@ -289,6 +299,14 @@ fun tripReportMarkdown(
                     val original = item.original?.let { " ([${labels.original}]($it))" }.orEmpty()
                     val star = if (item.highlighted && item.kind == MediaKind.PHOTO) " ★ ${labels.highlight}" else ""
                     appendLine(if (item.kind == MediaKind.PHOTO) "![$label](${item.path})$original$star" else "[$label](${item.path})")
+                    item.text?.takeIf { it.isNotBlank() }?.let { text ->
+                        // The text file has the photo's name, so each text stays linked to its photo
+                        val file = item.textPath?.let { " ([${it.substringAfterLast('/')}]($it))" }.orEmpty()
+                        appendLine()
+                        appendLine("> **${labels.textOn} $label**$file")
+                        appendLine(">")
+                        text.mdBlock().lines().forEach { line -> appendLine("> ${line.trimEnd()}  ") }
+                    }
                 }
             }
         }

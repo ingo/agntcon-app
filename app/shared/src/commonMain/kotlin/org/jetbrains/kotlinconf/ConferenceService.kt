@@ -52,6 +52,7 @@ import org.jetbrains.kotlinconf.media.PhotoCleanUp
 import org.jetbrains.kotlinconf.media.cleanUpProgress
 import org.jetbrains.kotlinconf.media.cleanUpScreenPhoto
 import org.jetbrains.kotlinconf.media.makeThumbnail
+import org.jetbrains.kotlinconf.media.recognizeText
 import org.jetbrains.kotlinconf.media.removeStoredDuplicates
 import org.jetbrains.kotlinconf.media.screenCleanUpAvailable
 import org.jetbrains.kotlinconf.media.SCREEN_CLEAN_UP_VERSION
@@ -313,13 +314,16 @@ class ConferenceService(
                         redo && next.cleanMode != CleanUpMode.ORIGINAL && cleanUpScreenPhoto(media.path(next.file), media.path(name), next.cleanMode)
                     }
                     // A preview of what lists should show: the cleaned-up photo if there is one, else the original
+                    val shown = cleaned ?: next.cleaned.takeUnless { redo } ?: next.file
                     val previewName = media.newName("jpg")
                     val preview = if (redo || next.thumbnail == null) {
-                        val shown = cleaned ?: next.cleaned.takeUnless { redo } ?: next.file
                         previewName.takeIf { makeThumbnail(media.path(shown), media.path(previewName)) }
                     } else {
                         null
                     }
+                    // The words on the photo, read once, from the cleaned-up copy where there is one: straighter and
+                    // clearer than the original. Kept with the photo, so nothing has to read it again.
+                    val text = if (next.textChecked) null else recognizeText(media.path(shown))
                     savePersonal { storage ->
                         val all = storage.getAttachments().first()
                         val current = all.values.flatten().firstOrNull { it.id == next.id }
@@ -338,6 +342,8 @@ class ConferenceService(
                                     cleanVersion = if (redo) SCREEN_CLEAN_UP_VERSION else it.cleanVersion,
                                     previewChecked = true,
                                     thumbnail = preview ?: it.thumbnail,
+                                    text = if (next.textChecked) it.text else text,
+                                    textChecked = true,
                                 )
                             })
                         }
@@ -391,7 +397,7 @@ class ConferenceService(
 
     private fun Attachment.needsNewCleanUp() = !cleanChecked || cleanVersion < SCREEN_CLEAN_UP_VERSION
 
-    private fun Attachment.needsCleanUp() = kind == MediaKind.PHOTO && (needsNewCleanUp() || !previewChecked)
+    private fun Attachment.needsCleanUp() = kind == MediaKind.PHOTO && (needsNewCleanUp() || !previewChecked || !textChecked)
 
     // Photos and videos picked on the trip report page, waiting to be matched to sessions on the review screen
     private val pendingImport = MutableStateFlow<List<PickedMedia>>(emptyList())
