@@ -4,6 +4,12 @@ package org.jetbrains.kotlinconf.media
 private const val MAX_CAST = 2.5
 private const val MAX_GAIN = 8.0
 
+/**
+ * The brightest channel of a dark slide's background, once corrected and stretched (linear), up to which it counts as
+ * a projector's black rather than a colour of the design. A bright or mid blue background is far brighter in blue.
+ */
+private const val BLACKISH_BACKGROUND = 0.1
+
 /** Median brightness (linear) above which a slide counts as light: dark text on a light background. */
 private const val LIGHT_MEDIAN = 0.3
 
@@ -41,8 +47,9 @@ internal class ScreenLevels(val gains: List<Double>, val biases: List<Double>, v
  *
  * The background of a dark slide is often lit by the room's warm light rather than the projector, so it is warmer than
  * the text and keeps a cast once the white is balanced; taking one black off every channel would then leave it orange.
- * So a dark slide's background, its median, is made grey by a black point per channel. A slide designed with a dark
- * coloured background comes out dark grey too.
+ * So a dark slide's background, its median, becomes black by a black point per channel, as long as it is nearly black.
+ * A background that is clearly coloured (a bright or mid blue, say) is part of the design, not a cast: it keeps the one
+ * black point and its colour.
  */
 internal fun measureScreenLevels(pixels: List<Rgb>): ScreenLevels? {
     if (pixels.isEmpty()) return null
@@ -72,8 +79,12 @@ internal fun measureScreenLevels(pixels: List<Rgb>): ScreenLevels? {
     val around = percentile(corrected, 0.4)..percentile(corrected, 0.6)
     val middle = balanced.filter { it.luminance in around }
     val background = listOf(middle.sumOf { it.r }, middle.sumOf { it.g }, middle.sumOf { it.b }).map { it / middle.size }
-    val grey = Rgb(background[0], background[1], background[2]).luminance
-    return ScreenLevels(tint.map { it * k }, background.map { (black + it - grey) * k }, false)
+    if (background.any { (it - black) * k > BLACKISH_BACKGROUND }) {
+        return ScreenLevels(tint.map { it * k }, List(3) { black * k }, false)
+    }
+    // Nearly black: the background's own level in each channel is that channel's black point, so it turns black
+    // rather than a stretched orange-brown. Brighter things on the slide (cards, text) keep their light.
+    return ScreenLevels(tint.map { it * k }, background.map { it.coerceIn(black, high * 0.3) * k }, false)
 }
 
 private fun percentile(values: List<Double>, p: Double): Double {
